@@ -1249,20 +1249,22 @@ ${htmlFotos}
   body.insertBefore(pb, fotosEl);
   body.insertBefore(h2, fotosEl);
 
-  // Escalar cada página para que quepa exactamente en A4
-  var MM     = 96 / 25.4;
-  var PAGE_H = (297 - 12 - 16) * MM;
-  var HDR_H  = header.getBoundingClientRect().height;
-  var MAX_H  = PAGE_H - HDR_H;
+  // Esperar a que el logo base64 se decodifique antes de medir el header
+  window.addEventListener('load', function() {
+    var MM     = 96 / 25.4;
+    var PAGE_H = (297 - 12 - 16) * MM;
+    var HDR_H  = header.getBoundingClientRect().height;
+    var MAX_H  = PAGE_H - HDR_H;
 
-  function scaleToFit(el) {
-    if (!el) return;
-    var h = el.getBoundingClientRect().height;
-    if (h > MAX_H) el.style.zoom = (MAX_H / h).toFixed(4);
-  }
+    function scaleToFit(el) {
+      if (!el) return;
+      var h = el.getBoundingClientRect().height;
+      if (h > MAX_H) el.style.zoom = (MAX_H / h).toFixed(4);
+    }
 
-  scaleToFit(document.querySelector('.pg1-content'));
-  scaleToFit(document.querySelector('.pg2-content'));
+    scaleToFit(document.querySelector('.pg1-content'));
+    scaleToFit(document.querySelector('.pg2-content'));
+  });
 })();
 <\/script>
 </body></html>`;

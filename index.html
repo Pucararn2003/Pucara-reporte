@@ -455,9 +455,20 @@ sb.auth.onAuthStateChange((_e, session) => {
       }, () => { cargarReportes(true); })
       .subscribe();
 
-    // Polling cada 5 s como respaldo (cubre DELETE/UPDATE aunque Realtime no esté activo)
+    // Polling liviano cada 6 s: solo compara IDs, descarga completo solo si hay cambio
     if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(() => cargarReportes(true), 5000);
+    pollingInterval = setInterval(async () => {
+      try {
+        const { data } = await sb
+          .from('registros_reporte_diario')
+          .select('id, correlativo')
+          .order('correlativo', { ascending: false });
+        if (!data) return;
+        const remotoIds = data.map(r => r.id).join(',');
+        const localIds  = reportes.map(r => r.id).join(',');
+        if (remotoIds !== localIds) cargarReportes(true);
+      } catch {}
+    }, 6000);
   } else {
     document.getElementById('login').style.display = 'flex';
     document.getElementById('app').style.display   = 'none';

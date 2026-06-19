@@ -1072,7 +1072,7 @@ function buildHtmlReporte(r) {
 <style>
 * { box-sizing: border-box; margin:0; padding:0; }
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-@page { size: A4; margin: 12mm 12mm 16mm 12mm; }
+@page { size: A4; margin: 8mm 8mm 8mm 8mm; }
 .hdr-title-text { font-size:20pt; font-weight:900; letter-spacing:1pt; color:#1F3864; }
 .tbl { width:100%; border-collapse:collapse; margin-bottom:3pt; font-size:10pt; }
 .tbl td, .tbl th { border:0.5pt solid #808080; padding:3pt 5pt; vertical-align:middle; }
@@ -1252,7 +1252,7 @@ ${htmlFotos}
   // Esperar a que el logo base64 se decodifique antes de medir el header
   window.addEventListener('load', function() {
     var MM     = 96 / 25.4;
-    var PAGE_H = (297 - 12 - 16) * MM;
+    var PAGE_H = (297 - 8 - 8) * MM;
     var HDR_H  = header.getBoundingClientRect().height;
     var MAX_H  = PAGE_H - HDR_H;
 

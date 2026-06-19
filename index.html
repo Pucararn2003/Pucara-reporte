@@ -1,0 +1,1260 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pucara S.A. — Reporte Diario</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;font-size:14px;background:#EEF3F9;color:#222}
+
+/* ── NAV ── */
+nav{background:#1E4F8C;color:#fff;display:flex;align-items:center;padding:0 20px;height:52px;gap:16px;position:sticky;top:0;z-index:100}
+nav .brand{font-weight:700;font-size:16px;flex:1}
+nav button{background:rgba(255,255,255,0.18);border:none;color:#fff;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600}
+nav button:hover{background:rgba(255,255,255,0.28)}
+nav .user{font-size:12px;opacity:.75}
+
+/* ── LOGIN ── */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#EEF3F9}
+.login-card{background:#fff;border-radius:14px;padding:36px 32px;width:340px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+.login-card h1{font-size:20px;color:#1E4F8C;margin-bottom:4px}
+.login-card p{color:#888;font-size:13px;margin-bottom:24px}
+.login-card label{display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:4px;margin-top:12px}
+.login-card input{width:100%;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none}
+.login-card input:focus{border-color:#1E4F8C}
+.login-card .btn-login{width:100%;background:#1E4F8C;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:20px}
+.login-card .btn-login:hover{background:#163B6E}
+.login-card .err{color:#c0392b;font-size:12px;margin-top:8px;min-height:16px}
+
+/* ── LAYOUT ── */
+#app{display:none}
+.page{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.toolbar h2{flex:1;font-size:18px;color:#1E4F8C}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:.15s}
+.btn-primary{background:#1E4F8C;color:#fff}.btn-primary:hover{background:#163B6E}
+.btn-secondary{background:#eee;color:#444}.btn-secondary:hover{background:#ddd}
+.btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
+.btn-green{background:#27ae60;color:#fff}.btn-green:hover{background:#1e8449}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── TABLA HISTORIAL ── */
+.tbl-wrap{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+table{width:100%;border-collapse:collapse}
+th{background:#1E4F8C;color:#fff;text-align:left;padding:10px 14px;font-size:12px;font-weight:700}
+td{padding:10px 14px;border-bottom:1px solid #f0ebe4;font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#E5EFF9}
+.badge{background:#1E4F8C;color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700}
+.actions{display:flex;gap:6px}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+
+/* ── FORM ── */
+.form-card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px}
+.form-card h3{font-size:13px;font-weight:700;color:#fff;background:#1E4F8C;padding:8px 12px;border-radius:6px;margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid.col3{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:700;color:#555}
+.form-group input,.form-group select,.form-group textarea{border:1.5px solid #ddd;border-radius:7px;padding:8px 10px;font-size:13px;font-family:Arial,Helvetica,sans-serif;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1E4F8C}
+.form-group textarea{resize:vertical;min-height:60px}
+
+/* ── DYNAMIC ROWS ── */
+.dyn-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+.dyn-table th{background:#f5e6d3;color:#1E4F8C;font-size:11px;padding:6px 8px;text-align:left}
+.dyn-table td{padding:4px 4px;vertical-align:middle}
+.dyn-table input{width:100%;border:1px solid #ddd;border-radius:5px;padding:6px 8px;font-size:12px}
+.dyn-table input:focus{border-color:#1E4F8C;outline:none}
+.btn-add{background:#f5e6d3;color:#1E4F8C;border:1.5px dashed #1E4F8C;border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:700;width:100%}
+.btn-add:hover{background:#efe0cc}
+.btn-rm{background:#fdd;color:#e74c3c;border:none;border-radius:5px;cursor:pointer;padding:4px 8px;font-size:13px;font-weight:700}
+.sugs{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 8px}
+.sug-chip{background:#f5e6d3;color:#1E4F8C;border:1px solid #e8c9a0;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600}
+.sug-chip:hover{background:#efe0cc}
+.worker-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:.1s}
+.worker-row:hover{background:#E5EFF9}
+.worker-row.checked{background:#fdf0e6}
+.worker-row input[type=checkbox]{accent-color:#1E4F8C;width:16px;height:16px;cursor:pointer}
+
+/* ── ITEMS LIST (actividades) ── */
+.items-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.item-row{display:flex;gap:6px;align-items:center}
+.item-row input{flex:1;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px}
+.item-row input:focus{border-color:#1E4F8C;outline:none}
+
+/* ── FOTOS ── */
+.fotos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:8px}
+.foto-card{border:1.5px solid #eee;border-radius:8px;overflow:hidden;position:relative}
+.foto-card img{width:100%;height:130px;object-fit:cover}
+.foto-card input{width:100%;border:none;border-top:1px solid #eee;padding:6px 8px;font-size:11px}
+.foto-card .rm-foto{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:22px;text-align:center}
+.add-foto{border:2px dashed #ccc;border-radius:8px;height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#aaa;font-size:12px;gap:6px}
+.add-foto:hover{border-color:#1E4F8C;color:#1E4F8C}
+.add-foto input{display:none}
+
+/* ── LOADING / EMPTY ── */
+.loading{text-align:center;padding:40px;color:#aaa}
+.empty{text-align:center;padding:60px 20px;color:#aaa}
+.empty svg{margin-bottom:12px;opacity:.3}
+
+/* ── LOGO ── */
+.login-logo-wrap{text-align:center;margin-bottom:18px}
+#login-logo{width:96px;height:96px;object-fit:contain;border-radius:14px;background:#fff;padding:8px;border:2px solid #3A7BC8;box-shadow:0 3px 10px rgba(0,0,0,.13);display:inline-block}
+#nav-logo{width:38px;height:38px;object-fit:contain;border-radius:8px;background:#fff;padding:4px;border:1.5px solid rgba(255,255,255,.4);flex-shrink:0}
+
+/* ── PRINT / PDF ── */
+#print-frame{display:none}
+@media print{
+  body>*{display:none!important}
+  #print-frame{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══════════════════════════════════════════════════════════════ -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-logo-wrap"><img id="login-logo" alt="Pucara S.A."/></div>
+    <h1>Pucara S.A.</h1>
+    <p>Reporte Diario — Herramienta PC</p>
+    <label>Correo electrónico</label>
+    <input id="email" type="email" placeholder="usuario@empresa.com" autocomplete="email"/>
+    <label>Contraseña</label>
+    <input id="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn-login" onclick="login()">Ingresar</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ══════════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <nav>
+    <img id="nav-logo" alt="Pucara S.A."/>
+    <span class="brand">Pucara S.A. — Reporte Diario</span>
+    <span id="conn-dot" title="Estado Supabase" style="font-size:18px;line-height:1;cursor:default">⬤</span>
+    <span class="user" id="nav-user"></span>
+    <button onclick="logout()">Cerrar sesión</button>
+  </nav>
+
+  <!-- Banner de error de configuración -->
+  <div id="banner-error" style="display:none;background:#c0392b;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600"></div>
+
+  <!-- ── HISTORIAL ─────────────────────────────────────────────────────────── -->
+  <div id="view-historial" class="page">
+    <div class="toolbar">
+      <h2>Historial de Reportes</h2>
+      <button class="btn btn-secondary" onclick="cargarReportes()" id="btn-refresh">↻ Actualizar</button>
+      <span id="ultima-sync" style="font-size:11px;color:#888;align-self:center"></span>
+      <button class="btn btn-primary" onclick="abrirFormNuevo()">+ Nuevo Reporte</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Supervisor</th>
+            <th>Personal</th>
+            <th>Fotos</th>
+            <th>Creado por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="8" class="loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FORMULARIO ────────────────────────────────────────────────────────── -->
+  <div id="view-form" class="page" style="display:none">
+    <div class="toolbar">
+      <button class="btn btn-secondary" onclick="mostrarHistorial()">← Volver</button>
+      <h2 id="form-titulo">Nuevo Reporte</h2>
+      <button class="btn btn-primary" onclick="guardarReporte()" id="btn-guardar">Guardar</button>
+    </div>
+
+    <!-- Datos generales -->
+    <div class="form-card">
+      <h3>Datos Generales</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Correlativo</label>
+          <input id="f-correlativo" type="number" min="1" placeholder="Auto"/>
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input id="f-fecha" type="date"/>
+        </div>
+        <div class="form-group">
+          <label>Hora Inicio</label>
+          <input id="f-hora-inicio" type="time"/>
+        </div>
+        <div class="form-group">
+          <label>Hora Término</label>
+          <input id="f-hora-termino" type="time"/>
+        </div>
+        <div class="form-group">
+          <label>Supervisor de Turno</label>
+          <select id="f-supervisor-sel" onchange="supervisorCambio()">
+            <option value="">— Seleccionar supervisor —</option>
+            <option value="Eric Rojas Rojas">Eric Rojas Rojas</option>
+            <option value="Luis Ahumada Berrios">Luis Ahumada Berrios</option>
+            <option value="otro">Otro...</option>
+          </select>
+          <input id="f-supervisor" type="text" placeholder="Nombre completo..." style="margin-top:6px;display:none"/>
+        </div>
+        <div class="form-group">
+          <label>RUT Supervisor</label>
+          <input id="f-rut" type="text" placeholder="12345678-9"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal -->
+    <div class="form-card">
+      <h3>Personal Presente en la Jornada</h3>
+      <table class="dyn-table">
+        <thead><tr><th style="width:40px">N°</th><th>Nombre</th><th>Cargo</th><th>Obs.</th><th style="width:32px"></th></tr></thead>
+        <tbody id="personal-rows"></tbody>
+      </table>
+      <button class="btn-add" style="margin-bottom:5px" onclick="abrirModalPersonal()">👥 Seleccionar de lista</button>
+      <button class="btn-add" onclick="addPersonal()">+ Agregar persona manualmente</button>
+    </div>
+
+    <!-- Vehículos -->
+    <div class="form-card">
+      <h3>Vehículos del Servicio</h3>
+      <table class="dyn-table">
+        <thead><tr><th style="width:40px">N°</th><th>Marca</th><th>Patente</th><th>KM</th><th>Iniciales</th><th style="width:32px"></th></tr></thead>
+        <tbody id="veh-rows"></tbody>
+      </table>
+      <button class="btn-add" onclick="addVehiculo()">+ Agregar vehículo</button>
+    </div>
+
+    <!-- Equipos -->
+    <div class="form-card">
+      <h3>Equipos</h3>
+      <table class="dyn-table">
+        <thead><tr><th style="width:40px">N°</th><th>Tipo</th><th>Código</th><th>Odómetro</th><th>Iniciales</th><th style="width:32px"></th></tr></thead>
+        <tbody id="eq-rows"></tbody>
+      </table>
+      <button class="btn-add" onclick="addEquipo()">+ Agregar equipo</button>
+    </div>
+
+    <!-- Datalist compartido para iniciales (se rellena con el personal cargado) -->
+    <datalist id="iniciales-datalist"></datalist>
+
+    <!-- Actividades -->
+    <div class="form-card">
+      <h3>Actividades Realizadas</h3>
+      <p style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px">I. Gestión SST / Administrativa</p>
+      <div class="items-list" id="gestion-items"></div>
+      <button class="btn-add" onclick="addItem('gestion')">+ Agregar ítem</button>
+      <div class="sugs" id="gestion-sugs"></div>
+
+      <p style="font-size:12px;font-weight:700;color:#555;margin:14px 0 6px">II. Actividades Operativas / Planificación</p>
+      <div class="items-list" id="actividades-items"></div>
+      <button class="btn-add" onclick="addItem('actividades')">+ Agregar ítem</button>
+      <div class="sugs" id="actividades-sugs"></div>
+
+      <p style="font-size:12px;font-weight:700;color:#555;margin:14px 0 6px">III. Alertas / Interferencias</p>
+      <div class="items-list" id="alertas-items"></div>
+      <button class="btn-add" onclick="addItem('alertas')">+ Agregar ítem</button>
+    </div>
+
+    <!-- Fotos -->
+    <div class="form-card">
+      <h3>Registro Fotográfico</h3>
+      <div class="fotos-grid" id="fotos-grid">
+        <label class="add-foto">
+          <span style="font-size:28px">📷</span>
+          <span>Agregar fotos</span>
+          <input type="file" accept="image/*" multiple onchange="agregarFotos(event)"/>
+        </label>
+      </div>
+    </div>
+
+    <!-- Botón guardar inferior -->
+    <div style="display:flex;justify-content:flex-end;padding-bottom:32px">
+      <button class="btn btn-primary" onclick="guardarReporte()" style="padding:12px 32px;font-size:15px;gap:8px">
+        💾 Guardar Reporte
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Marco oculto para imprimir el PDF -->
+<div id="print-frame"></div>
+
+<!-- Modal selección de personal -->
+<div id="modal-personal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:500px;max-width:95vw;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <h3 style="font-size:15px;font-weight:800;color:#1E4F8C;margin-bottom:3px">Seleccionar Personal</h3>
+    <p style="font-size:11px;color:#888;margin-bottom:12px">Marcá los trabajadores y confirmá para agregarlos</p>
+    <div id="modal-personal-list" style="overflow-y:auto;flex:1;border:1px solid #eee;border-radius:8px;padding:4px"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarModalPersonal()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#eee;font-weight:700;cursor:pointer;font-size:13px">Cancelar</button>
+      <button onclick="confirmarModalPersonal()" style="flex:2;padding:11px;border-radius:8px;border:none;background:#1E4F8C;color:#fff;font-weight:700;cursor:pointer;font-size:13px" id="btn-confirmar-personal">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://ftbsqhcvxnyrkajgavaa.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0YnNxaGN2eG55cmthamdhdmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg2OTIsImV4cCI6MjA5MDEwNDY5Mn0.v_Oif1dHmSp-pVp9Dctopona3NlTIDbX9pcdaRMrD0w';
+const LOGO_URL = 'data:image/png;base64,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';
+// Logo embebido como base64 — no requiere archivo externo ni carga asíncrona
+document.getElementById('login-logo').src = LOGO_URL;
+document.getElementById('nav-logo').src   = LOGO_URL;
+
+// ═══════════════════════════════════════════════════════════
+// DATOS PREDEFINIDOS (mismos que la app móvil)
+// ═══════════════════════════════════════════════════════════
+const SUPERVISORES = [
+  { nombre: 'Eric Rojas Rojas',    rut: '15002789-6' },
+  { nombre: 'Luis Ahumada Berrios', rut: '15555031-7' },
+];
+
+const TRABAJADORES = [
+  { nombre: 'Alexis Varela Guerrero',     cargo: 'Asesor en Prevención de Riesgos' },
+  { nombre: 'Luis Ahumada Berrios',       cargo: 'Jefe de Terreno' },
+  { nombre: 'Kevin Lazcano Albornoz',     cargo: 'Minero Especialista A' },
+  { nombre: 'Matías Adasme Miranda',      cargo: 'Minero Especialista B' },
+  { nombre: 'David Ramírez Zambra',       cargo: 'Minero Especialista B' },
+  { nombre: 'Marcelo Pérez Contreras',    cargo: 'Minero Especialista B' },
+  { nombre: 'Cristian Salinas Ibarra',    cargo: 'Minero Especialista B' },
+  { nombre: 'Alexander Naranjo Cárdenas', cargo: 'Minero Especialista B' },
+  { nombre: 'Máximo Aliaga Becerra',      cargo: 'Minero Especialista B' },
+  { nombre: 'Cristian Yáñez Lillo',       cargo: 'Minero Especialista B' },
+  { nombre: 'Eric Rojas Rojas',           cargo: 'Jefe de Terreno (ADC)' },
+  { nombre: 'Víctor Conejeros Martínez',  cargo: 'Minero Especialista B' },
+  { nombre: 'Jaime Cereceda Solano',      cargo: 'Minero Especialista B' },
+  { nombre: 'Wladimir Muñoz Tapia',       cargo: 'Minero Especialista A' },
+  { nombre: 'Esteban Moreira Ubilla',     cargo: 'Asesor en Prevención de Riesgos' },
+];
+
+const TURNOS = {
+  'Eric Rojas Rojas': [
+    { nombre: 'Alexander Naranjo Cárdenas', cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Máximo Aliaga Becerra',       cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Cristian Yáñez Lillo',        cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Eric Rojas Rojas',            cargo: 'Jefe de Terreno (ADC)', observacion: '' },
+    { nombre: 'Víctor Conejeros Martínez',   cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Jaime Cereceda Solano',       cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Wladimir Muñoz Tapia',        cargo: 'Minero Especialista A', observacion: '' },
+    { nombre: 'Esteban Moreira Ubilla',      cargo: 'Asesor en Prevención de Riesgos', observacion: '' },
+  ],
+  'Luis Ahumada Berrios': [
+    { nombre: 'Alexis Varela Guerrero',   cargo: 'Asesor en Prevención de Riesgos', observacion: '' },
+    { nombre: 'Luis Ahumada Berrios',     cargo: 'Jefe de Terreno', observacion: '' },
+    { nombre: 'Kevin Lazcano Albornoz',   cargo: 'Minero Especialista A', observacion: '' },
+    { nombre: 'Matías Adasme Miranda',    cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'David Ramírez Zambra',     cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Marcelo Pérez Contreras',  cargo: 'Minero Especialista B', observacion: '' },
+    { nombre: 'Cristian Salinas Ibarra',  cargo: 'Minero Especialista B', observacion: '' },
+  ],
+};
+
+const VEHICULOS_FIJOS = [
+  { marca: 'Toyota Hilux',       patente: 'VDKK-61', km: '', iniciales: '', fijo: true },
+  { marca: 'Toyota Hilux',       patente: 'VDKK-62', km: '', iniciales: '', fijo: true },
+  { marca: 'Chevrolet Colorado', patente: 'VGGV-85', km: '', iniciales: '', fijo: true },
+];
+
+const EQUIPOS_FIJOS = [
+  { tipo: 'Compresor',         codigo: 'XAS 400',     odometro: '', iniciales: '', fijo: true },
+  { tipo: 'Generador',         codigo: 'P015000W-G',  odometro: '', iniciales: '', fijo: true },
+  { tipo: 'Carro de arrastre', codigo: 'IJH935',      odometro: '', iniciales: '', fijo: true },
+];
+
+const SUGS_GESTION = [
+  'Se realiza Charla diaria.',
+  'Realización de reunión de entrega de información entre administradores.',
+  'Planificación para la ejecución de actividades con geotecnia.',
+  'Gestiones Administrativas del contrato.',
+];
+
+const SUGS_OP = [
+  'Se realiza puesta en automático en la mañana y manual con arranque de motor, radar 779 de operaciones mina.',
+  'Se realiza segregación de área crítica en fondo mina, por activación de falla geológica.',
+  'Se realiza la medición de flujómetros en sector de proyectito, se realiza informe.',
+  'Se realiza apoyo a la empresa Geoblast para mediciones en malla de tronadura.',
+];
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+let currentUser = null;
+
+// ═══════════════════════════════════════════════════════════
+// DIAGNÓSTICO DE CONEXIÓN
+// ═══════════════════════════════════════════════════════════
+const dot   = () => document.getElementById('conn-dot');
+const banner = () => document.getElementById('banner-error');
+
+async function verificarConexion() {
+  dot().style.color = '#f39c12'; // amarillo = probando
+  dot().title = 'Verificando conexión...';
+  try {
+    const { error } = await sb.from('registros_reporte_diario').select('id').limit(1);
+    if (error) throw error;
+    dot().style.color = '#27ae60'; // verde = OK
+    dot().title = 'Supabase conectado ✓';
+    banner().style.display = 'none';
+  } catch(e) {
+    dot().style.color = '#e74c3c'; // rojo = error
+    dot().title = 'Error: ' + e.message;
+    let msg = '';
+    if (e.message.includes('schema cache') || e.message.includes('does not exist')) {
+      msg = '⚠️ La tabla "registros_reporte_diario" no existe en Supabase. ' +
+            'Ejecutá el SQL de configuración en el panel de Supabase (SQL Editor) para activar la sincronización.';
+    } else {
+      msg = '⚠️ Error de conexión con Supabase: ' + e.message;
+    }
+    banner().textContent = msg;
+    banner().style.display = 'block';
+  }
+}
+
+let realtimeChannel = null;
+let pollingInterval  = null;
+
+sb.auth.onAuthStateChange((_e, session) => {
+  currentUser = session?.user || null;
+  if (currentUser) {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display   = 'block';
+    document.getElementById('nav-user').textContent = currentUser.email;
+    verificarConexion();
+    cargarReportes();
+
+    // Realtime: actualización instantánea si la tabla tiene replicación habilitada
+    if (realtimeChannel) sb.removeChannel(realtimeChannel);
+    realtimeChannel = sb.channel('rd-sync')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'registros_reporte_diario',
+      }, () => { cargarReportes(true); })
+      .subscribe();
+
+    // Polling cada 5 s como respaldo (cubre DELETE/UPDATE aunque Realtime no esté activo)
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(() => cargarReportes(true), 5000);
+  } else {
+    document.getElementById('login').style.display = 'flex';
+    document.getElementById('app').style.display   = 'none';
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+    if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+  }
+});
+
+async function login() {
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl    = document.getElementById('login-err');
+  errEl.textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) errEl.textContent = 'Credenciales incorrectas.';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+}
+
+// Enter en login
+['email','password'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); })
+);
+
+// ═══════════════════════════════════════════════════════════
+// SUPERVISOR — selector con auto-relleno de RUT y personal
+// ═══════════════════════════════════════════════════════════
+function getSupervisorValue() {
+  const sel = document.getElementById('f-supervisor-sel').value;
+  if (sel === 'otro') return document.getElementById('f-supervisor').value.trim();
+  return sel;
+}
+
+function supervisorCambio() {
+  const sel   = document.getElementById('f-supervisor-sel').value;
+  const input = document.getElementById('f-supervisor');
+  const rut   = document.getElementById('f-rut');
+
+  if (sel === 'otro') {
+    input.style.display = '';
+    input.focus();
+    rut.value = '';
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+    const sup = SUPERVISORES.find(s => s.nombre === sel);
+    rut.value = sup ? sup.rut : '';
+    if (TURNOS[sel]) setPersonal(TURNOS[sel].map(p => ({...p})));
+  actualizarDatalistIniciales();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODAL SELECCIÓN DE PERSONAL
+// ═══════════════════════════════════════════════════════════
+let modalSeleccion = [];
+
+function abrirModalPersonal() {
+  const actuales = getPersonal().map(p => p.nombre);
+  modalSeleccion = [...actuales];
+  const list = document.getElementById('modal-personal-list');
+  list.innerHTML = TRABAJADORES.map(t => {
+    const marcado = actuales.includes(t.nombre);
+    return `<div class="worker-row${marcado?' checked':''}" onclick="toggleWorker(this,'${t.nombre.replace(/'/g,"\\'")}')">
+      <input type="checkbox" ${marcado?'checked':''} onclick="event.stopPropagation()"/>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#222">${esc(t.nombre)}</div>
+        <div style="font-size:11px;color:#888">${esc(t.cargo)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  actualizarBtnConfirmar();
+  document.getElementById('modal-personal').style.display = 'flex';
+}
+
+function toggleWorker(row, nombre) {
+  const cb = row.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  row.classList.toggle('checked', cb.checked);
+  if (cb.checked) { if (!modalSeleccion.includes(nombre)) modalSeleccion.push(nombre); }
+  else { modalSeleccion = modalSeleccion.filter(n => n !== nombre); }
+  actualizarBtnConfirmar();
+}
+
+function actualizarBtnConfirmar() {
+  document.getElementById('btn-confirmar-personal').textContent =
+    `Confirmar (${modalSeleccion.length})`;
+}
+
+// ─── Iniciales datalist ────────────────────────────────────
+function getInic(nombre) {
+  const p = (nombre||'').trim().split(' ');
+  return ((p[0]?.[0]||'') + (p[1]?.[0]||'')).toUpperCase();
+}
+
+function actualizarDatalistIniciales() {
+  const dl = document.getElementById('iniciales-datalist');
+  if (!dl) return;
+  const personal = getPersonal();
+  const opts = [{ v:'F/S', lbl:'F/S — Fuera de servicio' }];
+  personal.forEach(p => {
+    if (p.nombre) opts.push({ v: getInic(p.nombre), lbl: `${getInic(p.nombre)} — ${p.nombre}` });
+  });
+  // fallback: si no hay personal aún, usar la lista completa de trabajadores
+  if (personal.length === 0) {
+    TRABAJADORES.forEach(t => opts.push({ v: getInic(t.nombre), lbl: `${getInic(t.nombre)} — ${t.nombre}` }));
+  }
+  dl.innerHTML = opts.map(o => `<option value="${esc(o.v)}">${esc(o.lbl)}</option>`).join('');
+}
+
+function cerrarModalPersonal() {
+  document.getElementById('modal-personal').style.display = 'none';
+}
+
+function confirmarModalPersonal() {
+  const manuales = getPersonal().filter(p =>
+    !TRABAJADORES.find(t => t.nombre === p.nombre)
+  );
+  const nuevos = modalSeleccion.map(nombre => {
+    const t = TRABAJADORES.find(w => w.nombre === nombre);
+    return { nombre, cargo: t?.cargo || '', observacion: '' };
+  });
+  setPersonal([...nuevos, ...manuales]);
+  actualizarDatalistIniciales();
+  cerrarModalPersonal();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUGERENCIAS DE ACTIVIDADES
+// ═══════════════════════════════════════════════════════════
+function renderSugerencias(tipo, sugs) {
+  const cont = document.getElementById(tipo+'-sugs');
+  if (!cont) return;
+  cont.innerHTML = sugs.map((s,i) =>
+    `<button class="sug-chip" onclick="addSugerencia('${tipo}',${i})" title="${esc(s)}">
+      + ${esc(s.length > 55 ? s.slice(0,55)+'…' : s)}
+    </button>`
+  ).join('');
+  // store ref for addSugerencia
+  cont._sugs = sugs;
+}
+
+function addSugerencia(tipo, idx) {
+  const cont = document.getElementById(tipo+'-sugs');
+  const txt  = cont._sugs?.[idx];
+  if (!txt) return;
+  const existing = getItems(tipo);
+  if (!existing.includes(txt)) addItemRow(tipo, txt);
+}
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════════════════════════════
+let reportes = [];
+
+function mostrarHistorial() {
+  document.getElementById('view-historial').style.display = '';
+  document.getElementById('view-form').style.display = 'none';
+}
+
+async function cargarReportes(silencioso = false) {
+  if (!silencioso) {
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="8" class="loading">Cargando...</td></tr>';
+  }
+  const { data, error } = await sb
+    .from('registros_reporte_diario')
+    .select('*')
+    .order('correlativo', { ascending: false });
+  if (error) {
+    if (!silencioso) {
+      document.getElementById('tabla-body').innerHTML = `<tr><td colspan="8" class="loading" style="color:#e74c3c">Error: ${error.message}</td></tr>`;
+    }
+    return;
+  }
+  reportes = (data || []).map(parseReporte);
+  renderTabla();
+  const ahora = new Date();
+  const h = String(ahora.getHours()).padStart(2,'0');
+  const m = String(ahora.getMinutes()).padStart(2,'0');
+  const s = String(ahora.getSeconds()).padStart(2,'0');
+  const el = document.getElementById('ultima-sync');
+  if (el) el.textContent = `Sincronizado ${h}:${m}:${s}`;
+}
+
+// Refrescar cuando el usuario vuelve a esta pestaña
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') cargarReportes(true);
+});
+
+function parseReporte(r) {
+  const safe = (v, def=[]) => { try { return JSON.parse(v||'null') || def; } catch { return def; } };
+  return {
+    ...r,
+    personal:               safe(r.personal_json, []),
+    vehiculos:              safe(r.vehiculos_json, []),
+    equipos:                safe(r.equipos_json, []),
+    fotos:                  safe(r.fotos_json, []),
+    gestion_sst:            safe(r.gestion_sst, []),
+    actividades_operativas: safe(r.actividades_operativas, []),
+    alertas:                safe(r.alertas, []),
+  };
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('tabla-body');
+  if (!reportes.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay reportes sincronizados.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = reportes.map(r => `
+    <tr>
+      <td><span class="badge">N°${r.correlativo}</span></td>
+      <td>${fmt(r.fecha)}</td>
+      <td>${r.hora_inicio||'—'} → ${r.hora_termino||'—'}</td>
+      <td>${esc(r.supervisor)||'—'}</td>
+      <td>${r.personal.length} personas</td>
+      <td style="text-align:center">${r.fotos.filter(f=>f.src||f.uri).length > 0 ? '📷 ' + r.fotos.filter(f=>f.src||f.uri).length : '—'}</td>
+      <td>${esc(r.usuario_nombre)||'—'}</td>
+      <td class="actions">
+        <button class="btn btn-green btn-sm" onclick="generarPDF('${r.id}')">📄 PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirFormEditar('${r.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminar('${r.id}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este reporte?')) return;
+  await sb.from('registros_reporte_diario').delete().eq('id', id);
+  cargarReportes();
+}
+
+function esc(t) { return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════════════════════════════════════════════════════
+// FORMULARIO
+// ═══════════════════════════════════════════════════════════
+let editingId  = null;
+let fotosState = []; // { src: base64, descripcion: '' }
+
+function mostrarForm() {
+  document.getElementById('view-historial').style.display = 'none';
+  document.getElementById('view-form').style.display = '';
+  window.scrollTo(0,0);
+}
+
+async function abrirFormNuevo() {
+  editingId  = null;
+  fotosState = [];
+  document.getElementById('form-titulo').textContent = 'Nuevo Reporte';
+
+  const { data } = await sb.from('registros_reporte_diario').select('correlativo').order('correlativo',{ascending:false}).limit(1);
+  const nextCorr = data?.length ? (data[0].correlativo + 1) : 1;
+
+  document.getElementById('f-correlativo').value  = nextCorr;
+  document.getElementById('f-fecha').value        = new Date().toISOString().split('T')[0];
+  document.getElementById('f-hora-inicio').value  = '07:00';
+  document.getElementById('f-hora-termino').value = '19:00';
+  document.getElementById('f-supervisor-sel').value = '';
+  document.getElementById('f-supervisor').value   = '';
+  document.getElementById('f-supervisor').style.display = 'none';
+  document.getElementById('f-rut').value          = '';
+
+  setPersonal([]);
+  setVehiculos(VEHICULOS_FIJOS.map(v => ({...v})));
+  setEquipos(EQUIPOS_FIJOS.map(e => ({...e})));
+  actualizarDatalistIniciales();
+  setItems('gestion', []);
+  setItems('actividades', []);
+  setItems('alertas', []);
+  renderSugerencias('gestion', SUGS_GESTION);
+  renderSugerencias('actividades', SUGS_OP);
+  renderFotos();
+  mostrarForm();
+}
+
+function abrirFormEditar(id) {
+  const r = reportes.find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  fotosState = (r.fotos||[]).filter(f => f.src || f.uri).map(f => ({ src: f.src||f.uri, descripcion: f.descripcion||'' }));
+
+  document.getElementById('form-titulo').textContent = `Editar Reporte N°${r.correlativo}`;
+  document.getElementById('f-correlativo').value  = r.correlativo;
+  document.getElementById('f-fecha').value        = r.fecha ? r.fecha.split('T')[0] : '';
+  document.getElementById('f-hora-inicio').value  = r.hora_inicio || '';
+  document.getElementById('f-hora-termino').value = r.hora_termino || '';
+  const supPredefinido = SUPERVISORES.find(s => s.nombre === r.supervisor);
+  if (supPredefinido) {
+    document.getElementById('f-supervisor-sel').value = r.supervisor;
+    document.getElementById('f-supervisor').style.display = 'none';
+    document.getElementById('f-supervisor').value = '';
+  } else {
+    document.getElementById('f-supervisor-sel').value = r.supervisor ? 'otro' : '';
+    document.getElementById('f-supervisor').style.display = r.supervisor ? '' : 'none';
+    document.getElementById('f-supervisor').value = r.supervisor || '';
+  }
+  document.getElementById('f-rut').value = r.supervisor_rut || '';
+
+  setPersonal(r.personal || []);
+  setVehiculos(r.vehiculos?.length ? r.vehiculos : VEHICULOS_FIJOS.map(v => ({...v})));
+  setEquipos(r.equipos?.length ? r.equipos : EQUIPOS_FIJOS.map(e => ({...e})));
+  setItems('gestion', Array.isArray(r.gestion_sst) ? r.gestion_sst : []);
+  setItems('actividades', Array.isArray(r.actividades_operativas) ? r.actividades_operativas : []);
+  setItems('alertas', Array.isArray(r.alertas) ? r.alertas : []);
+  renderSugerencias('gestion', SUGS_GESTION);
+  renderSugerencias('actividades', SUGS_OP);
+  renderFotos();
+  mostrarForm();
+}
+
+async function guardarReporte() {
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    const id  = editingId || `rd-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+    const obj = {
+      id,
+      correlativo:           parseInt(document.getElementById('f-correlativo').value) || 1,
+      fecha:                 document.getElementById('f-fecha').value,
+      hora_inicio:           document.getElementById('f-hora-inicio').value,
+      hora_termino:          document.getElementById('f-hora-termino').value,
+      supervisor:            getSupervisorValue(),
+      supervisor_rut:        document.getElementById('f-rut').value,
+      personal_json:         JSON.stringify(getPersonal()),
+      vehiculos_json:        JSON.stringify(getVehiculos()),
+      equipos_json:          JSON.stringify(getEquipos()),
+      gestion_sst:           JSON.stringify(getItems('gestion')),
+      actividades_operativas: JSON.stringify(getItems('actividades')),
+      alertas:               JSON.stringify(getItems('alertas')),
+      fotos_json:            JSON.stringify(fotosState),
+      usuario_id:            currentUser?.id,
+      usuario_nombre:        currentUser?.email,
+      fecha_creacion:        new Date().toISOString(),
+    };
+    const { error } = await sb.from('registros_reporte_diario').upsert(obj);
+    if (error) throw error;
+    await cargarReportes();
+    mostrarHistorial();
+  } catch(e) {
+    alert('Error al guardar: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+}
+
+// ─── Personal ──────────────────────────────────────────────
+function setPersonal(arr) {
+  const tbody = document.getElementById('personal-rows');
+  tbody.innerHTML = '';
+  arr.forEach((_,i) => addPersonalRow(i+1, arr[i]));
+}
+function addPersonal() {
+  const tbody = document.getElementById('personal-rows');
+  addPersonalRow(tbody.children.length + 1, {});
+}
+function addPersonalRow(n, p={}) {
+  const tbody = document.getElementById('personal-rows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><small>${n}</small></td>
+    <td><input type="text" placeholder="Nombre" value="${esc(p.nombre||'')}"/></td>
+    <td><input type="text" placeholder="Cargo" value="${esc(p.cargo||'')}"/></td>
+    <td><input type="text" placeholder="Observación" value="${esc(p.observacion||'')}"/></td>
+    <td><button class="btn-rm" onclick="this.closest('tr').remove();renumerar('personal-rows')">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+function getPersonal() {
+  return [...document.querySelectorAll('#personal-rows tr')].map(tr => {
+    const inp = tr.querySelectorAll('input');
+    return { nombre: inp[0]?.value||'', cargo: inp[1]?.value||'', observacion: inp[2]?.value||'' };
+  }).filter(p => p.nombre);
+}
+
+// ─── Vehículos ─────────────────────────────────────────────
+function setVehiculos(arr) {
+  const tbody = document.getElementById('veh-rows');
+  tbody.innerHTML = '';
+  arr.forEach((_,i) => addVehiculoRow(i+1, arr[i]));
+}
+function addVehiculo() {
+  const tbody = document.getElementById('veh-rows');
+  addVehiculoRow(tbody.children.length + 1, {});
+}
+function addVehiculoRow(n, v={}) {
+  const tbody = document.getElementById('veh-rows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><small>${n}</small></td>
+    <td><input type="text" placeholder="Marca" value="${esc(v.marca||'')}"/></td>
+    <td><input type="text" placeholder="Patente" value="${esc(v.patente||'')}"/></td>
+    <td><input type="text" placeholder="KM" value="${esc(v.km||'')}"/></td>
+    <td><input type="text" placeholder="Inic." value="${esc(v.iniciales||'')}" list="iniciales-datalist" style="min-width:60px"/></td>
+    <td><button class="btn-rm" onclick="this.closest('tr').remove();renumerar('veh-rows')">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+function getVehiculos() {
+  return [...document.querySelectorAll('#veh-rows tr')].map(tr => {
+    const inp = tr.querySelectorAll('input');
+    return { marca: inp[0]?.value||'', patente: inp[1]?.value||'', km: inp[2]?.value||'', iniciales: inp[3]?.value||'' };
+  }).filter(v => v.marca || v.patente);
+}
+
+// ─── Equipos ───────────────────────────────────────────────
+function setEquipos(arr) {
+  const tbody = document.getElementById('eq-rows');
+  tbody.innerHTML = '';
+  arr.forEach((_,i) => addEquipoRow(i+1, arr[i]));
+}
+function addEquipo() {
+  const tbody = document.getElementById('eq-rows');
+  addEquipoRow(tbody.children.length + 1, {});
+}
+function addEquipoRow(n, e={}) {
+  const tbody = document.getElementById('eq-rows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><small>${n}</small></td>
+    <td><input type="text" placeholder="Tipo" value="${esc(e.tipo||'')}"/></td>
+    <td><input type="text" placeholder="Código" value="${esc(e.codigo||'')}"/></td>
+    <td><input type="text" placeholder="Odóm." value="${esc(e.odometro||'')}"/></td>
+    <td><input type="text" placeholder="Inic." value="${esc(e.iniciales||'')}" list="iniciales-datalist" style="min-width:60px"/></td>
+    <td><button class="btn-rm" onclick="this.closest('tr').remove();renumerar('eq-rows')">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+function getEquipos() {
+  return [...document.querySelectorAll('#eq-rows tr')].map(tr => {
+    const inp = tr.querySelectorAll('input');
+    return { tipo: inp[0]?.value||'', codigo: inp[1]?.value||'', odometro: inp[2]?.value||'', iniciales: inp[3]?.value||'' };
+  }).filter(e => e.tipo || e.codigo);
+}
+
+// ─── Items de actividad ────────────────────────────────────
+function setItems(tipo, arr) {
+  const cont = document.getElementById(tipo+'-items');
+  cont.innerHTML = '';
+  arr.forEach(txt => addItemRow(tipo, txt));
+}
+function addItem(tipo) { addItemRow(tipo, ''); }
+function addItemRow(tipo, txt='') {
+  const cont = document.getElementById(tipo+'-items');
+  const n = cont.children.length;
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.innerHTML = `<span style="font-size:12px;font-weight:700;min-width:20px">${String.fromCharCode(97+n)})</span>
+    <input type="text" placeholder="Descripción..." value="${esc(txt)}"/>
+    <button class="btn-rm" onclick="this.parentElement.remove();reindexItems('${tipo}')">✕</button>`;
+  cont.appendChild(div);
+}
+function getItems(tipo) {
+  return [...document.querySelectorAll(`#${tipo}-items .item-row input`)].map(i => i.value).filter(v => v.trim());
+}
+function reindexItems(tipo) {
+  const rows = document.querySelectorAll(`#${tipo}-items .item-row`);
+  rows.forEach((r,i) => { r.querySelector('span').textContent = String.fromCharCode(97+i)+')'; });
+}
+
+// ─── Renumerar filas ───────────────────────────────────────
+function renumerar(tbodyId) {
+  const rows = document.querySelectorAll(`#${tbodyId} tr`);
+  rows.forEach((r,i) => { const s=r.querySelector('small'); if(s) s.textContent=i+1; });
+}
+
+// ─── Fotos ─────────────────────────────────────────────────
+async function agregarFotos(evt) {
+  const files = [...evt.target.files];
+  const MAX_FOTOS = 4;
+  for (const file of files) {
+    if (fotosState.length >= MAX_FOTOS) break;
+    const src = await toBase64(file);
+    fotosState.push({ src, descripcion: '' });
+  }
+  renderFotos();
+  evt.target.value = '';
+}
+
+function toBase64(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.readAsDataURL(file);
+  });
+}
+
+function renderFotos() {
+  const grid = document.getElementById('fotos-grid');
+  const addBtn = grid.querySelector('.add-foto');
+  [...grid.querySelectorAll('.foto-card')].forEach(c => c.remove());
+
+  fotosState.forEach((f,i) => {
+    const div = document.createElement('div');
+    div.className = 'foto-card';
+    div.innerHTML = `
+      <img src="${f.src}" alt="foto ${i+1}"/>
+      <button class="rm-foto" onclick="rmFoto(${i})">✕</button>
+      <input type="text" placeholder="Descripción..." value="${esc(f.descripcion)}"
+             oninput="fotosState[${i}].descripcion=this.value"/>`;
+    grid.insertBefore(div, addBtn);
+  });
+
+  const MAX_FOTOS = 4;
+  addBtn.style.display = fotosState.length >= MAX_FOTOS ? 'none' : '';
+  addBtn.querySelector('span:last-of-type').textContent =
+    `Agregar fotos (${fotosState.length}/${MAX_FOTOS})`;
+}
+
+function rmFoto(i) {
+  fotosState.splice(i, 1);
+  renderFotos();
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERACIÓN DE PDF (mismo HTML que la app móvil)
+// ═══════════════════════════════════════════════════════════
+function generarPDF(id) {
+  const r = reportes.find(x => x.id === id);
+  if (!r) return;
+  const html = buildHtmlReporte(r);
+  const win = window.open('', '_blank', 'width=750,height=900');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  // Espera que carguen imágenes (logo) antes de imprimir
+  win.addEventListener('load', () => { win.focus(); win.print(); });
+  // Fallback por si el evento load no dispara
+  setTimeout(() => { try { win.focus(); win.print(); } catch {} }, 1200);
+}
+
+function fmtActividad(data) {
+  let arr = [];
+  if (Array.isArray(data)) { arr = data; }
+  else if (typeof data === 'string' && data.trim()) {
+    try { const p = JSON.parse(data); arr = Array.isArray(p) ? p : [data]; } catch { arr = [data]; }
+  }
+  if (!arr.length) return `<div style="padding-left:18pt;margin-bottom:2pt;"><b>a)</b>&nbsp;&nbsp;</div>`;
+  return arr.map((item,i) =>
+    `<div style="padding-left:18pt;margin-bottom:4pt;"><b>${String.fromCharCode(97+i)})</b>&nbsp;&nbsp;${esc(item)}</div>`
+  ).join('');
+}
+
+function buildHtmlReporte(r) {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtD = iso => { if(!iso) return '—'; const d=new Date(iso); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`; };
+
+  // ── Personal: dos columnas ────────────────────────────────────────────────
+  const personal = r.personal || [];
+  const mitad = Math.ceil(personal.length / 2);
+  const col1 = personal.slice(0, mitad), col2 = personal.slice(mitad);
+  let filasPersonal = '';
+  for (let i = 0; i < Math.max(col1.length, 1); i++) {
+    const p1 = col1[i] || {}, p2 = col2[i] || {};
+    const n2 = col2[i] ? mitad + i + 1 : '';
+    const obs1 = p1.observacion ? `<div style="font-size:7.5pt;color:#666;font-style:italic;margin-top:2pt;">Obs: ${esc(p1.observacion)}</div>` : '';
+    const obs2 = p2.observacion ? `<div style="font-size:7.5pt;color:#666;font-style:italic;margin-top:2pt;">Obs: ${esc(p2.observacion)}</div>` : '';
+    filasPersonal += `<tr>
+      <td class="num">${i+1}</td><td>${esc(p1.nombre||'')}${obs1}</td><td>${esc(p1.cargo||'')}</td>
+      <td class="num">${n2}</td><td>${esc(p2.nombre||'')}${obs2}</td><td>${esc(p2.cargo||'')}</td>
+    </tr>`;
+  }
+
+  // ── Vehículos ─────────────────────────────────────────────────────────────
+  let filasVeh = (r.vehiculos||[]).map((v,i) => `
+    <tr><td class="num">${i+1}</td><td>${esc(v.marca)}</td><td>${esc(v.patente)}</td>
+    <td class="num">${esc(v.km)}</td><td class="num">${esc(v.iniciales)}</td></tr>`
+  ).join('');
+  if (!filasVeh) filasVeh = '<tr><td colspan="5" class="vacio">—</td></tr>';
+
+  // ── Equipos ───────────────────────────────────────────────────────────────
+  let filasEq = (r.equipos||[]).map((e,i) => `
+    <tr><td class="num">${i+1}</td><td>${esc(e.tipo)}</td><td>${esc(e.codigo)}</td>
+    <td class="num">${esc(e.odometro)}</td><td class="num">${esc(e.iniciales)}</td></tr>`
+  ).join('');
+  if (!filasEq) filasEq = '<tr><td colspan="5" class="vacio">—</td></tr>';
+
+  // ── Fotos: 2 por fila ─────────────────────────────────────────────────────
+  const fotos = (r.fotos||[]).filter(f => f.src || f.uri);
+  let htmlFotos = '<p class="vacio-p">Sin registro fotográfico</p>';
+  if (fotos.length) {
+    let rows = '';
+    for (let i = 0; i < fotos.length; i += 2) {
+      const f1 = fotos[i], f2 = fotos[i+1];
+      rows += `<tr>
+        <td class="foto-cell"><div class="foto-img-area"><img src="${f1.src||f1.uri}" class="foto-img"/></div><div class="foto-desc">${esc(f1.descripcion||'')}</div></td>
+        <td class="foto-cell">${f2 ? `<div class="foto-img-area"><img src="${f2.src||f2.uri}" class="foto-img"/></div><div class="foto-desc">${esc(f2.descripcion||'')}</div>` : ''}</td>
+      </tr>`;
+    }
+    htmlFotos = `<table class="foto-tabla">${rows}</table>`;
+  }
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/>
+<style>
+* { box-sizing: border-box; margin:0; padding:0; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@page { size: A4; margin: 12mm 12mm 16mm 12mm; }
+.hdr-title-text { font-size:20pt; font-weight:900; letter-spacing:1pt; color:#1F3864; }
+.tbl { width:100%; border-collapse:collapse; margin-bottom:3pt; font-size:10pt; }
+.tbl td, .tbl th { border:0.5pt solid #808080; padding:3pt 5pt; vertical-align:middle; }
+.key { background:#E8EEF7; font-weight:700; color:#444; }
+.col { background:#D9E8F5; font-weight:700; color:#444; }
+.sec { background:#2E5090; color:#fff; font-weight:700; text-align:left; padding:4pt 6pt; font-size:10pt; }
+.num { text-align:center; }
+.vacio { text-align:center; color:#aaa; font-style:italic; }
+.vacio-p { color:#aaa; font-style:italic; padding:4pt; }
+.act-titulo { font-weight:700; margin-top:6pt; margin-bottom:3pt; font-size:10pt; }
+.act-cuerpo { font-size:10pt; margin-bottom:6pt; min-height:16pt; }
+.act-bloque { page-break-inside: avoid; break-inside: avoid; }
+.foto-tabla { width:100%; border-collapse:collapse; }
+.foto-cell  { width:50%; padding:4pt; border:0.5pt solid #808080; vertical-align:top; text-align:center; }
+.foto-img-area { height:152pt; display:flex; align-items:center; justify-content:center; }
+.foto-img   { max-width:100%; max-height:148pt; border:0.5pt solid #ccc; border-radius:2pt; }
+.foto-desc  { font-size:8.5pt; color:#444; margin-top:3pt; font-style:italic; border-top:0.3pt solid #e0e0e0; padding-top:2pt; min-height:12pt; }
+.aprob-table  { width:100%; border-collapse:collapse; margin-top:6pt; }
+.aprob-table td { border:0.5pt solid #808080; vertical-align:top; width:50%; padding:0; }
+.aprob-header { background:#2E5090; color:#fff; font-weight:700; text-align:center; padding:4pt; font-size:10pt; border-bottom:0.5pt solid #808080; }
+.aprob-body   { padding:6pt 10pt; }
+.firma-espacio { min-height:52pt; display:flex; align-items:flex-end; justify-content:center; margin-bottom:2pt; }
+.firma-label  { font-size:9pt; color:#333; }
+.doc-header   { background:#fff; padding-bottom:4pt; page-break-inside:avoid; break-inside:avoid; }
+.doc-body     {}
+@media screen { body { width:703px; } }
+</style>
+</head><body>
+<div class="doc-header">
+<table style="width:100%; border-collapse:collapse; margin-bottom:4pt;">
+  <tr>
+    <td style="width:28%; text-align:center; vertical-align:middle; padding:6pt; border:0.5pt solid #808080;">
+      <img src="${LOGO_URL}" style="max-height:52pt; max-width:100%; object-fit:contain;"/>
+    </td>
+    <td style="width:44%; text-align:center; vertical-align:middle; padding:8pt 4pt; border:0.5pt solid #808080;">
+      <div class="hdr-title-text">REPORTE DIARIO</div>
+    </td>
+    <td style="width:28%; padding:0; border:0.5pt solid #808080; vertical-align:top;">
+      <table style="width:100%; border-collapse:collapse; font-size:8.5pt; height:100%;">
+        <tr>
+          <td style="padding:3pt 5pt; font-weight:700; background:#E8EEF7; border-right:0.5pt solid #808080; border-bottom:0.5pt solid #808080; white-space:nowrap;">Fecha Formato</td>
+          <td style="padding:3pt 5pt; border-bottom:0.5pt solid #808080;">06/06/2025</td>
+        </tr>
+        <tr>
+          <td style="padding:3pt 5pt; font-weight:700; background:#E8EEF7; border-right:0.5pt solid #808080; border-bottom:0.5pt solid #808080;">Revisión</td>
+          <td style="padding:3pt 5pt; border-bottom:0.5pt solid #808080;">3</td>
+        </tr>
+        <tr>
+          <td style="padding:3pt 5pt; font-weight:700; background:#E8EEF7; border-right:0.5pt solid #808080;">Páginas</td>
+          <td style="padding:3pt 5pt;"><span id="pg-pages">1 de 2</span></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" style="padding:0; border:0.5pt solid #808080;">
+      <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+        <tr>
+          <td style="padding:3pt 5pt; font-weight:700; background:#E8EEF7; border-right:0.5pt solid #808080; white-space:nowrap; width:14%;">Gerencia</td>
+          <td style="padding:3pt 5pt; border-right:0.5pt solid #808080; width:36%;">Riesgos Naturales</td>
+          <td style="padding:3pt 5pt; font-weight:700; background:#E8EEF7; border-right:0.5pt solid #808080; white-space:nowrap; width:14%;">Código interno</td>
+          <td style="padding:3pt 5pt; width:36%;">PR-SGI-01-F03</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</div>
+<div class="doc-body">
+<div class="pg1-content">
+
+<!-- DATOS GENERALES -->
+<table class="tbl">
+  <tr><td colspan="4" class="sec">DATOS GENERALES</td></tr>
+  <tr><td class="key" style="width:22%">Correlativo Reporte</td><td colspan="3" style="font-weight:700;">N°${r.correlativo}</td></tr>
+  <tr><td class="key">Nombre del Servicio</td><td colspan="3">Saneamiento de Taludes, Quebradas y Desagüe Mina</td></tr>
+  <tr><td class="key">N° Contrato</td><td style="width:20%">QB-108-2024</td><td class="key" style="width:14%">Cliente</td><td>TECK QB</td></tr>
+  <tr><td class="key">Fecha</td><td>${fmtD(r.fecha)}</td><td class="key">Hora Inicio</td><td>${esc(r.hora_inicio)||'—'}</td></tr>
+  <tr><td class="key">Hora Término</td><td>${esc(r.hora_termino)||'—'}</td><td class="key">RUT Supervisor</td><td>${esc(r.supervisor_rut)||'—'}</td></tr>
+  <tr><td class="key">Supervisor de Turno</td><td colspan="3">${esc(r.supervisor)||'—'}</td></tr>
+</table>
+
+<!-- PERSONAL -->
+<table class="tbl">
+  <tr><td colspan="6" class="sec">PERSONAL PRESENTE EN LA JORNADA</td></tr>
+  <tr>
+    <th class="col num" style="width:5%">N°</th><th class="col" style="width:22%">Nombre</th><th class="col" style="width:23%">Cargo</th>
+    <th class="col num" style="width:5%">N°</th><th class="col" style="width:22%">Nombre</th><th class="col" style="width:23%">Cargo</th>
+  </tr>
+  ${filasPersonal || '<tr><td colspan="6" class="vacio">—</td></tr>'}
+</table>
+
+<!-- VEHÍCULOS -->
+<table class="tbl" style="table-layout:fixed;">
+  <colgroup><col style="width:6%"/><col style="width:30%"/><col style="width:25%"/><col style="width:20%"/><col style="width:19%"/></colgroup>
+  <tr><td colspan="5" class="sec">VEHÍCULOS DEL SERVICIO</td></tr>
+  <tr><th class="col num">N°</th><th class="col">Marca</th><th class="col">Patente</th><th class="col num">KM</th><th class="col num">Iniciales</th></tr>
+  ${filasVeh}
+</table>
+
+<!-- EQUIPOS -->
+<table class="tbl" style="table-layout:fixed;">
+  <colgroup><col style="width:6%"/><col style="width:30%"/><col style="width:25%"/><col style="width:20%"/><col style="width:19%"/></colgroup>
+  <tr><td colspan="5" class="sec">EQUIPOS</td></tr>
+  <tr><th class="col num">N°</th><th class="col">Tipo</th><th class="col">Código</th><th class="col num">Odómetro</th><th class="col num">Iniciales</th></tr>
+  ${filasEq}
+</table>
+
+<!-- ACTIVIDADES -->
+<table class="tbl"><tr><td class="sec">ACTIVIDADES REALIZADAS</td></tr></table>
+<div class="act-bloque">
+  <div class="act-titulo">I.&nbsp;&nbsp;&nbsp;GESTIÓN SST / ADMINISTRATIVA:</div>
+  <div class="act-cuerpo">${fmtActividad(r.gestion_sst)}</div>
+</div>
+<div class="act-bloque">
+  <div class="act-titulo">II.&nbsp;&nbsp;ACTIVIDADES OPERATIVAS / PLANIFICACIÓN:</div>
+  <div class="act-cuerpo">${fmtActividad(r.actividades_operativas)}</div>
+</div>
+<div class="act-bloque">
+  <div class="act-titulo">III.&nbsp;ALERTAS / INTERFERENCIAS:</div>
+  <div class="act-cuerpo">${fmtActividad(r.alertas)}</div>
+</div>
+</div>
+<div class="pg2-content">
+<!-- FOTOS — siempre inicia página 2 -->
+<table class="tbl pg2-start" style="margin-top:5pt;">
+  <tr><td class="sec">REGISTRO FOTOGRÁFICO</td></tr>
+</table>
+${htmlFotos}
+
+<!-- APROBACIONES -->
+<table class="aprob-table">
+  <tr>
+    <td>
+      <div class="aprob-header">APROBACIÓN CLIENTE</div>
+      <div class="aprob-body">
+        <div class="firma-espacio"></div>
+        <div class="firma-label">Firma: ………………………………………………………………</div>
+        <div class="firma-label" style="margin-top:4pt">Nombre: ………………………………………………</div>
+      </div>
+    </td>
+    <td>
+      <div class="aprob-header">APROBACIÓN PUCARÁ S.A</div>
+      <div class="aprob-body">
+        <div class="firma-espacio"></div>
+        <div class="firma-label">Firma: ………………………………………………………………</div>
+        <div class="firma-label" style="margin-top:4pt">Nombre: ${esc(r.supervisor || r.usuario_nombre || '—')}</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+</div>
+</div>
+<script>
+(function() {
+  var header  = document.querySelector('.doc-header');
+  var body    = document.querySelector('.doc-body');
+  var fotosEl = body && body.querySelector('.pg2-content');
+  if (!header || !fotosEl) return;
+
+  // Encabezado pág 1
+  var s = header.querySelector('#pg-pages');
+  if (s) s.textContent = '1 de 2';
+
+  // Salto de página + encabezado pág 2 justo antes del Registro Fotográfico
+  var pb = document.createElement('div');
+  pb.style.cssText = 'page-break-before:always; break-before:page;';
+
+  var h2 = header.cloneNode(true);
+  var s2 = h2.querySelector('#pg-pages');
+  if (s2) s2.textContent = '2 de 2';
+
+  body.insertBefore(pb, fotosEl);
+  body.insertBefore(h2, fotosEl);
+
+  // Escalar cada página para que quepa exactamente en A4
+  var MM     = 96 / 25.4;
+  var PAGE_H = (297 - 12 - 16) * MM;
+  var HDR_H  = header.getBoundingClientRect().height;
+  var MAX_H  = PAGE_H - HDR_H;
+
+  function scaleToFit(el) {
+    if (!el) return;
+    var h = el.getBoundingClientRect().height;
+    if (h > MAX_H) el.style.zoom = (MAX_H / h).toFixed(4);
+  }
+
+  scaleToFit(document.querySelector('.pg1-content'));
+  scaleToFit(document.querySelector('.pg2-content'));
+})();
+<\/script>
+</body></html>`;
+}
+</script>
+</body>
+</html>

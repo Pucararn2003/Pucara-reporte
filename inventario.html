@@ -649,7 +649,7 @@ function renderSalida() {
 // ── Item Selects ───────────────────────────────────────────────
 function poblarSelectItems() {
   const opts = '<option value="">Seleccionar ítem…</option>' +
-    items.map(i => `<option value="${i.id}" data-desc="${esc(i.descripcion)}" data-cat="${esc(i.categoria||'')}" data-talla="${esc(i.talla||'')}" data-disp="${i.cantidad_disponible||0}">${i.correlativo?`[${i.correlativo}] `:''}${i.descripcion}${i.talla?` (${i.talla})':''} — Disp: ${i.cantidad_disponible||0}</option>`).join('');
+    items.map(i => `<option value="${i.id}" data-desc="${esc(i.descripcion)}" data-cat="${esc(i.categoria||'')}" data-talla="${esc(i.talla||'')}" data-disp="${i.cantidad_disponible||0}">${i.correlativo?`[${i.correlativo}] `:''}${i.descripcion}${i.talla?` (${i.talla})`:''} — Disp: ${i.cantidad_disponible||0}</option>`).join('');
   document.getElementById('me-item').innerHTML = opts;
   document.getElementById('ms-item').innerHTML = opts;
 }

@@ -145,18 +145,32 @@ tr:hover td{background:#f7faff}
       <div class="stat-card"><div class="val" id="st-bajo" style="color:#e65100">0</div><div class="lbl">Stock bajo (≤ 1)</div></div>
       <div class="stat-card"><div class="val" id="st-baja" style="color:#c62828">0</div><div class="lbl">Dados de baja</div></div>
     </div>
-    <div class="toolbar">
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px">
       <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
-      <input type="text" id="fi-buscar" placeholder="Buscar..." oninput="renderInventario()" style="width:200px"/>
+      <input type="text" id="fi-buscar" placeholder="Buscar..." oninput="renderInventario()" style="width:180px"/>
       <select id="fi-cat" onchange="renderInventario()">
         <option value="">Todas las categorías</option>
         <option>EPP</option>
         <option>Ropa de Trabajo</option>
         <option>Insumos</option>
         <option>Herramientas</option>
-        <option>Equipos</option>
+        <option>Equipos y herramientas</option>
         <option>Otro</option>
       </select>
+      <select id="fi-estado" onchange="renderInventario()">
+        <option value="">Todos los estados</option>
+        <option>Disponible</option>
+        <option>En Uso</option>
+        <option>En Reparación</option>
+        <option>Dado de Baja</option>
+        <option>Pérdida</option>
+      </select>
+      <select id="fi-ubic" onchange="renderInventario()">
+        <option value="">Todas las ubicaciones</option>
+        <option>Bodega patio 7000</option>
+        <option>Oficina Pucará</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="limpiarFiltros()" style="white-space:nowrap">✕ Limpiar filtros</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -572,12 +586,24 @@ function actualizarStats() {
 }
 
 // ── Render Inventario ─────────────────────────────────────────
+function limpiarFiltros() {
+  document.getElementById('fi-buscar').value = '';
+  document.getElementById('fi-cat').value    = '';
+  document.getElementById('fi-estado').value = '';
+  document.getElementById('fi-ubic').value   = '';
+  renderInventario();
+}
+
 function renderInventario() {
-  const q   = (document.getElementById('fi-buscar').value || '').toLowerCase();
-  const cat = document.getElementById('fi-cat').value;
-  let rows  = items;
-  if (cat) rows = rows.filter(i => i.categoria === cat);
-  if (q)   rows = rows.filter(i =>
+  const q      = (document.getElementById('fi-buscar').value || '').toLowerCase();
+  const cat    = document.getElementById('fi-cat').value;
+  const estado = document.getElementById('fi-estado').value;
+  const ubic   = document.getElementById('fi-ubic').value;
+  let rows = items;
+  if (cat)    rows = rows.filter(i => i.categoria === cat);
+  if (estado) rows = rows.filter(i => i.estado === estado);
+  if (ubic)   rows = rows.filter(i => (i.ubicacion||'') === ubic);
+  if (q)      rows = rows.filter(i =>
     (i.descripcion||'').toLowerCase().includes(q) ||
     (i.correlativo||'').toLowerCase().includes(q) ||
     (i.marca_modelo||'').toLowerCase().includes(q)

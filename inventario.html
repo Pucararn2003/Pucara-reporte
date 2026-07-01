@@ -1068,11 +1068,25 @@ function ocultarHistorial() {
 }
 
 // ── Modal Ítem ─────────────────────────────────────────────────
+function nextCorrelativo() {
+  const corrs = items.map(i => i.correlativo).filter(Boolean);
+  if (!corrs.length) return '';
+  let maxNum = 0, prefix = '', padLen = 1;
+  corrs.forEach(function(c) {
+    const m = c.match(/^(.*?)(\d+)$/);
+    if (m) {
+      const n = parseInt(m[2], 10);
+      if (n > maxNum) { maxNum = n; prefix = m[1]; padLen = m[2].length; }
+    }
+  });
+  return maxNum > 0 ? prefix + String(maxNum + 1).padStart(padLen, '0') : '';
+}
+
 function abrirModalItem(id) {
   editId = id || null;
   document.getElementById('mi-title').textContent = id ? 'Editar Ítem' : 'Agregar Ítem';
   const it = id ? items.find(x => x.id === id) : {};
-  document.getElementById('mi-corr').value  = it?.correlativo || '';
+  document.getElementById('mi-corr').value  = id ? (it?.correlativo || '') : nextCorrelativo();
   document.getElementById('mi-cat').value   = it?.categoria   || '';
   document.getElementById('mi-desc').value  = it?.descripcion || '';
   document.getElementById('mi-color').value = it?.color       || '';

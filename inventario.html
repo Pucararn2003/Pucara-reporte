@@ -847,6 +847,8 @@ async function logout() {
 // ── Data ──────────────────────────────────────────────────────
 async function cargarDatos() {
   await Promise.all([cargarItems(), cargarMovs()]);
+  renderEntrega();
+  renderSalida();
   renderHistorialMovimientos();
 }
 
@@ -863,8 +865,6 @@ async function cargarMovs() {
   const { data, error } = await sb.from('inventario_movimientos').select('*').order('fecha', { ascending: false }).limit(500);
   if (error) { console.error(error); return; }
   movs = data || [];
-  renderEntrega();
-  renderSalida();
 }
 
 // ── Stats ─────────────────────────────────────────────────────

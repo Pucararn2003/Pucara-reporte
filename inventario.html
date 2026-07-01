@@ -113,6 +113,16 @@ th.sortable:hover{background:#163d6e}
 .fgrid .full{grid-column:1/-1}
 .ferr{color:#c62828;font-size:12px;margin-top:2px;display:none}
 
+/* ── Historial tooltip ── */
+#hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:none;line-height:1.55;display:none}
+.hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px}
+.hist-entry{border-top:1px solid rgba(255,255,255,.12);padding-top:6px;margin-top:6px}
+.hist-meta{color:#a9ccee;font-size:11px;margin-bottom:3px}
+.hist-cambio{padding-left:10px;margin-top:2px}
+.hist-antes{color:#ff9f9f}
+.hist-despues{color:#9fffa8}
+.hist-icon{display:inline-block;font-size:11px;color:#aaa;margin-left:5px;cursor:default;vertical-align:middle}
+
 /* ── Item search dropdown ── */
 .item-search-wrap{position:relative}
 .item-dropdown{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1px solid #cdd8e3;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);max-height:230px;overflow-y:auto;z-index:600}
@@ -683,7 +693,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr>
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verDetalle('${i.id}')">`:`<div class="img-placeholder" onclick="verDetalle('${i.id}')" style="cursor:pointer" title="Ver detalle">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div></div></td>
+    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verDetalle('${i.id}')">`:`<div class="img-placeholder" onclick="verDetalle('${i.id}')" style="cursor:pointer" title="Ver detalle">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -788,6 +798,45 @@ document.addEventListener('click', e => {
 
 function poblarSelectItems() { /* reemplazado por búsqueda dinámica */ }
 
+// ── Historial tooltip ────────────────────────────────────────────
+let _histTip = null, _histTimer = null;
+
+function mostrarHistorial(e, itemId) {
+  clearTimeout(_histTimer);
+  const it = items.find(x => x.id === itemId);
+  if (!it?.historial?.length) return;
+  if (!_histTip) {
+    _histTip = document.createElement('div');
+    _histTip.id = 'hist-tip';
+    document.body.appendChild(_histTip);
+  }
+  const fmt = d => new Date(d).toLocaleString('es-CL', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+  _histTip.innerHTML =
+    `<div class="hist-hdr">🕐 Historial de modificaciones (${it.historial.length})</div>` +
+    it.historial.slice(0, 20).map(h =>
+      `<div class="hist-entry">
+        <div class="hist-meta">📅 ${fmt(h.fecha)} &nbsp;·&nbsp; 👤 ${h.usuario}</div>
+        ${h.cambios.map(c =>
+          `<div class="hist-cambio">• <b>${c.campo}:</b> <span class="hist-antes">${c.antes ?? '—'}</span> → <span class="hist-despues">${c.despues ?? '—'}</span></div>`
+        ).join('')}
+      </div>`
+    ).join('');
+  const r   = e.currentTarget.getBoundingClientRect();
+  const tipW = 390;
+  let x = r.left;
+  if (x + tipW > window.innerWidth - 12) x = window.innerWidth - tipW - 12;
+  _histTip.style.left    = x + 'px';
+  _histTip.style.top     = (r.bottom + 6) + 'px';
+  _histTip.style.display = 'block';
+}
+
+function ocultarHistorial() {
+  _histTimer = setTimeout(() => { if (_histTip) _histTip.style.display = 'none'; }, 120);
+}
+
 // ── Modal Ítem ─────────────────────────────────────────────────
 function abrirModalItem(id) {
   editId = id || null;
@@ -848,6 +897,23 @@ async function guardarItem() {
     observaciones:      document.getElementById('mi-obs').value.trim()    || null,
     imagen_url,
   };
+  if (editId) {
+    const oldIt = items.find(x => x.id === editId) || {};
+    const CAMPOS = [
+      ['correlativo','Correlativo'],['categoria','Categoría'],['descripcion','Descripción'],
+      ['color','Color'],['talla','Talla'],['marca_modelo','Marca/Modelo'],
+      ['serie_sn','Serie/SN'],['norma','Norma'],
+      ['cantidad_total','Cant. Total'],['cantidad_disponible','Cant. Disponible'],
+      ['ubicacion','Ubicación'],['estado','Estado'],['observaciones','Observaciones'],
+    ];
+    const cambios = CAMPOS
+      .filter(([f]) => String(oldIt[f] ?? '') !== String(p[f] ?? ''))
+      .map(([f, lbl]) => ({ campo: lbl, antes: oldIt[f] ?? null, despues: p[f] ?? null }));
+    if (cambios.length) {
+      const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios };
+      p.historial = [entrada, ...(oldIt.historial || [])].slice(0, 50);
+    }
+  }
   const { error } = editId
     ? await sb.from('inventario_items').update(p).eq('id', editId)
     : await sb.from('inventario_items').insert(p);

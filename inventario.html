@@ -1341,8 +1341,9 @@ async function eliminarSalida(movId) {
 
 // -- Exportar Excel ------------------------------------------------
 function abrirExcel() {
-  document.getElementById('xl-desde').value = '';
-  document.getElementById('xl-hasta').value = '';
+  const now = new Date(), y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('xl-desde').value = `${y}-${m}-01`;
+  document.getElementById('xl-hasta').value = hoy();
   document.getElementById('xl-inv').checked  = true;
   document.getElementById('xl-epp').checked  = true;
   document.getElementById('xl-sal').checked  = true;

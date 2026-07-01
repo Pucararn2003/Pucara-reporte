@@ -138,6 +138,7 @@ th.sortable:hover{background:#163d6e}
     <h1>Control de Inventario — GEOTÉCNIA</h1>
     <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
     <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
+    <img id="nav-logo-r" src="" alt="Pucará"/>
   </header>
 
   <nav class="tabs-nav">
@@ -514,8 +515,9 @@ let sortCol = null;
 let sortDir = 'asc';
 
 // ── Boot ─────────────────────────────────────────────────────
-document.getElementById('login-logo').src = LOGO_URL;
-document.getElementById('nav-logo').src   = LOGO_URL;
+document.getElementById('login-logo').src  = LOGO_URL;
+document.getElementById('nav-logo').src    = LOGO_URL;
+document.getElementById('nav-logo-r').src  = LOGO_URL;
 
 // Populate trabajadores select
 (function(){

@@ -395,12 +395,15 @@ th.sortable:hover{background:#163d6e}
         </div>
         <div class="fg full">
           <label>Trabajador *</label>
-          <select id="me-trab" onchange="autoFillTrab()">
-            <option value="">Seleccionar…</option>
-          </select>
+          <div class="item-search-wrap">
+            <input type="text" id="me-trab" placeholder="🔍 Buscar o escribir nombre del trabajador..."
+                   oninput="filtrarTrab()" onfocus="filtrarTrab()" autocomplete="off"
+                   onblur="setTimeout(()=>{const l=document.getElementById('me-trab-list');if(l)l.style.display='none'},160)"/>
+            <div id="me-trab-list" class="item-dropdown"></div>
+          </div>
         </div>
         <div class="fg"><label>RUT</label><input type="text" id="me-rut" placeholder="12.345.678-9"/></div>
-        <div class="fg"><label>Cargo</label><input type="text" id="me-cargo" readonly style="background:#f8f8f8"/></div>
+        <div class="fg"><label>Cargo</label><input type="text" id="me-cargo" placeholder="Cargo del trabajador"/></div>
         <div class="fg full">
           <label>Ítem *</label>
           <div class="item-search-wrap">
@@ -612,17 +615,25 @@ let sortDir = 'asc';
 
 
 
-// Populate trabajadores select
-(function(){
-  const sel = document.getElementById('me-trab');
-  TRABAJADORES.forEach(t => {
-    const o = document.createElement('option');
-    o.value = t.nombre;
-    o.textContent = t.nombre;
-    o.dataset.cargo = t.cargo;
-    sel.appendChild(o);
-  });
-})();
+function filtrarTrab() {
+  const q    = (document.getElementById('me-trab').value || '').toLowerCase();
+  const list = document.getElementById('me-trab-list');
+  const fil  = q ? TRABAJADORES.filter(t => t.nombre.toLowerCase().includes(q) || (t.cargo||'').toLowerCase().includes(q)) : TRABAJADORES;
+  list.innerHTML = fil.length
+    ? fil.map(t => `<div class="item-dd-row" onmousedown="seleccionarTrab('${t.nombre.replace(/'/g,"\\'")}')">
+        <strong>${t.nombre}</strong><br><small style="color:#888">${t.cargo}</small>
+      </div>`).join('')
+    : `<div class="item-dd-empty">Sin resultados — se usará el nombre escrito</div>`;
+  list.style.display = 'block';
+}
+
+function seleccionarTrab(nombre) {
+  const t = TRABAJADORES.find(x => x.nombre === nombre);
+  document.getElementById('me-trab').value  = nombre;
+  document.getElementById('me-rut').value   = t?.rut   || '';
+  document.getElementById('me-cargo').value = t?.cargo || '';
+  document.getElementById('me-trab-list').style.display = 'none';
+}
 
 // Populate responsables (Jefes de Terreno + APR)
 (function(){
@@ -1002,6 +1013,7 @@ function abrirModalEntrega() {
   document.getElementById('me-fecha').value   = hoy();
   document.getElementById('me-turno').value   = '';
   document.getElementById('me-trab').value    = '';
+  document.getElementById('me-trab-list').style.display = 'none';
   document.getElementById('me-rut').value     = '';
   document.getElementById('me-cargo').value   = '';
   document.getElementById('me-item-search').value = '';
@@ -1019,12 +1031,6 @@ function abrirModalEntrega() {
   abrir('modal-entrega');
 }
 
-function autoFillTrab() {
-  const sel = document.getElementById('me-trab');
-  const t = TRABAJADORES.find(x => x.nombre === sel.value);
-  document.getElementById('me-cargo').value = t?.cargo || '';
-  document.getElementById('me-rut').value   = t?.rut   || '';
-}
 
 
 function mostrarAlertaStock(elId, disp) {

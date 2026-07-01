@@ -669,7 +669,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr>
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verImagen('${esc(i.imagen_url)}','${esc(i.descripcion)}')">`:'<div class="img-placeholder">📷</div>'}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div></div></td>
+    <td><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verDetalle('${i.id}')">`:`<div class="img-placeholder" onclick="verDetalle('${i.id}')" style="cursor:pointer" title="Ver detalle">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -1101,10 +1101,39 @@ function quitarImagen() {
   prev.src = ''; prev.style.display = 'none';
 }
 
-function verImagen(url, desc) {
+function verDetalle(itemId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  const imgHtml = it.imagen_url
+    ? `<img src="${it.imagen_url}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;background:#111;padding:8px">`
+    : `<div style="height:180px;border-radius:10px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:#444;font-size:56px">📷</div>`;
+  const stat = (label, val, big, color) =>
+    `<div style="background:rgba(255,255,255,.06);border-radius:8px;padding:12px 14px">
+      <div style="color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${label}</div>
+      <div style="font-size:${big?'26px':'14px'};font-weight:${big?'700':'400'};color:${color||'#fff'}">${val}</div>
+    </div>`;
   const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px';
-  ov.innerHTML = `<img src="${url}" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6)"><p style="color:#fff;margin-top:14px;font-size:14px;text-align:center">${desc}</p><p style="color:rgba(255,255,255,.45);font-size:12px;margin-top:4px">Clic para cerrar</p>`;
+  ov.id = 'det-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 16px';
+  ov.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:18px;max-width:700px;width:100%;position:relative" onclick="event.stopPropagation()">
+      <button onclick="document.body.removeChild(document.getElementById('det-ov'))"
+        style="position:absolute;top:-10px;right:0;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;line-height:1">✕</button>
+      <div>
+        <h2 style="color:#fff;margin:0 0 4px;font-size:18px;padding-right:40px">${it.descripcion}</h2>
+        <p style="color:rgba(255,255,255,.45);margin:0;font-size:13px">${[it.correlativo,it.categoria,it.talla?'Talla '+it.talla:''].filter(Boolean).join(' · ')}</p>
+      </div>
+      ${imgHtml}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${stat('Total',it.cantidad_total??0,true)}
+        ${stat('Disponible',it.cantidad_disponible??0,true,(it.cantidad_disponible??0)<=1?'#ef5350':'#66bb6a')}
+        ${stat('Fecha de Ingreso',it.fecha_ingreso?ff(it.fecha_ingreso):'—')}
+        ${stat('Estado',it.estado||'—')}
+        ${stat('Ubicación',it.ubicacion||'—')}
+        ${stat('Marca / Modelo',it.marca_modelo||'—')}
+      </div>
+      ${it.observaciones?`<div style="padding:12px 14px;background:rgba(255,255,255,.05);border-radius:8px;color:rgba(255,255,255,.65);font-size:13px;border-left:3px solid #1E4F8C">${it.observaciones}</div>`:''}
+    </div>`;
   ov.onclick = () => document.body.removeChild(ov);
   document.body.appendChild(ov);
 }

@@ -49,13 +49,15 @@ async function importar() {
   }
   log(`✓ Sesión activa: ${session.user.email}`, 'ok');
 
-  // Check existing items
+  // Delete existing data to avoid duplicates
   const { count } = await sb.from('inventario_items').select('*', { count: 'exact', head: true });
   if (count > 0) {
-    log(`⚠️  Ya existen ${count} ítems en la tabla. Abortando para evitar duplicados.`, 'warn');
-    log('Si deseas reimportar, elimina los registros desde inventario.html primero.', 'warn');
-    btn.disabled = false;
-    return;
+    log(`⚠️  Existen ${count} ítems previos — eliminando para reimportar limpio...`, 'warn');
+    const { error: delM } = await sb.from('inventario_movimientos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (delM) { log(`❌ Error al limpiar movimientos: ${delM.message}`, 'err'); btn.disabled = false; return; }
+    const { error: delI } = await sb.from('inventario_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (delI) { log(`❌ Error al limpiar ítems: ${delI.message}`, 'err'); btn.disabled = false; return; }
+    log('  ✓ Datos anteriores eliminados', 'ok');
   }
 
   // Insert items in batches of 20

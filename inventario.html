@@ -757,16 +757,16 @@ function renderInventario() {
   }
   const tb = document.getElementById('tb-inv');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
-  tb.innerHTML = rows.map(i => `<tr>
+  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="verDetalle('${i.id}')">
     <td>${i.correlativo||'—'}</td>
-    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verDetalle('${i.id}')">`:`<div class="img-placeholder" onclick="verDetalle('${i.id}')" style="cursor:pointer" title="Ver detalle">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
+    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
     <td style="text-align:center"><span class="${(i.cantidad_disponible??0)<=1?'stock-low':'stock-ok'}">${i.cantidad_disponible??0}</span></td>
     <td>${badgeEstado(i.estado)}</td>
     <td>${i.ubicacion||'—'}</td>
-    <td>
+    <td onclick="event.stopPropagation()">
       <button class="btn btn-secondary btn-sm" onclick="editarItem('${i.id}')">✏️</button>
       <button class="btn btn-danger btn-sm" onclick="borrarItem('${i.id}','${esc(i.descripcion)}')">🗑️</button>
     </td>
@@ -1446,12 +1446,18 @@ function verDetalle(itemId) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         ${stat('Total',it.cantidad_total??0,true)}
         ${stat('Disponible',it.cantidad_disponible??0,true,(it.cantidad_disponible??0)<=1?'#ef5350':'#66bb6a')}
-        ${stat('Fecha de Ingreso',it.fecha_ingreso?ff(it.fecha_ingreso):'—')}
+        ${stat('Categoría',it.categoria||'—')}
+        ${stat('Área Responsable',it.area_responsable||'—')}
+        ${stat('Color',it.color||'—')}
+        ${stat('Talla',it.talla||'—')}
+        ${stat('Marca / Modelo',it.marca_modelo||'—')}
+        ${stat('Serie / SN',it.serie_sn||'—')}
+        ${stat('Norma',it.norma||'—')}
         ${stat('Estado',it.estado||'—')}
         ${stat('Ubicación',it.ubicacion||'—')}
-        ${stat('Marca / Modelo',it.marca_modelo||'—')}
+        ${stat('Fecha de Ingreso',it.fecha_ingreso?ff(it.fecha_ingreso):'—')}
       </div>
-      ${it.observaciones?`<div style="padding:12px 14px;background:rgba(255,255,255,.05);border-radius:8px;color:rgba(255,255,255,.65);font-size:13px;border-left:3px solid #1E4F8C">${it.observaciones}</div>`:''}
+      ${it.observaciones?`<div style="padding:12px 14px;background:rgba(255,255,255,.05);border-radius:8px;color:rgba(255,255,255,.65);font-size:13px;border-left:3px solid #1E4F8C"><span style="color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Observaciones</span>${it.observaciones}</div>`:''}
     </div>`;
   ov.onclick = () => document.body.removeChild(ov);
   document.body.appendChild(ov);

@@ -74,6 +74,7 @@ th.sortable:hover{background:#163d6e}
 .th-filter{background:#0d2d5c;padding:4px 6px}
 .th-filter input,.th-filter select{width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none}
 .th-filter input::placeholder{color:rgba(255,255,255,.6)}
+.th-filter input:focus,.th-filter select:focus{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.22);box-shadow:0 0 0 2px rgba(255,255,255,.15)}
 .th-filter select option{background:#1E4F8C;color:#fff}
 .th-filter .btn-clear{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;width:100%;white-space:nowrap}
 .th-filter .btn-clear:hover{background:rgba(255,255,255,.28)}
@@ -165,7 +166,7 @@ th.sortable:hover{background:#163d6e}
 .dash-card h4{font-size:10px;font-weight:700;color:#1E4F8C;margin:0 0 14px;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid #edf0f7;padding-bottom:10px}
 .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .bar-lbl{width:140px;font-size:12px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-.bar-track{flex:1;background:#eef2f7;border-radius:4px;height:12px;overflow:hidden}
+.bar-track{flex:1;background:#eef2f7;border-radius:4px;height:12px;overflow:hidden;cursor:default}
 .bar-fill{height:100%;border-radius:4px;background:#1E4F8C;transition:width .4s}
 .bar-val{width:28px;text-align:right;font-size:12px;font-weight:700;color:#333;flex-shrink:0}
 .dash-alert{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:7px;font-size:13px}
@@ -256,6 +257,7 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="toolbar" style="gap:8px">
       <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
+      <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;flex:1;max-width:320px;color:#222"/>
     </div>
     <div class="table-wrap">
       <table>
@@ -272,7 +274,7 @@ th.sortable:hover{background:#163d6e}
             <th>Acciones</th>
           </tr>
           <tr>
-            <th class="th-filter" colspan="2"><input type="text" id="fi-buscar" placeholder="🔍 Buscar..." oninput="renderInventario()"/></th>
+            <th class="th-filter" colspan="2"></th>
             <th class="th-filter">
               <select id="fi-cat" onchange="renderInventario()">
                 <option value="">Todas las categorías</option>
@@ -957,7 +959,7 @@ function renderEntrega() {
     <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
     <td>${m.talla||'—'}</td>
     <td style="text-align:center">${m.cantidad}</td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??(items.find(x=>x.id===m.item_id)?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
     <td style="white-space:nowrap">
@@ -982,7 +984,7 @@ function renderSalida() {
     <td>${m.descripcion||'—'}</td>
     <td><span class="badge b-info">${m.categoria||'—'}</span></td>
     <td style="text-align:center">${m.cantidad}</td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??(items.find(x=>x.id===m.item_id)?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
     <td style="white-space:nowrap">
@@ -1814,7 +1816,7 @@ function renderDashboard() {
     ? topEpp.map(function(x){
         return '<div class="bar-row">'+
           '<div class="bar-lbl" title="'+x.it.descripcion+'">'+x.it.descripcion+(x.it.talla?' ('+x.it.talla+')':'')+'</div>'+
-          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxE*100)+'%"></div></div>'+
+          '<div class="bar-track" title="'+x.it.descripcion+(x.it.talla?' ('+x.it.talla+')':'')+'  —  '+x.cnt+' entregas"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxE*100)+'%"></div></div>'+
           '<div class="bar-val">'+x.cnt+'</div>'+
         '</div>';
       }).join('')
@@ -1832,7 +1834,7 @@ function renderDashboard() {
     ? topSal.map(function(x){
         return '<div class="bar-row">'+
           '<div class="bar-lbl" title="'+x.it.descripcion+'">'+x.it.descripcion+'</div>'+
-          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxS*100)+'%;background:#e65100"></div></div>'+
+          '<div class="bar-track" title="'+x.it.descripcion+'  —  '+x.cnt+' salidas"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxS*100)+'%;background:#e65100"></div></div>'+
           '<div class="bar-val">'+x.cnt+'</div>'+
         '</div>';
       }).join('')
@@ -1849,7 +1851,7 @@ function renderDashboard() {
     ? topW.map(function(kv){
         return '<div class="bar-row" style="break-inside:avoid">'+
           '<div class="bar-lbl" title="'+kv[0]+'">'+kv[0]+'</div>'+
-          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(kv[1]/maxW*100)+'%;background:#2e7d32"></div></div>'+
+          '<div class="bar-track" title="'+kv[0]+'  —  '+kv[1]+' entregas EPP"><div class="bar-fill" style="width:'+Math.round(kv[1]/maxW*100)+'%;background:#2e7d32"></div></div>'+
           '<div class="bar-val">'+kv[1]+'</div>'+
         '</div>';
       }).join('')

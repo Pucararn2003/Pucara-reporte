@@ -113,6 +113,14 @@ th.sortable:hover{background:#163d6e}
 .fgrid .full{grid-column:1/-1}
 .ferr{color:#c62828;font-size:12px;margin-top:2px;display:none}
 
+/* ── Item search dropdown ── */
+.item-search-wrap{position:relative}
+.item-dropdown{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1px solid #cdd8e3;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);max-height:230px;overflow-y:auto;z-index:600}
+.item-dd-row{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f5f5f5;line-height:1.4}
+.item-dd-row:last-child{border-bottom:none}
+.item-dd-row:hover{background:#eef3ff}
+.item-dd-empty{padding:10px 12px;color:#999;font-size:13px;text-align:center}
+
 /* ── Alert ── */
 .alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
 .alert-warn{background:#fff8e1;border:1px solid #ffca28;color:#e65100}
@@ -125,7 +133,7 @@ th.sortable:hover{background:#163d6e}
 ══════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <img id="login-logo" src="" alt="Pucará"/>
+    <img id="login-logo" alt="Pucará"/>
     <h2>Control de Inventario</h2>
     <input id="login-email" type="email" placeholder="Correo electrónico" autocomplete="email"/>
     <input id="login-pwd"   type="password" placeholder="Contraseña" autocomplete="current-password"/>
@@ -139,7 +147,7 @@ th.sortable:hover{background:#163d6e}
 ══════════════════════════════════════ -->
 <div id="app-screen">
   <header>
-    <img id="nav-logo" src="" alt="Pucará"/>
+    <img id="nav-logo" alt="Pucará"/>
     <h1>Control de Inventario — GEOTÉCNIA</h1>
     <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
     <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
@@ -346,9 +354,13 @@ th.sortable:hover{background:#163d6e}
         <div class="fg"><label>Cargo</label><input type="text" id="me-cargo" readonly style="background:#f8f8f8"/></div>
         <div class="fg full">
           <label>Ítem *</label>
-          <select id="me-item" onchange="autoFillItemE()">
-            <option value="">Seleccionar ítem…</option>
-          </select>
+          <div class="item-search-wrap">
+            <input type="text" id="me-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                   oninput="filtrarItems('me')" onfocus="filtrarItems('me')" autocomplete="off"
+                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="me-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="me-item-val"/>
+          </div>
         </div>
         <div class="fg"><label>Talla</label><input type="text" id="me-talla"/></div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="me-cant" min="1" value="1"/></div>
@@ -391,9 +403,13 @@ th.sortable:hover{background:#163d6e}
         </div>
         <div class="fg full">
           <label>Ítem *</label>
-          <select id="ms-item" onchange="autoFillItemS()">
-            <option value="">Seleccionar ítem…</option>
-          </select>
+          <div class="item-search-wrap">
+            <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                   oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
+                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="ms-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="ms-item-val"/>
+          </div>
         </div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
         <div class="fg"><label>Responsable de Retiro</label><input type="text" id="ms-resp"/></div>
@@ -727,13 +743,50 @@ function renderSalida() {
   </tr>`).join('');
 }
 
-// ── Item Selects ───────────────────────────────────────────────
-function poblarSelectItems() {
-  const opts = '<option value="">Seleccionar ítem…</option>' +
-    items.map(i => `<option value="${i.id}" data-desc="${esc(i.descripcion)}" data-cat="${esc(i.categoria||'')}" data-talla="${esc(i.talla||'')}" data-disp="${i.cantidad_disponible||0}">${i.correlativo?`[${i.correlativo}] `:''}${i.descripcion}${i.talla?` (${i.talla})`:''} — Disp: ${i.cantidad_disponible||0}</option>`).join('');
-  document.getElementById('me-item').innerHTML = opts;
-  document.getElementById('ms-item').innerHTML = opts;
+// ── Item Search Dropdown ────────────────────────────────────────
+function filtrarItems(prefix) {
+  const q    = (document.getElementById(prefix + '-item-search').value || '').toLowerCase();
+  const list = document.getElementById(prefix + '-item-list');
+  const fil  = items.filter(i =>
+    (i.descripcion || '').toLowerCase().includes(q) ||
+    (i.correlativo || '').toLowerCase().includes(q) ||
+    (i.categoria   || '').toLowerCase().includes(q)
+  );
+  list.innerHTML = fil.length
+    ? fil.map(i => {
+        const stock = i.cantidad_disponible || 0;
+        const sc    = stock <= 1 ? 'stock-low' : 'stock-ok';
+        const lbl   = (i.correlativo ? '[' + i.correlativo + '] ' : '') + i.descripcion + (i.talla ? ' (' + i.talla + ')' : '');
+        return `<div class="item-dd-row" data-id="${i.id}" data-prefix="${prefix}" onclick="seleccionarItemDD(this)">${lbl} — <span class="${sc}">Disp: ${stock}</span></div>`;
+      }).join('')
+    : '<div class="item-dd-empty">Sin resultados</div>';
+  list.style.display = 'block';
 }
+
+function seleccionarItemDD(el) {
+  const id     = el.dataset.id;
+  const prefix = el.dataset.prefix;
+  const it     = items.find(x => x.id === id);
+  if (!it) return;
+  const lbl = (it.correlativo ? '[' + it.correlativo + '] ' : '') + it.descripcion + (it.talla ? ' (' + it.talla + ')' : '');
+  document.getElementById(prefix + '-item-search').value = lbl;
+  document.getElementById(prefix + '-item-val').value    = id;
+  document.getElementById(prefix + '-item-list').style.display = 'none';
+  if (prefix === 'me') {
+    document.getElementById('me-talla').value = it.talla || '';
+    mostrarAlertaStock('alerta-epp', it.cantidad_disponible || 0);
+  } else {
+    mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.item-search-wrap')) {
+    document.querySelectorAll('.item-dropdown').forEach(d => d.style.display = 'none');
+  }
+});
+
+function poblarSelectItems() { /* reemplazado por búsqueda dinámica */ }
 
 // ── Modal Ítem ─────────────────────────────────────────────────
 function abrirModalItem(id) {
@@ -818,7 +871,9 @@ function abrirModalEntrega() {
   document.getElementById('me-trab').value    = '';
   document.getElementById('me-rut').value     = '';
   document.getElementById('me-cargo').value   = '';
-  document.getElementById('me-item').value    = '';
+  document.getElementById('me-item-search').value = '';
+  document.getElementById('me-item-val').value    = '';
+  document.getElementById('me-item-list').style.display = 'none';
   document.getElementById('me-talla').value   = '';
   document.getElementById('me-cant').value    = '1';
   document.getElementById('me-estado').value  = 'Nuevo';
@@ -835,18 +890,6 @@ function autoFillTrab() {
   document.getElementById('me-rut').value   = t?.rut   || '';
 }
 
-function autoFillItemE() {
-  const sel = document.getElementById('me-item');
-  const opt = sel.options[sel.selectedIndex];
-  document.getElementById('me-talla').value = opt?.dataset?.talla || '';
-  mostrarAlertaStock('alerta-epp', parseInt(opt?.dataset?.disp || '0'));
-}
-
-function autoFillItemS() {
-  const sel = document.getElementById('ms-item');
-  const opt = sel.options[sel.selectedIndex];
-  mostrarAlertaStock('alerta-sal', parseInt(opt?.dataset?.disp || '0'));
-}
 
 function mostrarAlertaStock(elId, disp) {
   const el = document.getElementById(elId);
@@ -859,20 +902,19 @@ function mostrarAlertaStock(elId, disp) {
 async function guardarEntrega() {
   const fecha  = document.getElementById('me-fecha').value;
   const trab   = document.getElementById('me-trab').value;
-  const itemSel= document.getElementById('me-item');
-  const itemId = itemSel.value;
+  const itemId = document.getElementById('me-item-val').value;
   const cant   = parseInt(document.getElementById('me-cant').value) || 1;
   if (!fecha || !trab || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
-  const opt  = itemSel.options[itemSel.selectedIndex];
-  const disp = parseInt(opt?.dataset?.disp || '0');
+  const itSel = items.find(x => x.id === itemId);
+  const disp  = itSel?.cantidad_disponible || 0;
   if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
   const { error: e1 } = await sb.from('inventario_movimientos').insert({
     tipo: 'entrega_epp',
     fecha,
     turno:           document.getElementById('me-turno').value   || null,
     item_id:         itemId,
-    descripcion:     opt?.dataset?.desc  || null,
-    categoria:       opt?.dataset?.cat   || null,
+    descripcion:     itSel?.descripcion || null,
+    categoria:       itSel?.categoria   || null,
     talla:           document.getElementById('me-talla').value.trim() || null,
     cantidad:        cant,
     nombre_trabajador: trab,
@@ -884,8 +926,7 @@ async function guardarEntrega() {
     usuario_email:   currentUser?.email || null,
   });
   if (e1) { alert('Error: ' + e1.message); return; }
-  const it = items.find(x => x.id === itemId);
-  if (it) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (it.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, disp - cant) }).eq('id', itemId);
   cerrar('modal-entrega');
   await cargarDatos();
 }
@@ -894,7 +935,9 @@ async function guardarEntrega() {
 function abrirModalSalida() {
   document.getElementById('ms-fecha').value = hoy();
   document.getElementById('ms-turno').value = '';
-  document.getElementById('ms-item').value  = '';
+  document.getElementById('ms-item-search').value = '';
+  document.getElementById('ms-item-val').value    = '';
+  document.getElementById('ms-item-list').style.display = 'none';
   document.getElementById('ms-cant').value  = '1';
   document.getElementById('ms-resp').value  = '';
   document.getElementById('ms-obs').value   = '';
@@ -904,28 +947,26 @@ function abrirModalSalida() {
 
 async function guardarSalida() {
   const fecha  = document.getElementById('ms-fecha').value;
-  const itemSel= document.getElementById('ms-item');
-  const itemId = itemSel.value;
+  const itemId = document.getElementById('ms-item-val').value;
   const cant   = parseInt(document.getElementById('ms-cant').value) || 1;
   if (!fecha || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
-  const opt  = itemSel.options[itemSel.selectedIndex];
-  const disp = parseInt(opt?.dataset?.disp || '0');
+  const itSel = items.find(x => x.id === itemId);
+  const disp  = itSel?.cantidad_disponible || 0;
   if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
   const { error: e1 } = await sb.from('inventario_movimientos').insert({
     tipo:         'salida_insumo',
     fecha,
     turno:        document.getElementById('ms-turno').value  || null,
     item_id:      itemId,
-    descripcion:  opt?.dataset?.desc || null,
-    categoria:    opt?.dataset?.cat  || null,
+    descripcion:  itSel?.descripcion || null,
+    categoria:    itSel?.categoria   || null,
     cantidad:     cant,
     responsable:  document.getElementById('ms-resp').value.trim() || null,
     observaciones:document.getElementById('ms-obs').value.trim()  || null,
     usuario_email:currentUser?.email || null,
   });
   if (e1) { alert('Error: ' + e1.message); return; }
-  const it = items.find(x => x.id === itemId);
-  if (it) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (it.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, disp - cant) }).eq('id', itemId);
   cerrar('modal-salida');
   await cargarDatos();
 }

@@ -152,6 +152,29 @@ th.sortable:hover{background:#163d6e}
 /* ── Alert ── */
 .alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
 .alert-warn{background:#fff8e1;border:1px solid #ffca28;color:#e65100}
+/* ── Dashboard ─────────────────────────────────────────────────────────── */
+.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.dash-kpi{background:#fff;border-radius:12px;padding:18px 16px 14px;box-shadow:0 2px 10px rgba(0,0,0,.08);border-top:4px solid #1E4F8C}
+.dash-kpi.kpi-green{border-top-color:#2e7d32}
+.dash-kpi.kpi-red{border-top-color:#c62828}
+.dash-kpi.kpi-amber{border-top-color:#e65100}
+.kpi-val{font-size:30px;font-weight:800;color:#1a2b3c;line-height:1.1;margin:6px 0 2px}
+.kpi-lbl{font-size:10px;font-weight:700;color:#6b7c93;text-transform:uppercase;letter-spacing:.7px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.dash-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.dash-card h4{font-size:10px;font-weight:700;color:#1E4F8C;margin:0 0 14px;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid #edf0f7;padding-bottom:10px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{width:140px;font-size:12px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.bar-track{flex:1;background:#eef2f7;border-radius:4px;height:12px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:#1E4F8C;transition:width .4s}
+.bar-val{width:28px;text-align:right;font-size:12px;font-weight:700;color:#333;flex-shrink:0}
+.dash-alert{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:7px;font-size:13px}
+.dash-alert.crit{background:#ffebee;border-left:4px solid #c62828}
+.dash-alert.warn{background:#fff8e1;border-left:4px solid #f9a825}
+.dash-alert-val{font-size:18px;font-weight:800;min-width:28px;text-align:center;flex-shrink:0}
+.dash-nodata{color:#bbb;font-size:13px;text-align:center;padding:20px 0;font-style:italic}
+@media(max-width:700px){.dash-kpis{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
+
 /* ── LOGO ── */
 .login-logo-wrap{text-align:center;margin-bottom:18px}
 #login-logo{width:96px;height:96px;object-fit:contain;border-radius:14px;background:#fff;padding:8px;border:2px solid #3A7BC8;box-shadow:0 3px 10px rgba(0,0,0,.13);display:inline-block}
@@ -219,6 +242,7 @@ th.sortable:hover{background:#163d6e}
     <button class="tab-btn active" onclick="switchTab('inventario',this)">📦 Inventario General</button>
     <button class="tab-btn" onclick="switchTab('entrega',this)">🦺 Entrega EPP / Ropa</button>
     <button class="tab-btn" onclick="switchTab('salida',this)">🔧 Salida Insumos</button>
+    <button class="tab-btn" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
     <button class="tab-btn" onclick="switchTab('historial-movs',this)">📋 Historial de Movimientos</button>
   </nav>
 
@@ -319,6 +343,59 @@ th.sortable:hover{background:#163d6e}
         </tr></thead>
         <tbody id="tb-sal"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: Dashboard ── -->
+  <div id="tab-dashboard" class="tab-panel">
+    <div style="max-width:1200px;margin:0 auto;padding:4px 0 30px">
+
+      <div class="dash-kpis">
+        <div class="dash-kpi">
+          <div class="kpi-lbl">Ítems Activos</div>
+          <div class="kpi-val" id="dk-items">—</div>
+        </div>
+        <div class="dash-kpi kpi-green">
+          <div class="kpi-lbl">Disponibilidad</div>
+          <div class="kpi-val" id="dk-disponible">—</div>
+        </div>
+        <div class="dash-kpi kpi-red">
+          <div class="kpi-lbl">Stock Crítico / Bajo</div>
+          <div class="kpi-val" id="dk-alerta-n">—</div>
+        </div>
+        <div class="dash-kpi kpi-amber">
+          <div class="kpi-lbl">Movs. Este Mes</div>
+          <div class="kpi-val" id="dk-movmes">—</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h4>⚠️ Alertas de Stock</h4>
+          <div id="dk-alertas"><div class="dash-nodata">Cargando…</div></div>
+        </div>
+        <div class="dash-card">
+          <h4>📈 Tendencia Últimos 6 Meses</h4>
+          <div id="dk-trend"></div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h4>🦺 EPP con Mayor Rotación</h4>
+          <div id="dk-epp-rot"><div class="dash-nodata">Cargando…</div></div>
+        </div>
+        <div class="dash-card">
+          <h4>🔧 Insumos Más Solicitados</h4>
+          <div id="dk-insumos"><div class="dash-nodata">Cargando…</div></div>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <h4>👷 Trabajadores con Más Entregas EPP</h4>
+        <div id="dk-workers" style="columns:2;gap:24px;column-fill:balance"><div class="dash-nodata">Cargando…</div></div>
+      </div>
+
     </div>
   </div>
 
@@ -903,7 +980,14 @@ function renderSalida() {
 function filtrarItems(prefix) {
   const q    = (document.getElementById(prefix + '-item-search').value || '').toLowerCase();
   const list = document.getElementById(prefix + '-item-list');
-  const fil  = items.filter(i =>
+  let pool = items;
+  if (prefix === 'ms') {
+    pool = items.filter(i => {
+      const cat = (i.categoria || '').toLowerCase();
+      return cat.includes('insumo') || cat.includes('equipo') || cat.includes('herramienta');
+    });
+  }
+  const fil  = pool.filter(i =>
     (i.descripcion || '').toLowerCase().includes(q) ||
     (i.correlativo || '').toLowerCase().includes(q) ||
     (i.categoria   || '').toLowerCase().includes(q)
@@ -1559,6 +1643,121 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'historial-movs') renderHistorialMovimientos();
+  if (name === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  var activos   = items.filter(function(i){ return i.estado !== 'Dado de Baja' && i.estado !== 'P\u00e9rdida'; });
+  var totalDisp = activos.reduce(function(s,i){ return s+(i.cantidad_disponible||0); }, 0);
+  var totalTot  = activos.reduce(function(s,i){ return s+(i.cantidad_total||0); }, 0);
+  var criticos  = activos.filter(function(i){ return (i.cantidad_disponible||0)===0; });
+  var bajos     = activos.filter(function(i){ var d=i.cantidad_disponible||0; return d>0&&d<=2; });
+  var mesAct    = hoy().slice(0,7);
+  var movsMes   = movs.filter(function(m){ return (m.fecha||'').startsWith(mesAct); }).length;
+
+  document.getElementById('dk-items').textContent      = activos.length;
+  document.getElementById('dk-disponible').textContent = totalTot ? Math.round(totalDisp/totalTot*100)+'%' : '\u2014';
+  document.getElementById('dk-alerta-n').textContent   = criticos.length+bajos.length;
+  document.getElementById('dk-movmes').textContent     = movsMes;
+
+  // Alertas
+  var alertas = criticos.map(function(i){ return Object.assign({},i,{_crit:true}); })
+    .concat(bajos.map(function(i){ return Object.assign({},i,{_crit:false}); })).slice(0,8);
+  document.getElementById('dk-alertas').innerHTML = alertas.length
+    ? alertas.map(function(i){
+        return '<div class="dash-alert '+(i._crit?'crit':'warn')+'">'+
+          '<div class="dash-alert-val" style="color:'+(i._crit?'#c62828':'#e65100')+'">'+(i.cantidad_disponible||0)+'</div>'+
+          '<div style="flex:1">'+
+            '<div style="font-weight:600;font-size:13px">'+(i.descripcion||'')+(i.talla?' ('+i.talla+')':'')+'</div>'+
+            '<div style="font-size:11px;color:#888">'+(i.categoria||'')+' \u00b7 Corr. '+(i.correlativo||'\u2014')+'</div>'+
+          '</div></div>';
+      }).join('')
+    : '<div class="dash-nodata">\u2705 Sin \u00edtems cr\u00edticos o bajos</div>';
+
+  // Tendencia 6 meses
+  var meses = [];
+  for (var i=5; i>=0; i--) {
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+    meses.push({ key: d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),
+                 lbl: d.toLocaleString('es-CL',{month:'short'}), epp:0, sal:0 });
+  }
+  movs.forEach(function(m) {
+    var mo = meses.find(function(x){ return x.key===(m.fecha||'').slice(0,7); });
+    if (!mo) return;
+    if (m.tipo==='entrega_epp')   mo.epp += (m.cantidad||1);
+    if (m.tipo==='salida_insumo') mo.sal += (m.cantidad||1);
+  });
+  var maxM = Math.max.apply(null, meses.map(function(m){ return m.epp+m.sal; }).concat([1]));
+  var tBars = meses.map(function(m){
+    var eh = Math.max(Math.round(m.epp/maxM*70), m.epp?3:0);
+    var sh = Math.max(Math.round(m.sal/maxM*70), m.sal?3:0);
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center">'+
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:72px">'+
+        '<div style="width:14px;background:#1E4F8C;border-radius:2px 2px 0 0;height:'+eh+'px" title="EPP: '+m.epp+'"></div>'+
+        '<div style="width:14px;background:#e65100;border-radius:2px 2px 0 0;height:'+sh+'px" title="Insumos: '+m.sal+'"></div>'+
+      '</div>'+
+      '<div style="font-size:9px;color:#888;margin-top:4px">'+m.lbl+'</div>'+
+    '</div>';
+  }).join('');
+  document.getElementById('dk-trend').innerHTML =
+    '<div style="display:flex;align-items:flex-end;gap:8px;height:90px">'+tBars+'</div>'+
+    '<div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:#666">'+
+      '<span><span style="display:inline-block;width:10px;height:10px;background:#1E4F8C;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Entregas EPP</span>'+
+      '<span><span style="display:inline-block;width:10px;height:10px;background:#e65100;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Salida Insumos</span>'+
+    '</div>';
+
+  // EPP mayor rotación
+  var eppCnt = {};
+  movs.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
+    eppCnt[m.item_id] = (eppCnt[m.item_id]||0)+(m.cantidad||1);
+  });
+  var topEpp = Object.keys(eppCnt).map(function(id){ return {it:items.find(function(x){return x.id===id;}),cnt:eppCnt[id]}; })
+    .filter(function(x){ return x.it; }).sort(function(a,b){ return b.cnt-a.cnt; }).slice(0,7);
+  var maxE = topEpp.length ? topEpp[0].cnt : 1;
+  document.getElementById('dk-epp-rot').innerHTML = topEpp.length
+    ? topEpp.map(function(x){
+        return '<div class="bar-row">'+
+          '<div class="bar-lbl" title="'+x.it.descripcion+'">'+x.it.descripcion+(x.it.talla?' ('+x.it.talla+')':'')+'</div>'+
+          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxE*100)+'%"></div></div>'+
+          '<div class="bar-val">'+x.cnt+'</div>'+
+        '</div>';
+      }).join('')
+    : '<div class="dash-nodata">Sin entregas registradas</div>';
+
+  // Insumos más solicitados
+  var salCnt = {};
+  movs.filter(function(m){ return m.tipo==='salida_insumo'; }).forEach(function(m){
+    salCnt[m.item_id] = (salCnt[m.item_id]||0)+(m.cantidad||1);
+  });
+  var topSal = Object.keys(salCnt).map(function(id){ return {it:items.find(function(x){return x.id===id;}),cnt:salCnt[id]}; })
+    .filter(function(x){ return x.it; }).sort(function(a,b){ return b.cnt-a.cnt; }).slice(0,7);
+  var maxS = topSal.length ? topSal[0].cnt : 1;
+  document.getElementById('dk-insumos').innerHTML = topSal.length
+    ? topSal.map(function(x){
+        return '<div class="bar-row">'+
+          '<div class="bar-lbl" title="'+x.it.descripcion+'">'+x.it.descripcion+'</div>'+
+          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(x.cnt/maxS*100)+'%;background:#e65100"></div></div>'+
+          '<div class="bar-val">'+x.cnt+'</div>'+
+        '</div>';
+      }).join('')
+    : '<div class="dash-nodata">Sin salidas registradas</div>';
+
+  // Trabajadores con más EPP
+  var wCnt = {};
+  movs.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
+    var k = m.nombre_trabajador||'\u2014'; wCnt[k]=(wCnt[k]||0)+1;
+  });
+  var topW = Object.keys(wCnt).map(function(k){ return [k,wCnt[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+  var maxW = topW.length ? topW[0][1] : 1;
+  document.getElementById('dk-workers').innerHTML = topW.length
+    ? topW.map(function(kv){
+        return '<div class="bar-row" style="break-inside:avoid">'+
+          '<div class="bar-lbl" title="'+kv[0]+'">'+kv[0]+'</div>'+
+          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(kv[1]/maxW*100)+'%;background:#2e7d32"></div></div>'+
+          '<div class="bar-val">'+kv[1]+'</div>'+
+        '</div>';
+      }).join('')
+    : '<div class="dash-nodata">Sin entregas registradas</div>';
 }
 
 function limpiarFE() {

@@ -958,8 +958,8 @@ function renderEntrega() {
     <td>${m.cargo_trabajador||'—'}</td>
     <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
     <td>${m.talla||'—'}</td>
-    <td style="text-align:center">${m.cantidad}</td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center"><span style="font-weight:700;color:#c62828">↓ ${m.cantidad}</span></td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">↑ ${r}</span>`:'—'; })()}</td>
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
     <td style="white-space:nowrap">
@@ -983,8 +983,8 @@ function renderSalida() {
     <td>${m.turno||'—'}</td>
     <td>${m.descripcion||'—'}</td>
     <td><span class="badge b-info">${m.categoria||'—'}</span></td>
-    <td style="text-align:center">${m.cantidad}</td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center"><span style="font-weight:700;color:#c62828">↓ ${m.cantidad}</span></td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">↑ ${r}</span>`:'—'; })()}</td>
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
     <td style="white-space:nowrap">

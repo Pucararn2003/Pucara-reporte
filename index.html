@@ -98,6 +98,11 @@ tr:hover td{background:#E5EFF9}
 .add-foto:hover{border-color:#1E4F8C;color:#1E4F8C}
 .add-foto input{display:none}
 
+/* ── MODAL FIRMA ── */
+.firma-drop-area{border:2px dashed #ccc;border-radius:10px;min-height:130px;display:flex;align-items:center;justify-content:center;background:#f9f9f9;overflow:hidden;padding:10px;margin-bottom:12px;cursor:pointer;transition:.15s}
+.firma-drop-area:hover{border-color:#1E4F8C;background:#eef3f9}
+.firma-drop-area img{max-width:100%;max-height:126px;object-fit:contain}
+
 /* ── LOADING / EMPTY ── */
 .loading{text-align:center;padding:40px;color:#aaa}
 .empty{text-align:center;padding:60px 20px;color:#aaa}
@@ -140,6 +145,7 @@ tr:hover td{background:#E5EFF9}
     <span class="brand">Pucara S.A. — Reporte Diario</span>
     <span id="conn-dot" title="Estado Supabase" style="font-size:18px;line-height:1;cursor:default">⬤</span>
     <span class="user" id="nav-user"></span>
+    <button onclick="abrirModalFirma()" title="Gestionar mi firma">✍️ Mi Firma</button>
     <button onclick="logout()">Cerrar sesión</button>
   </nav>
 
@@ -295,6 +301,28 @@ tr:hover td{background:#E5EFF9}
 
 <!-- Marco oculto para imprimir el PDF -->
 <div id="print-frame"></div>
+
+<!-- Modal firma -->
+<div id="modal-firma" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:440px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <h3 style="font-size:15px;font-weight:800;color:#1E4F8C;margin-bottom:4px">✍️ Mi Firma</h3>
+    <p style="font-size:11px;color:#888;margin-bottom:14px">La firma se incrustará automáticamente en el PDF, sección <strong>Aprobación Pucará S.A.</strong></p>
+    <label class="firma-drop-area" id="firma-drop-area" title="Haz clic para cargar una imagen">
+      <img id="firma-img-preview" style="display:none"/>
+      <span id="firma-placeholder" style="color:#aaa;font-size:13px;text-align:center;line-height:1.6">
+        📷<br/>Haz clic para cargar<br/>una imagen de tu firma
+      </span>
+      <input type="file" accept="image/*" style="display:none" id="firma-file-input" onchange="cargarImagenFirma(event)"/>
+    </label>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <button onclick="document.getElementById('firma-file-input').click()" class="btn btn-primary" style="flex:1;font-size:13px">📤 Cambiar imagen</button>
+      <button id="btn-eliminar-firma" onclick="eliminarFirma()" class="btn btn-danger" style="font-size:13px;display:none">🗑 Eliminar</button>
+    </div>
+    <div style="margin-top:14px">
+      <button onclick="cerrarModalFirma()" style="width:100%;padding:11px;border-radius:8px;border:none;background:#eee;font-weight:700;cursor:pointer;font-size:13px">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal selección de personal -->
 <div id="modal-personal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
@@ -990,6 +1018,42 @@ function rmFoto(i) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// FIRMA DEL USUARIO
+// ═══════════════════════════════════════════════════════════
+const firmaKey = () => 'firma_pucara_' + (currentUser?.email || 'guest');
+
+function abrirModalFirma() {
+  actualizarPreviewFirma();
+  document.getElementById('modal-firma').style.display = 'flex';
+}
+function cerrarModalFirma() {
+  document.getElementById('modal-firma').style.display = 'none';
+}
+function actualizarPreviewFirma() {
+  const firma = localStorage.getItem(firmaKey());
+  const img   = document.getElementById('firma-img-preview');
+  const ph    = document.getElementById('firma-placeholder');
+  const btn   = document.getElementById('btn-eliminar-firma');
+  if (firma) {
+    img.src = firma; img.style.display = 'block'; ph.style.display = 'none'; btn.style.display = '';
+  } else {
+    img.style.display = 'none'; ph.style.display = ''; btn.style.display = 'none';
+  }
+}
+function cargarImagenFirma(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { localStorage.setItem(firmaKey(), e.target.result); actualizarPreviewFirma(); };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+function eliminarFirma() {
+  localStorage.removeItem(firmaKey());
+  actualizarPreviewFirma();
+}
+
+// ═══════════════════════════════════════════════════════════
 // GENERACIÓN DE PDF (mismo HTML que la app móvil)
 // ═══════════════════════════════════════════════════════════
 function generarPDF(id) {
@@ -1021,6 +1085,10 @@ function fmtActividad(data) {
 function buildHtmlReporte(r) {
   const pad2 = n => String(n).padStart(2,'0');
   const fmtD = iso => { if(!iso) return '—'; const d=new Date(iso); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`; };
+  const firmaBase64 = localStorage.getItem(firmaKey());
+  const firmaImgHtml = firmaBase64
+    ? `<img src="${firmaBase64}" style="max-height:54pt;max-width:90%;object-fit:contain;display:block;margin:0 auto 0;"/>`
+    : '';
 
   // ── Personal: dos columnas ────────────────────────────────────────────────
   const personal = r.personal || [];
@@ -1217,7 +1285,7 @@ ${htmlFotos}
     <td>
       <div class="aprob-header">APROBACIÓN PUCARÁ S.A</div>
       <div class="aprob-body">
-        <div class="firma-espacio"></div>
+        <div class="firma-espacio">${firmaImgHtml}</div>
         <div class="firma-label">Firma: ………………………………………………………………</div>
         <div class="firma-label" style="margin-top:4pt">Nombre: ${esc(r.supervisor || r.usuario_nombre || '—')}</div>
       </div>

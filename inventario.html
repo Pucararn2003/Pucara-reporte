@@ -106,10 +106,11 @@ th.sortable:hover{background:#163d6e}
 /* ── Form ── */
 .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
 .fg label{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px}
-.fg input,.fg select,.fg textarea{padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box}
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#1E4F8C;box-shadow:0 0 0 3px rgba(30,79,140,.1)}
 .fg textarea{resize:vertical;min-height:60px;font-family:inherit}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.fgrid .fg{min-width:0}
 .fgrid .full{grid-column:1/-1}
 .ferr{color:#c62828;font-size:12px;margin-top:2px;display:none}
 

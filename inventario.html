@@ -77,6 +77,11 @@ th.sortable:hover{background:#163d6e}
 .th-filter .btn-clear{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;width:100%;white-space:nowrap}
 .th-filter .btn-clear:hover{background:rgba(255,255,255,.28)}
 
+/* ── Image thumb ── */
+.img-thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;border:1px solid #dde;transition:.15s}
+.img-thumb:hover{transform:scale(1.1);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.img-placeholder{width:44px;height:44px;border-radius:6px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px;flex-shrink:0}
+
 /* ── Badges ── */
 .badge{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap}
 .b-ok{background:#e8f5e9;color:#2e7d32}
@@ -294,11 +299,20 @@ th.sortable:hover{background:#163d6e}
         <div class="fg"><label>Fecha de Ingreso</label><input type="date" id="mi-fecha"/></div>
         <div class="fg"><label>Área Responsable</label><input type="text" id="mi-area" value="GEOTÉCNIA"/></div>
         <div class="fg full"><label>Observaciones</label><textarea id="mi-obs" rows="2"></textarea></div>
+        <div class="fg full">
+          <label>Imagen del Ítem</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" id="mi-img-file" accept="image/*" onchange="previewImg(this)" style="flex:1;min-width:0;padding:6px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImagen()">✕ Quitar</button>
+          </div>
+          <img id="mi-img-preview" src="" alt="preview" style="display:none;max-height:140px;max-width:100%;border-radius:7px;margin-top:8px;object-fit:contain;border:1px solid #eee"/>
+          <input type="hidden" id="mi-img-url"/>
+        </div>
       </div>
     </div>
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-item')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarItem()">Guardar Ítem</button>
+      <button class="btn btn-primary" id="btn-guardar-item" onclick="guardarItem()">Guardar Ítem</button>
     </div>
   </div>
 </div>
@@ -655,7 +669,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr>
     <td>${i.correlativo||'—'}</td>
-    <td><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</td>
+    <td><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="verImagen('${esc(i.imagen_url)}','${esc(i.descripcion)}')">`:'<div class="img-placeholder">📷</div>'}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -743,6 +757,11 @@ function abrirModalItem(id) {
   document.getElementById('mi-fecha').value = it?.fecha_ingreso|| '';
   document.getElementById('mi-area').value  = it?.area_responsable || 'GEOTÉCNIA';
   document.getElementById('mi-obs').value   = it?.observaciones || '';
+  document.getElementById('mi-img-file').value = '';
+  document.getElementById('mi-img-url').value  = it?.imagen_url || '';
+  const imgPrev = document.getElementById('mi-img-preview');
+  if (it?.imagen_url) { imgPrev.src = it.imagen_url; imgPrev.style.display = 'block'; }
+  else { imgPrev.src = ''; imgPrev.style.display = 'none'; }
   document.getElementById('mi-desc-err').style.display = 'none';
   abrir('modal-item');
 }
@@ -752,6 +771,14 @@ function editarItem(id) { abrirModalItem(id); }
 async function guardarItem() {
   const desc = document.getElementById('mi-desc').value.trim();
   if (!desc) { document.getElementById('mi-desc-err').style.display = 'block'; return; }
+  const btnG = document.getElementById('btn-guardar-item');
+  btnG.disabled = true; btnG.textContent = 'Guardando…';
+  let imagen_url = document.getElementById('mi-img-url').value || null;
+  const imgFile  = document.getElementById('mi-img-file').files[0];
+  if (imgFile) {
+    try { imagen_url = await subirImagen(imgFile, editId || 'new'); }
+    catch(e) { alert(e.message); btnG.disabled = false; btnG.textContent = 'Guardar Ítem'; return; }
+  }
   const p = {
     correlativo:        document.getElementById('mi-corr').value.trim()  || null,
     categoria:          document.getElementById('mi-cat').value           || null,
@@ -768,10 +795,12 @@ async function guardarItem() {
     fecha_ingreso:      document.getElementById('mi-fecha').value         || null,
     area_responsable:   document.getElementById('mi-area').value.trim()   || 'GEOTÉCNIA',
     observaciones:      document.getElementById('mi-obs').value.trim()    || null,
+    imagen_url,
   };
   const { error } = editId
     ? await sb.from('inventario_items').update(p).eq('id', editId)
     : await sb.from('inventario_items').insert(p);
+  btnG.disabled = false; btnG.textContent = 'Guardar Ítem';
   if (error) { alert('Error: ' + error.message); return; }
   cerrar('modal-item');
   await cargarItems();
@@ -1044,6 +1073,40 @@ function generarPDF() {
   w.document.write(html);
   w.document.close();
   cerrar('modal-pdf');
+}
+
+// ── Image ─────────────────────────────────────────────────────
+async function subirImagen(file, id) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `items/${id}_${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('inventario').upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error('Error al subir imagen: ' + error.message + '. Verifica que el bucket "inventario" exista en Supabase Storage.');
+  const { data } = sb.storage.from('inventario').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function previewImg(input) {
+  const prev = document.getElementById('mi-img-preview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function quitarImagen() {
+  document.getElementById('mi-img-file').value = '';
+  document.getElementById('mi-img-url').value  = '';
+  const prev = document.getElementById('mi-img-preview');
+  prev.src = ''; prev.style.display = 'none';
+}
+
+function verImagen(url, desc) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px';
+  ov.innerHTML = `<img src="${url}" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6)"><p style="color:#fff;margin-top:14px;font-size:14px;text-align:center">${desc}</p><p style="color:rgba(255,255,255,.45);font-size:12px;margin-top:4px">Clic para cerrar</p>`;
+  ov.onclick = () => document.body.removeChild(ov);
+  document.body.appendChild(ov);
 }
 
 // ── Utils ──────────────────────────────────────────────────────

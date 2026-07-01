@@ -67,6 +67,15 @@ th{background:#1E4F8C;color:#fff;padding:10px 12px;text-align:left;white-space:n
 td{padding:9px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f7faff}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:#163d6e}
+.sort-icon{font-size:10px;opacity:.85}
+.th-filter{background:#0d2d5c;padding:4px 6px}
+.th-filter input,.th-filter select{width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none}
+.th-filter input::placeholder{color:rgba(255,255,255,.6)}
+.th-filter select option{background:#1E4F8C;color:#fff}
+.th-filter .btn-clear{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;width:100%;white-space:nowrap}
+.th-filter .btn-clear:hover{background:rgba(255,255,255,.28)}
 
 /* ── Badges ── */
 .badge{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap}
@@ -145,39 +154,51 @@ tr:hover td{background:#f7faff}
       <div class="stat-card"><div class="val" id="st-bajo" style="color:#e65100">0</div><div class="lbl">Stock bajo (≤ 1)</div></div>
       <div class="stat-card"><div class="val" id="st-baja" style="color:#c62828">0</div><div class="lbl">Dados de baja</div></div>
     </div>
-    <div class="toolbar" style="flex-wrap:wrap;gap:8px">
+    <div class="toolbar" style="gap:8px">
       <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
-      <input type="text" id="fi-buscar" placeholder="Buscar..." oninput="renderInventario()" style="width:180px"/>
-      <select id="fi-cat" onchange="renderInventario()">
-        <option value="">Todas las categorías</option>
-        <option>EPP</option>
-        <option>Ropa de Trabajo</option>
-        <option>Insumos</option>
-        <option>Herramientas</option>
-        <option>Equipos y herramientas</option>
-        <option>Otro</option>
-      </select>
-      <select id="fi-estado" onchange="renderInventario()">
-        <option value="">Todos los estados</option>
-        <option>Disponible</option>
-        <option>En Uso</option>
-        <option>En Reparación</option>
-        <option>Dado de Baja</option>
-        <option>Pérdida</option>
-      </select>
-      <select id="fi-ubic" onchange="renderInventario()">
-        <option value="">Todas las ubicaciones</option>
-        <option>Bodega patio 7000</option>
-        <option>Oficina Pucará</option>
-      </select>
-      <button class="btn btn-secondary btn-sm" onclick="limpiarFiltros()" style="white-space:nowrap">✕ Limpiar filtros</button>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>Corr.</th><th>Descripción</th><th>Categoría</th><th>Talla</th>
-          <th>Total</th><th>Disponible</th><th>Estado</th><th>Ubicación</th><th>Acciones</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th class="sortable" onclick="sortBy('correlativo')">Corr. <span class="sort-icon" id="sort-correlativo"></span></th>
+            <th class="sortable" onclick="sortBy('descripcion')">Descripción <span class="sort-icon" id="sort-descripcion"></span></th>
+            <th class="sortable" onclick="sortBy('categoria')">Categoría <span class="sort-icon" id="sort-categoria"></span></th>
+            <th>Talla</th>
+            <th class="sortable" onclick="sortBy('cantidad_total')" style="text-align:center">Total <span class="sort-icon" id="sort-cantidad_total"></span></th>
+            <th class="sortable" onclick="sortBy('cantidad_disponible')" style="text-align:center">Disponible <span class="sort-icon" id="sort-cantidad_disponible"></span></th>
+            <th class="sortable" onclick="sortBy('estado')">Estado <span class="sort-icon" id="sort-estado"></span></th>
+            <th class="sortable" onclick="sortBy('ubicacion')">Ubicación <span class="sort-icon" id="sort-ubicacion"></span></th>
+            <th>Acciones</th>
+          </tr>
+          <tr>
+            <th class="th-filter" colspan="2"><input type="text" id="fi-buscar" placeholder="🔍 Buscar..." oninput="renderInventario()"/></th>
+            <th class="th-filter">
+              <select id="fi-cat" onchange="renderInventario()">
+                <option value="">Todas las categorías</option>
+                <option>EPP</option><option>Ropa de Trabajo</option><option>Insumos</option>
+                <option>Herramientas</option><option>Equipos y herramientas</option><option>Otro</option>
+              </select>
+            </th>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
+            <th class="th-filter">
+              <select id="fi-estado" onchange="renderInventario()">
+                <option value="">Todos los estados</option>
+                <option>Disponible</option><option>En Uso</option><option>En Reparación</option>
+                <option>Dado de Baja</option><option>Pérdida</option>
+              </select>
+            </th>
+            <th class="th-filter">
+              <select id="fi-ubic" onchange="renderInventario()">
+                <option value="">Todas las ubicaciones</option>
+                <option>Bodega patio 7000</option><option>Oficina Pucará</option>
+              </select>
+            </th>
+            <th class="th-filter"><button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar</button></th>
+          </tr>
+        </thead>
         <tbody id="tb-inv"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -489,6 +510,8 @@ let currentUser = null;
 let items = [];
 let movs  = [];
 let editId = null;
+let sortCol = null;
+let sortDir = 'asc';
 
 // ── Boot ─────────────────────────────────────────────────────
 document.getElementById('login-logo').src = LOGO_URL;
@@ -586,6 +609,15 @@ function actualizarStats() {
 }
 
 // ── Render Inventario ─────────────────────────────────────────
+function sortBy(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+  const icon = document.getElementById('sort-' + col);
+  if (icon) icon.textContent = sortDir === 'asc' ? ' ▲' : ' ▼';
+  renderInventario();
+}
+
 function limpiarFiltros() {
   document.getElementById('fi-buscar').value = '';
   document.getElementById('fi-cat').value    = '';
@@ -599,7 +631,7 @@ function renderInventario() {
   const cat    = document.getElementById('fi-cat').value;
   const estado = document.getElementById('fi-estado').value;
   const ubic   = document.getElementById('fi-ubic').value;
-  let rows = items;
+  let rows = [...items];
   if (cat)    rows = rows.filter(i => i.categoria === cat);
   if (estado) rows = rows.filter(i => i.estado === estado);
   if (ubic)   rows = rows.filter(i => (i.ubicacion||'') === ubic);
@@ -608,6 +640,15 @@ function renderInventario() {
     (i.correlativo||'').toLowerCase().includes(q) ||
     (i.marca_modelo||'').toLowerCase().includes(q)
   );
+  if (sortCol) {
+    rows.sort((a, b) => {
+      let va = a[sortCol] ?? '';
+      let vb = b[sortCol] ?? '';
+      if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+      va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+      return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }
   const tb = document.getElementById('tb-inv');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr>

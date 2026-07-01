@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventario — Pucará</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:14px;background:#f0f4f8;color:#222}
+
+/* ── Login ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1E4F8C}
+.login-card{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.login-card img{width:80px;display:block;margin:0 auto 20px}
+.login-card h2{text-align:center;color:#1E4F8C;margin-bottom:24px;font-size:20px}
+.login-card input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-size:14px;outline:none}
+.login-card input:focus{border-color:#1E4F8C;box-shadow:0 0 0 3px rgba(30,79,140,.1)}
+.login-card button.btn-login{width:100%;padding:12px;background:#1E4F8C;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.login-card button.btn-login:hover{background:#163d6e}
+#login-error{color:#c62828;font-size:13px;text-align:center;margin-top:8px;display:none}
+
+/* ── App ── */
+#app-screen{display:none;min-height:100vh}
+header{background:#1E4F8C;color:#fff;display:flex;align-items:center;padding:0 20px;height:56px;gap:12px;flex-shrink:0}
+header img{height:36px;flex-shrink:0}
+header h1{font-size:17px;font-weight:700;flex:1}
+.hdr-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.25)}
+.hdr-btn-danger{background:rgba(220,50,50,.25)}
+
+/* ── Tabs ── */
+.tabs-nav{background:#fff;border-bottom:2px solid #dce8f0;display:flex;padding:0 20px;gap:0}
+.tab-btn{padding:13px 20px;border:none;background:transparent;font-size:14px;font-weight:600;color:#666;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.15s}
+.tab-btn.active{color:#1E4F8C;border-bottom-color:#1E4F8C}
+.tab-btn:hover:not(.active){color:#1E4F8C;background:#f5f8ff}
+
+/* ── Tab content ── */
+.tab-panel{display:none;padding:20px}
+.tab-panel.active{display:block}
+
+/* ── Stats ── */
+.stats-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.stat-card{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 6px rgba(0,0,0,.08);flex:1;min-width:110px}
+.stat-card .val{font-size:28px;font-weight:700;color:#1E4F8C}
+.stat-card .lbl{font-size:11px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.toolbar input[type=text],.toolbar input[type=date],.toolbar select{padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none}
+.toolbar input:focus,.toolbar select:focus{border-color:#1E4F8C}
+
+/* ── Buttons ── */
+.btn{padding:8px 16px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s;white-space:nowrap}
+.btn-primary{background:#1E4F8C;color:#fff}.btn-primary:hover{background:#163d6e}
+.btn-success{background:#2e7d32;color:#fff}.btn-success:hover{background:#1b5e20}
+.btn-danger{background:#c62828;color:#fff}.btn-danger:hover{background:#b71c1c}
+.btn-warn{background:#e65100;color:#fff}.btn-warn:hover{background:#bf360c}
+.btn-secondary{background:#f0f4f8;color:#444;border:1px solid #cdd8e3}.btn-secondary:hover{background:#e0eaf2}
+.btn-pdf{background:#4e342e;color:#fff}.btn-pdf:hover{background:#3e2723}
+.btn-sm{padding:4px 10px;font-size:12px}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto;background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#1E4F8C;color:#fff;padding:10px 12px;text-align:left;white-space:nowrap;font-weight:600;font-size:12px}
+td{padding:9px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f7faff}
+
+/* ── Badges ── */
+.badge{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-ok{background:#e8f5e9;color:#2e7d32}
+.b-info{background:#e3f2fd;color:#1565c0}
+.b-warn{background:#fff8e1;color:#e65100}
+.b-err{background:#ffebee;color:#c62828}
+.b-gray{background:#f0f0f0;color:#555}
+.stock-low{color:#c62828;font-weight:700}
+.stock-ok{color:#2e7d32;font-weight:600}
+
+/* ── Modals ── */
+.modal-bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 16px}
+.modal-bd.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:600px;max-width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.modal-sm{width:460px}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee}
+.mhdr h3{color:#1E4F8C;font-size:15px;font-weight:700}
+.mclose{background:none;border:none;font-size:22px;cursor:pointer;color:#999;line-height:1;padding:0}
+.mbody{padding:22px}
+.mftr{padding:14px 22px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end}
+
+/* ── Form ── */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#1E4F8C;box-shadow:0 0 0 3px rgba(30,79,140,.1)}
+.fg textarea{resize:vertical;min-height:60px;font-family:inherit}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.fgrid .full{grid-column:1/-1}
+.ferr{color:#c62828;font-size:12px;margin-top:2px;display:none}
+
+/* ── Alert ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
+.alert-warn{background:#fff8e1;border:1px solid #ffca28;color:#e65100}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN
+══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <img id="login-logo" src="" alt="Pucará"/>
+    <h2>Control de Inventario</h2>
+    <input id="login-email" type="email" placeholder="Correo electrónico" autocomplete="email"/>
+    <input id="login-pwd"   type="password" placeholder="Contraseña" autocomplete="current-password"/>
+    <button class="btn-login" onclick="login()">Ingresar</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="app-screen">
+  <header>
+    <img id="nav-logo" src="" alt="Pucará"/>
+    <h1>Control de Inventario — GEOTÉCNIA</h1>
+    <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
+    <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
+  </header>
+
+  <nav class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('inventario',this)">📦 Inventario General</button>
+    <button class="tab-btn" onclick="switchTab('entrega',this)">🦺 Entrega EPP / Ropa</button>
+    <button class="tab-btn" onclick="switchTab('salida',this)">🔧 Salida Insumos</button>
+  </nav>
+
+  <!-- ── TAB: Inventario General ── -->
+  <div id="tab-inventario" class="tab-panel active">
+    <div class="stats-row">
+      <div class="stat-card"><div class="val" id="st-items">0</div><div class="lbl">Ítems activos</div></div>
+      <div class="stat-card"><div class="val" id="st-disp">0</div><div class="lbl">Total disponible</div></div>
+      <div class="stat-card"><div class="val" id="st-bajo" style="color:#e65100">0</div><div class="lbl">Stock bajo (≤ 1)</div></div>
+      <div class="stat-card"><div class="val" id="st-baja" style="color:#c62828">0</div><div class="lbl">Dados de baja</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
+      <input type="text" id="fi-buscar" placeholder="Buscar..." oninput="renderInventario()" style="width:200px"/>
+      <select id="fi-cat" onchange="renderInventario()">
+        <option value="">Todas las categorías</option>
+        <option>EPP</option>
+        <option>Ropa de Trabajo</option>
+        <option>Insumos</option>
+        <option>Herramientas</option>
+        <option>Equipos</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Corr.</th><th>Descripción</th><th>Categoría</th><th>Talla</th>
+          <th>Total</th><th>Disponible</th><th>Estado</th><th>Ubicación</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tb-inv"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: Entrega EPP ── -->
+  <div id="tab-entrega" class="tab-panel">
+    <div class="toolbar">
+      <button class="btn btn-success" onclick="abrirModalEntrega()">+ Registrar Entrega EPP</button>
+      <label style="font-size:13px;color:#555">Desde</label>
+      <input type="date" id="fe-desde" onchange="renderEntrega()"/>
+      <label style="font-size:13px;color:#555">Hasta</label>
+      <input type="date" id="fe-hasta" onchange="renderEntrega()"/>
+      <button class="btn btn-secondary" onclick="limpiarFE()">Limpiar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
+          <th>Talla</th><th>Cant.</th><th>Estado</th><th>Responsable</th>
+        </tr></thead>
+        <tbody id="tb-epp"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: Salida Insumos ── -->
+  <div id="tab-salida" class="tab-panel">
+    <div class="toolbar">
+      <button class="btn btn-warn" onclick="abrirModalSalida()">+ Registrar Salida</button>
+      <label style="font-size:13px;color:#555">Desde</label>
+      <input type="date" id="fs-desde" onchange="renderSalida()"/>
+      <label style="font-size:13px;color:#555">Hasta</label>
+      <input type="date" id="fs-hasta" onchange="renderSalida()"/>
+      <button class="btn btn-secondary" onclick="limpiarFS()">Limpiar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
+          <th>Cant.</th><th>Responsable</th><th>Observaciones</th>
+        </tr></thead>
+        <tbody id="tb-sal"><tr><td colspan="7" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Ítem
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-item">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 id="mi-title">Agregar Ítem</h3>
+      <button class="mclose" onclick="cerrar('modal-item')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg">
+          <label>Correlativo</label>
+          <input type="text" id="mi-corr" placeholder="EPP-001"/>
+        </div>
+        <div class="fg">
+          <label>Categoría</label>
+          <select id="mi-cat">
+            <option value="">Seleccionar…</option>
+            <option>EPP</option><option>Ropa de Trabajo</option><option>Insumos</option>
+            <option>Herramientas</option><option>Equipos</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label>Descripción *</label>
+          <input type="text" id="mi-desc" placeholder="Nombre del ítem"/>
+          <span class="ferr" id="mi-desc-err">Campo requerido</span>
+        </div>
+        <div class="fg"><label>Color</label><input type="text" id="mi-color"/></div>
+        <div class="fg"><label>Talla</label><input type="text" id="mi-talla" placeholder="L / 42…"/></div>
+        <div class="fg"><label>Marca / Modelo</label><input type="text" id="mi-marca"/></div>
+        <div class="fg"><label>Serie / S·N</label><input type="text" id="mi-serie"/></div>
+        <div class="fg"><label>Norma</label><input type="text" id="mi-norma"/></div>
+        <div class="fg"><label>Cantidad Total</label><input type="number" id="mi-total" min="0" value="0"/></div>
+        <div class="fg"><label>Cantidad Disponible</label><input type="number" id="mi-disp" min="0" value="0"/></div>
+        <div class="fg"><label>Ubicación</label><input type="text" id="mi-ubic"/></div>
+        <div class="fg">
+          <label>Estado</label>
+          <select id="mi-estado">
+            <option>Disponible</option><option>En Uso</option>
+            <option>En Reparación</option><option>Dado de Baja</option><option>Pérdida</option>
+          </select>
+        </div>
+        <div class="fg"><label>Fecha de Ingreso</label><input type="date" id="mi-fecha"/></div>
+        <div class="fg"><label>Área Responsable</label><input type="text" id="mi-area" value="GEOTÉCNIA"/></div>
+        <div class="fg full"><label>Observaciones</label><textarea id="mi-obs" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-item')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarItem()">Guardar Ítem</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Entrega EPP
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-entrega">
+  <div class="modal">
+    <div class="mhdr">
+      <h3>Registrar Entrega EPP / Ropa</h3>
+      <button class="mclose" onclick="cerrar('modal-entrega')">✕</button>
+    </div>
+    <div class="mbody">
+      <div id="alerta-epp" class="alert alert-warn" style="display:none"></div>
+      <div class="fgrid">
+        <div class="fg"><label>Fecha *</label><input type="date" id="me-fecha"/></div>
+        <div class="fg">
+          <label>Turno</label>
+          <select id="me-turno">
+            <option value="">Sin turno</option>
+            <option>Turno A (Día)</option><option>Turno B (Noche)</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label>Trabajador *</label>
+          <select id="me-trab" onchange="autoFillTrab()">
+            <option value="">Seleccionar…</option>
+          </select>
+        </div>
+        <div class="fg"><label>RUT</label><input type="text" id="me-rut" placeholder="12.345.678-9"/></div>
+        <div class="fg"><label>Cargo</label><input type="text" id="me-cargo" readonly style="background:#f8f8f8"/></div>
+        <div class="fg full">
+          <label>Ítem *</label>
+          <select id="me-item" onchange="autoFillItemE()">
+            <option value="">Seleccionar ítem…</option>
+          </select>
+        </div>
+        <div class="fg"><label>Talla</label><input type="text" id="me-talla"/></div>
+        <div class="fg"><label>Cantidad *</label><input type="number" id="me-cant" min="1" value="1"/></div>
+        <div class="fg">
+          <label>Estado al Entregar</label>
+          <select id="me-estado">
+            <option>Nuevo</option><option>Buen Estado</option><option>Regular</option><option>Mal Estado</option>
+          </select>
+        </div>
+        <div class="fg"><label>Responsable de Entrega</label><input type="text" id="me-resp"/></div>
+        <div class="fg full"><label>Observaciones</label><textarea id="me-obs" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-entrega')">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarEntrega()">Registrar Entrega</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Salida Insumos
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-salida">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>Registrar Salida de Insumos</h3>
+      <button class="mclose" onclick="cerrar('modal-salida')">✕</button>
+    </div>
+    <div class="mbody">
+      <div id="alerta-sal" class="alert alert-warn" style="display:none"></div>
+      <div class="fgrid">
+        <div class="fg"><label>Fecha *</label><input type="date" id="ms-fecha"/></div>
+        <div class="fg">
+          <label>Turno</label>
+          <select id="ms-turno">
+            <option value="">Sin turno</option>
+            <option>Turno A (Día)</option><option>Turno B (Noche)</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label>Ítem *</label>
+          <select id="ms-item" onchange="autoFillItemS()">
+            <option value="">Seleccionar ítem…</option>
+          </select>
+        </div>
+        <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
+        <div class="fg"><label>Responsable de Retiro</label><input type="text" id="ms-resp"/></div>
+        <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-salida')">Cancelar</button>
+      <button class="btn btn-warn" onclick="guardarSalida()">Registrar Salida</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: PDF
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-pdf">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>Generar Informe PDF</h3>
+      <button class="mclose" onclick="cerrar('modal-pdf')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label>Período desde</label><input type="date" id="pdf-desde"/></div>
+        <div class="fg"><label>Período hasta</label><input type="date" id="pdf-hasta"/></div>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 10px">Incluir en el informe</p>
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="pdf-inv" checked/> Inventario General (estado actual)
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="pdf-epp" checked/> Entregas EPP / Ropa
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="pdf-sal" checked/> Salida de Insumos
+      </label>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-pdf')">Cancelar</button>
+      <button class="btn btn-pdf" onclick="generarPDF()">📄 Generar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════ -->
+<script>
+/*
+  TABLAS SUPABASE REQUERIDAS — ejecutar en SQL Editor de Supabase:
+
+  CREATE TABLE IF NOT EXISTS inventario_items (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    correlativo text,
+    categoria text,
+    area_responsable text DEFAULT 'GEOTÉCNIA',
+    descripcion text NOT NULL,
+    color text,
+    marca_modelo text,
+    serie_sn text,
+    norma text,
+    talla text,
+    cantidad_total integer DEFAULT 0,
+    cantidad_disponible integer DEFAULT 0,
+    ubicacion text,
+    estado text DEFAULT 'Disponible',
+    fecha_ingreso date,
+    observaciones text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS inventario_movimientos (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    tipo text NOT NULL,
+    fecha date NOT NULL,
+    turno text,
+    item_id uuid REFERENCES inventario_items(id) ON DELETE SET NULL,
+    descripcion text,
+    categoria text,
+    talla text,
+    cantidad integer DEFAULT 1,
+    nombre_trabajador text,
+    rut_trabajador text,
+    cargo_trabajador text,
+    estado_entregar text,
+    responsable text,
+    observaciones text,
+    usuario_email text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  ALTER TABLE inventario_items ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE inventario_movimientos ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "auth_items" ON inventario_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  CREATE POLICY "auth_movimientos" ON inventario_movimientos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+*/
+
+// ── Config ──────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ftbsqhcvxnyrkajgavaa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0YnNxaGN2eG55cmthamdhdmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg2OTIsImV4cCI6MjA5MDEwNDY5Mn0.v_Oif1dHmSp-pVp9Dctopona3NlTIDbX9pcdaRMrD0w';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const LOGO_URL = 'data:image/png;base64,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';
+
+const PDF_LOGO_URL = 'data:image/png;base64,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';
+
+const TRABAJADORES = [
+  { nombre: 'Alexis Varela Guerrero',      cargo: 'Asesor en Prevención de Riesgos' },
+  { nombre: 'Luis Ahumada Berrios',        cargo: 'Jefe de Terreno' },
+  { nombre: 'Kevin Lazcano Albornoz',      cargo: 'Minero Especialista A' },
+  { nombre: 'Matías Adasme Miranda',       cargo: 'Minero Especialista B' },
+  { nombre: 'David Ramírez Zambra',        cargo: 'Minero Especialista B' },
+  { nombre: 'Marcelo Pérez Contreras',     cargo: 'Minero Especialista B' },
+  { nombre: 'Cristian Salinas Ibarra',     cargo: 'Minero Especialista B' },
+  { nombre: 'Alexander Naranjo Cárdenas',  cargo: 'Minero Especialista B' },
+  { nombre: 'Máximo Aliaga Becerra',       cargo: 'Minero Especialista B' },
+  { nombre: 'Cristian Yáñez Lillo',        cargo: 'Minero Especialista B' },
+  { nombre: 'Eric Rojas Rojas',            cargo: 'Jefe de Terreno (ADC)' },
+  { nombre: 'Víctor Conejeros Martínez',   cargo: 'Minero Especialista B' },
+  { nombre: 'Jaime Cereceda Solano',       cargo: 'Minero Especialista B' },
+  { nombre: 'Wladimir Muñoz Tapia',        cargo: 'Minero Especialista A' },
+  { nombre: 'Esteban Moreira Ubilla',      cargo: 'Asesor en Prevención de Riesgos' },
+];
+
+// ── State ────────────────────────────────────────────────────
+let currentUser = null;
+let items = [];
+let movs  = [];
+let editId = null;
+
+// ── Boot ─────────────────────────────────────────────────────
+document.getElementById('login-logo').src = LOGO_URL;
+document.getElementById('nav-logo').src   = LOGO_URL;
+
+// Populate trabajadores select
+(function(){
+  const sel = document.getElementById('me-trab');
+  TRABAJADORES.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.nombre;
+    o.textContent = t.nombre;
+    o.dataset.cargo = t.cargo;
+    sel.appendChild(o);
+  });
+})();
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-bd').forEach(bd => {
+  bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
+});
+
+// Enter key on password
+document.getElementById('login-pwd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; showApp(); await cargarDatos(); }
+  else showLogin();
+}
+
+// ── Auth ─────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display   = 'none';
+}
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
+}
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pwd   = document.getElementById('login-pwd').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if (!email || !pwd) { errEl.textContent = 'Completa todos los campos'; errEl.style.display = 'block'; return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error) { errEl.textContent = 'Credenciales incorrectas'; errEl.style.display = 'block'; return; }
+  currentUser = data.user;
+  showApp();
+  await cargarDatos();
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  showLogin();
+}
+
+// ── Data ──────────────────────────────────────────────────────
+async function cargarDatos() {
+  await Promise.all([cargarItems(), cargarMovs()]);
+}
+
+async function cargarItems() {
+  const { data, error } = await sb.from('inventario_items').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  items = data || [];
+  renderInventario();
+  actualizarStats();
+  poblarSelectItems();
+}
+
+async function cargarMovs() {
+  const { data, error } = await sb.from('inventario_movimientos').select('*').order('fecha', { ascending: false }).limit(500);
+  if (error) { console.error(error); return; }
+  movs = data || [];
+  renderEntrega();
+  renderSalida();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function actualizarStats() {
+  const activos = items.filter(i => i.estado !== 'Dado de Baja' && i.estado !== 'Pérdida');
+  const dispTotal = items.reduce((s, i) => s + (i.cantidad_disponible || 0), 0);
+  const bajo  = activos.filter(i => (i.cantidad_disponible || 0) <= 1).length;
+  const baja  = items.filter(i => i.estado === 'Dado de Baja' || i.estado === 'Pérdida').length;
+  document.getElementById('st-items').textContent = activos.length;
+  document.getElementById('st-disp').textContent  = dispTotal;
+  document.getElementById('st-bajo').textContent  = bajo;
+  document.getElementById('st-baja').textContent  = baja;
+}
+
+// ── Render Inventario ─────────────────────────────────────────
+function renderInventario() {
+  const q   = (document.getElementById('fi-buscar').value || '').toLowerCase();
+  const cat = document.getElementById('fi-cat').value;
+  let rows  = items;
+  if (cat) rows = rows.filter(i => i.categoria === cat);
+  if (q)   rows = rows.filter(i =>
+    (i.descripcion||'').toLowerCase().includes(q) ||
+    (i.correlativo||'').toLowerCase().includes(q) ||
+    (i.marca_modelo||'').toLowerCase().includes(q)
+  );
+  const tb = document.getElementById('tb-inv');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
+  tb.innerHTML = rows.map(i => `<tr>
+    <td>${i.correlativo||'—'}</td>
+    <td><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</td>
+    <td><span class="badge b-info">${i.categoria||'—'}</span></td>
+    <td>${i.talla||'—'}</td>
+    <td style="text-align:center">${i.cantidad_total??0}</td>
+    <td style="text-align:center"><span class="${(i.cantidad_disponible??0)<=1?'stock-low':'stock-ok'}">${i.cantidad_disponible??0}</span></td>
+    <td>${badgeEstado(i.estado)}</td>
+    <td>${i.ubicacion||'—'}</td>
+    <td>
+      <button class="btn btn-secondary btn-sm" onclick="editarItem('${i.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="borrarItem('${i.id}','${esc(i.descripcion)}')">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+
+function badgeEstado(e) {
+  const m = {'Disponible':'b-ok','En Uso':'b-info','En Reparación':'b-warn','Dado de Baja':'b-err','Pérdida':'b-err'};
+  return `<span class="badge ${m[e]||'b-gray'}">${e||'—'}</span>`;
+}
+
+// ── Render Entrega EPP ────────────────────────────────────────
+function renderEntrega() {
+  const d = document.getElementById('fe-desde').value;
+  const h = document.getElementById('fe-hasta').value;
+  let rows = movs.filter(m => m.tipo === 'entrega_epp');
+  if (d) rows = rows.filter(m => m.fecha >= d);
+  if (h) rows = rows.filter(m => m.fecha <= h);
+  const tb = document.getElementById('tb-epp');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  tb.innerHTML = rows.map(m => `<tr>
+    <td>${ff(m.fecha)}</td>
+    <td>${m.nombre_trabajador||'—'}</td>
+    <td>${m.cargo_trabajador||'—'}</td>
+    <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
+    <td>${m.talla||'—'}</td>
+    <td style="text-align:center">${m.cantidad}</td>
+    <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
+    <td>${m.responsable||'—'}</td>
+  </tr>`).join('');
+}
+
+// ── Render Salida ──────────────────────────────────────────────
+function renderSalida() {
+  const d = document.getElementById('fs-desde').value;
+  const h = document.getElementById('fs-hasta').value;
+  let rows = movs.filter(m => m.tipo === 'salida_insumo');
+  if (d) rows = rows.filter(m => m.fecha >= d);
+  if (h) rows = rows.filter(m => m.fecha <= h);
+  const tb = document.getElementById('tb-sal');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  tb.innerHTML = rows.map(m => `<tr>
+    <td>${ff(m.fecha)}</td>
+    <td>${m.turno||'—'}</td>
+    <td>${m.descripcion||'—'}</td>
+    <td><span class="badge b-info">${m.categoria||'—'}</span></td>
+    <td style="text-align:center">${m.cantidad}</td>
+    <td>${m.responsable||'—'}</td>
+    <td>${m.observaciones||'—'}</td>
+  </tr>`).join('');
+}
+
+// ── Item Selects ───────────────────────────────────────────────
+function poblarSelectItems() {
+  const opts = '<option value="">Seleccionar ítem…</option>' +
+    items.map(i => `<option value="${i.id}" data-desc="${esc(i.descripcion)}" data-cat="${esc(i.categoria||'')}" data-talla="${esc(i.talla||'')}" data-disp="${i.cantidad_disponible||0}">${i.correlativo?`[${i.correlativo}] `:''}${i.descripcion}${i.talla?` (${i.talla})':''} — Disp: ${i.cantidad_disponible||0}</option>`).join('');
+  document.getElementById('me-item').innerHTML = opts;
+  document.getElementById('ms-item').innerHTML = opts;
+}
+
+// ── Modal Ítem ─────────────────────────────────────────────────
+function abrirModalItem(id) {
+  editId = id || null;
+  document.getElementById('mi-title').textContent = id ? 'Editar Ítem' : 'Agregar Ítem';
+  const it = id ? items.find(x => x.id === id) : {};
+  document.getElementById('mi-corr').value  = it?.correlativo || '';
+  document.getElementById('mi-cat').value   = it?.categoria   || '';
+  document.getElementById('mi-desc').value  = it?.descripcion || '';
+  document.getElementById('mi-color').value = it?.color       || '';
+  document.getElementById('mi-talla').value = it?.talla       || '';
+  document.getElementById('mi-marca').value = it?.marca_modelo|| '';
+  document.getElementById('mi-serie').value = it?.serie_sn    || '';
+  document.getElementById('mi-norma').value = it?.norma       || '';
+  document.getElementById('mi-total').value = it?.cantidad_total    ?? 0;
+  document.getElementById('mi-disp').value  = it?.cantidad_disponible ?? 0;
+  document.getElementById('mi-ubic').value  = it?.ubicacion   || '';
+  document.getElementById('mi-estado').value= it?.estado      || 'Disponible';
+  document.getElementById('mi-fecha').value = it?.fecha_ingreso|| '';
+  document.getElementById('mi-area').value  = it?.area_responsable || 'GEOTÉCNIA';
+  document.getElementById('mi-obs').value   = it?.observaciones || '';
+  document.getElementById('mi-desc-err').style.display = 'none';
+  abrir('modal-item');
+}
+
+function editarItem(id) { abrirModalItem(id); }
+
+async function guardarItem() {
+  const desc = document.getElementById('mi-desc').value.trim();
+  if (!desc) { document.getElementById('mi-desc-err').style.display = 'block'; return; }
+  const p = {
+    correlativo:        document.getElementById('mi-corr').value.trim()  || null,
+    categoria:          document.getElementById('mi-cat').value           || null,
+    descripcion:        desc,
+    color:              document.getElementById('mi-color').value.trim()  || null,
+    talla:              document.getElementById('mi-talla').value.trim()  || null,
+    marca_modelo:       document.getElementById('mi-marca').value.trim()  || null,
+    serie_sn:           document.getElementById('mi-serie').value.trim()  || null,
+    norma:              document.getElementById('mi-norma').value.trim()  || null,
+    cantidad_total:     parseInt(document.getElementById('mi-total').value) || 0,
+    cantidad_disponible:parseInt(document.getElementById('mi-disp').value)  || 0,
+    ubicacion:          document.getElementById('mi-ubic').value.trim()   || null,
+    estado:             document.getElementById('mi-estado').value,
+    fecha_ingreso:      document.getElementById('mi-fecha').value         || null,
+    area_responsable:   document.getElementById('mi-area').value.trim()   || 'GEOTÉCNIA',
+    observaciones:      document.getElementById('mi-obs').value.trim()    || null,
+  };
+  const { error } = editId
+    ? await sb.from('inventario_items').update(p).eq('id', editId)
+    : await sb.from('inventario_items').insert(p);
+  if (error) { alert('Error: ' + error.message); return; }
+  cerrar('modal-item');
+  await cargarItems();
+}
+
+async function borrarItem(id, desc) {
+  if (!confirm(`¿Eliminar "${desc}"? Esta acción no se puede deshacer.`)) return;
+  const { error } = await sb.from('inventario_items').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  await cargarItems();
+}
+
+// ── Modal Entrega EPP ──────────────────────────────────────────
+function abrirModalEntrega() {
+  document.getElementById('me-fecha').value   = hoy();
+  document.getElementById('me-turno').value   = '';
+  document.getElementById('me-trab').value    = '';
+  document.getElementById('me-rut').value     = '';
+  document.getElementById('me-cargo').value   = '';
+  document.getElementById('me-item').value    = '';
+  document.getElementById('me-talla').value   = '';
+  document.getElementById('me-cant').value    = '1';
+  document.getElementById('me-estado').value  = 'Nuevo';
+  document.getElementById('me-resp').value    = '';
+  document.getElementById('me-obs').value     = '';
+  document.getElementById('alerta-epp').style.display = 'none';
+  abrir('modal-entrega');
+}
+
+function autoFillTrab() {
+  const sel = document.getElementById('me-trab');
+  const t = TRABAJADORES.find(x => x.nombre === sel.value);
+  document.getElementById('me-cargo').value = t?.cargo || '';
+}
+
+function autoFillItemE() {
+  const sel = document.getElementById('me-item');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('me-talla').value = opt?.dataset?.talla || '';
+  mostrarAlertaStock('alerta-epp', parseInt(opt?.dataset?.disp || '0'));
+}
+
+function autoFillItemS() {
+  const sel = document.getElementById('ms-item');
+  const opt = sel.options[sel.selectedIndex];
+  mostrarAlertaStock('alerta-sal', parseInt(opt?.dataset?.disp || '0'));
+}
+
+function mostrarAlertaStock(elId, disp) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (disp < 1)  { el.textContent = `⚠️ Sin stock disponible (${disp} unidades).`; el.style.display = 'block'; }
+  else if (disp <= 2) { el.textContent = `⚠️ Stock bajo: solo ${disp} unidad(es) disponible(s).`; el.style.display = 'block'; }
+  else el.style.display = 'none';
+}
+
+async function guardarEntrega() {
+  const fecha  = document.getElementById('me-fecha').value;
+  const trab   = document.getElementById('me-trab').value;
+  const itemSel= document.getElementById('me-item');
+  const itemId = itemSel.value;
+  const cant   = parseInt(document.getElementById('me-cant').value) || 1;
+  if (!fecha || !trab || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
+  const opt  = itemSel.options[itemSel.selectedIndex];
+  const disp = parseInt(opt?.dataset?.disp || '0');
+  if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
+  const { error: e1 } = await sb.from('inventario_movimientos').insert({
+    tipo: 'entrega_epp',
+    fecha,
+    turno:           document.getElementById('me-turno').value   || null,
+    item_id:         itemId,
+    descripcion:     opt?.dataset?.desc  || null,
+    categoria:       opt?.dataset?.cat   || null,
+    talla:           document.getElementById('me-talla').value.trim() || null,
+    cantidad:        cant,
+    nombre_trabajador: trab,
+    rut_trabajador:  document.getElementById('me-rut').value.trim()  || null,
+    cargo_trabajador:document.getElementById('me-cargo').value.trim()|| null,
+    estado_entregar: document.getElementById('me-estado').value,
+    responsable:     document.getElementById('me-resp').value.trim() || null,
+    observaciones:   document.getElementById('me-obs').value.trim()  || null,
+    usuario_email:   currentUser?.email || null,
+  });
+  if (e1) { alert('Error: ' + e1.message); return; }
+  const it = items.find(x => x.id === itemId);
+  if (it) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (it.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  cerrar('modal-entrega');
+  await cargarDatos();
+}
+
+// ── Modal Salida ───────────────────────────────────────────────
+function abrirModalSalida() {
+  document.getElementById('ms-fecha').value = hoy();
+  document.getElementById('ms-turno').value = '';
+  document.getElementById('ms-item').value  = '';
+  document.getElementById('ms-cant').value  = '1';
+  document.getElementById('ms-resp').value  = '';
+  document.getElementById('ms-obs').value   = '';
+  document.getElementById('alerta-sal').style.display = 'none';
+  abrir('modal-salida');
+}
+
+async function guardarSalida() {
+  const fecha  = document.getElementById('ms-fecha').value;
+  const itemSel= document.getElementById('ms-item');
+  const itemId = itemSel.value;
+  const cant   = parseInt(document.getElementById('ms-cant').value) || 1;
+  if (!fecha || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
+  const opt  = itemSel.options[itemSel.selectedIndex];
+  const disp = parseInt(opt?.dataset?.disp || '0');
+  if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
+  const { error: e1 } = await sb.from('inventario_movimientos').insert({
+    tipo:         'salida_insumo',
+    fecha,
+    turno:        document.getElementById('ms-turno').value  || null,
+    item_id:      itemId,
+    descripcion:  opt?.dataset?.desc || null,
+    categoria:    opt?.dataset?.cat  || null,
+    cantidad:     cant,
+    responsable:  document.getElementById('ms-resp').value.trim() || null,
+    observaciones:document.getElementById('ms-obs').value.trim()  || null,
+    usuario_email:currentUser?.email || null,
+  });
+  if (e1) { alert('Error: ' + e1.message); return; }
+  const it = items.find(x => x.id === itemId);
+  if (it) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (it.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  cerrar('modal-salida');
+  await cargarDatos();
+}
+
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function limpiarFE() {
+  document.getElementById('fe-desde').value = '';
+  document.getElementById('fe-hasta').value = '';
+  renderEntrega();
+}
+function limpiarFS() {
+  document.getElementById('fs-desde').value = '';
+  document.getElementById('fs-hasta').value = '';
+  renderSalida();
+}
+
+// ── Modal PDF ──────────────────────────────────────────────────
+function abrirPDF() {
+  const now = new Date(), y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('pdf-desde').value = `${y}-${m}-01`;
+  document.getElementById('pdf-hasta').value = hoy();
+  abrir('modal-pdf');
+}
+
+function generarPDF() {
+  const desde = document.getElementById('pdf-desde').value;
+  const hasta = document.getElementById('pdf-hasta').value;
+  const incInv = document.getElementById('pdf-inv').checked;
+  const incEpp = document.getElementById('pdf-epp').checked;
+  const incSal = document.getElementById('pdf-sal').checked;
+
+  let body = '';
+
+  if (incInv) {
+    const filas = items.map(i => `<tr>
+      <td>${i.correlativo||'—'}</td>
+      <td>${i.descripcion}</td>
+      <td>${i.categoria||'—'}</td>
+      <td>${i.talla||'—'}</td>
+      <td style="text-align:center">${i.cantidad_total??0}</td>
+      <td style="text-align:center;font-weight:700;color:${(i.cantidad_disponible??0)<=1?'#c62828':'#2e7d32'}">${i.cantidad_disponible??0}</td>
+      <td>${i.estado||'—'}</td>
+      <td>${i.ubicacion||'—'}</td>
+    </tr>`).join('');
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Inventario General — Estado Actual</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+      <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+        <th style="padding:6px 8px">Corr.</th><th style="padding:6px 8px">Descripción</th>
+        <th style="padding:6px 8px">Categoría</th><th style="padding:6px 8px">Talla</th>
+        <th style="padding:6px 8px;text-align:center">Total</th><th style="padding:6px 8px;text-align:center">Disponible</th>
+        <th style="padding:6px 8px">Estado</th><th style="padding:6px 8px">Ubicación</th>
+      </tr></thead>
+      <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:12px;color:#999">Sin ítems</td></tr>'}</tbody>
+    </table>`;
+  }
+
+  if (incEpp) {
+    let rows = movs.filter(m => m.tipo === 'entrega_epp');
+    if (desde) rows = rows.filter(m => m.fecha >= desde);
+    if (hasta) rows = rows.filter(m => m.fecha <= hasta);
+    const filas = rows.map(m => `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:5px 8px">${ff(m.fecha)}</td>
+      <td style="padding:5px 8px">${m.nombre_trabajador||'—'}</td>
+      <td style="padding:5px 8px">${m.descripcion||'—'}</td>
+      <td style="padding:5px 8px">${m.talla||'—'}</td>
+      <td style="padding:5px 8px;text-align:center">${m.cantidad}</td>
+      <td style="padding:5px 8px">${m.estado_entregar||'—'}</td>
+      <td style="padding:5px 8px">${m.responsable||'—'}</td>
+    </tr>`).join('');
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Entrega EPP / Ropa de Trabajo</h3>
+    <p style="font-size:10pt;color:#666;margin-bottom:6px">Período: ${ff(desde)||'—'} — ${ff(hasta)||'—'}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+      <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+        <th style="padding:6px 8px">Fecha</th><th style="padding:6px 8px">Trabajador</th>
+        <th style="padding:6px 8px">Ítem</th><th style="padding:6px 8px">Talla</th>
+        <th style="padding:6px 8px;text-align:center">Cant.</th><th style="padding:6px 8px">Estado</th>
+        <th style="padding:6px 8px">Responsable</th>
+      </tr></thead>
+      <tbody>${filas||'<tr><td colspan="7" style="text-align:center;padding:12px;color:#999">Sin registros en el período</td></tr>'}</tbody>
+    </table>`;
+  }
+
+  if (incSal) {
+    let rows = movs.filter(m => m.tipo === 'salida_insumo');
+    if (desde) rows = rows.filter(m => m.fecha >= desde);
+    if (hasta) rows = rows.filter(m => m.fecha <= hasta);
+    const filas = rows.map(m => `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:5px 8px">${ff(m.fecha)}</td>
+      <td style="padding:5px 8px">${m.turno||'—'}</td>
+      <td style="padding:5px 8px">${m.descripcion||'—'}</td>
+      <td style="padding:5px 8px">${m.categoria||'—'}</td>
+      <td style="padding:5px 8px;text-align:center">${m.cantidad}</td>
+      <td style="padding:5px 8px">${m.responsable||'—'}</td>
+      <td style="padding:5px 8px">${m.observaciones||'—'}</td>
+    </tr>`).join('');
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Salida de Insumos</h3>
+    <p style="font-size:10pt;color:#666;margin-bottom:6px">Período: ${ff(desde)||'—'} — ${ff(hasta)||'—'}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+      <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+        <th style="padding:6px 8px">Fecha</th><th style="padding:6px 8px">Turno</th>
+        <th style="padding:6px 8px">Ítem</th><th style="padding:6px 8px">Categoría</th>
+        <th style="padding:6px 8px;text-align:center">Cant.</th><th style="padding:6px 8px">Responsable</th>
+        <th style="padding:6px 8px">Observaciones</th>
+      </tr></thead>
+      <tbody>${filas||'<tr><td colspan="7" style="text-align:center;padding:12px;color:#999">Sin registros en el período</td></tr>'}</tbody>
+    </table>`;
+  }
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+<title>Informe Inventario</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}
+  .page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.5cm 2cm;box-sizing:border-box}
+  @media print{body{margin:0}.page{padding:1cm 1.5cm}}
+  table th,table td{border:1px solid #ddd}
+</style>
+</head><body><div class="page">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    <tr>
+      <td style="border:none;width:70px;vertical-align:middle">
+        <img src="${PDF_LOGO_URL}" style="width:60px" alt="Pucará"/>
+      </td>
+      <td style="border:none;vertical-align:middle;padding-left:14px">
+        <div style="font-size:16pt;font-weight:700;color:#1E4F8C">Control de Inventario — GEOTÉCNIA</div>
+        <div style="font-size:10pt;color:#666;margin-top:3px">Informe generado el ${ff(hoy())} | ${currentUser?.email||''}</div>
+      </td>
+    </tr>
+  </table>
+  <hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 8px"/>
+  ${body}
+</div>
+<script>window.onload=()=>window.print();<\/script>
+</body></html>`;
+
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  cerrar('modal-pdf');
+}
+
+// ── Utils ──────────────────────────────────────────────────────
+function abrir(id)  { document.getElementById(id).classList.add('open'); }
+function cerrar(id) { document.getElementById(id).classList.remove('open'); }
+function hoy()      { return new Date().toISOString().split('T')[0]; }
+function ff(d)      { if(!d) return '—'; const [y,m,dia]=d.split('-'); return `${dia}/${m}/${y}`; }
+function esc(s)     { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+init();
+</script>
+</body>
+</html>

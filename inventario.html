@@ -350,6 +350,22 @@ th.sortable:hover{background:#163d6e}
   <div id="tab-dashboard" class="tab-panel">
     <div style="max-width:1200px;margin:0 auto;padding:4px 0 30px">
 
+      <div style="background:#fff;border-radius:10px;padding:12px 18px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:#6b7c93;text-transform:uppercase;letter-spacing:.7px">Período</span>
+        <select id="dk-filtro-mes" onchange="renderDashboard()" style="border:1px solid #cdd8e3;border-radius:7px;padding:6px 10px;font-size:13px;color:#333;background:#f8fafc">
+          <option value="">Todos los meses</option>
+          <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+          <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="dk-filtro-anio" onchange="renderDashboard()" style="border:1px solid #cdd8e3;border-radius:7px;padding:6px 10px;font-size:13px;color:#333;background:#f8fafc">
+          <option value="">Todos los años</option>
+        </select>
+        <button class="btn btn-secondary" onclick="limpiarFiltrosDash()" style="padding:6px 12px;font-size:13px">✕ Limpiar</button>
+        <span id="dk-periodo-lbl" style="font-size:12px;color:#1E4F8C;font-weight:600"></span>
+      </div>
+
       <div class="dash-kpis">
         <div class="dash-kpi">
           <div class="kpi-lbl">Ítems Activos</div>
@@ -364,7 +380,7 @@ th.sortable:hover{background:#163d6e}
           <div class="kpi-val" id="dk-alerta-n">—</div>
         </div>
         <div class="dash-kpi kpi-amber">
-          <div class="kpi-lbl">Movs. Este Mes</div>
+          <div class="kpi-lbl" id="dk-movmes-lbl">Movs. Este Mes</div>
           <div class="kpi-val" id="dk-movmes">—</div>
         </div>
       </div>
@@ -375,7 +391,7 @@ th.sortable:hover{background:#163d6e}
           <div id="dk-alertas"><div class="dash-nodata">Cargando…</div></div>
         </div>
         <div class="dash-card">
-          <h4>📈 Tendencia Últimos 6 Meses</h4>
+          <h4 id="dk-trend-title">📈 Tendencia Últimos 6 Meses</h4>
           <div id="dk-trend"></div>
         </div>
       </div>
@@ -1660,69 +1676,135 @@ function switchTab(name, btn) {
   if (name === 'dashboard') renderDashboard();
 }
 
+function limpiarFiltrosDash() {
+  document.getElementById('dk-filtro-mes').value  = '';
+  document.getElementById('dk-filtro-anio').value = '';
+  renderDashboard();
+}
+
 function renderDashboard() {
+  var filtroMes  = document.getElementById('dk-filtro-mes').value  || '';
+  var filtroAnio = document.getElementById('dk-filtro-anio').value || '';
+
+  // Poblar años desde datos reales (sin reset de selección)
+  var aniosSel  = document.getElementById('dk-filtro-anio');
+  var aniosData = Array.from(new Set(
+    movs.map(function(m){ return (m.fecha||"").slice(0,4); }).filter(function(a){ return a.length===4; })
+  )).sort();
+  var optsTxt = aniosData.join(',');
+  if (aniosSel.dataset.opts !== optsTxt) {
+    var curVal = aniosSel.value;
+    aniosSel.innerHTML = '<option value="">Todos los a\u00f1os</option>' +
+      aniosData.map(function(a){ return '<option value="'+a+'">'+a+'</option>'; }).join('');
+    aniosSel.value = curVal;
+    aniosSel.dataset.opts = optsTxt;
+  }
+
+  // Filtro de movimientos
+  function mvOk(m) {
+    var f = m.fecha || '';
+    if (filtroAnio && f.slice(0,4) !== filtroAnio) return false;
+    if (filtroMes  && f.slice(5,7) !== filtroMes)  return false;
+    return true;
+  }
+  var movsFil = movs.filter(mvOk);
+
+  // Etiqueta período activo
+  var MESES_NOM = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var periodoStr = '';
+  if (filtroMes || filtroAnio) {
+    periodoStr = '\u2192 ' + (filtroMes ? MESES_NOM[parseInt(filtroMes,10)] : 'Todo el a\u00f1o') + (filtroAnio ? ' '+filtroAnio : '');
+  }
+  document.getElementById('dk-periodo-lbl').textContent = periodoStr;
+
+  // KPI label din\u00e1mico
+  var movLbl = (filtroMes || filtroAnio) ? 'Movs. en per\u00edodo' : 'Movs. Este Mes';
+  document.getElementById('dk-movmes-lbl').textContent = movLbl;
+
+  // KPIs inventario (estado actual, sin filtro fecha)
   var activos   = items.filter(function(i){ return i.estado !== 'Dado de Baja' && i.estado !== 'P\u00e9rdida'; });
   var totalDisp = activos.reduce(function(s,i){ return s+(i.cantidad_disponible||0); }, 0);
   var totalTot  = activos.reduce(function(s,i){ return s+(i.cantidad_total||0); }, 0);
   var criticos  = activos.filter(function(i){ return (i.cantidad_disponible||0)===0; });
   var bajos     = activos.filter(function(i){ var d=i.cantidad_disponible||0; return d>0&&d<=2; });
-  var mesAct    = hoy().slice(0,7);
-  var movsMes   = movs.filter(function(m){ return (m.fecha||'').startsWith(mesAct); }).length;
+
+  var movsCnt = movsFil.length;
+  if (!filtroMes && !filtroAnio) {
+    var mesAct = hoy().slice(0,7);
+    movsCnt = movs.filter(function(m){ return (m.fecha||"").startsWith(mesAct); }).length;
+  }
 
   document.getElementById('dk-items').textContent      = activos.length;
   document.getElementById('dk-disponible').textContent = totalTot ? Math.round(totalDisp/totalTot*100)+'%' : '\u2014';
-  document.getElementById('dk-alerta-n').textContent   = criticos.length+bajos.length;
-  document.getElementById('dk-movmes').textContent     = movsMes;
+  document.getElementById('dk-alerta-n').textContent   = criticos.length + bajos.length;
+  document.getElementById('dk-movmes').textContent     = movsCnt;
 
-  // Alertas
+  // Alertas (estado actual)
   var alertas = criticos.map(function(i){ return Object.assign({},i,{_crit:true}); })
     .concat(bajos.map(function(i){ return Object.assign({},i,{_crit:false}); })).slice(0,8);
   document.getElementById('dk-alertas').innerHTML = alertas.length
     ? alertas.map(function(i){
         return '<div class="dash-alert '+(i._crit?'crit':'warn')+'">'+
-          '<div class="dash-alert-val" style="color:'+(i._crit?'#c62828':'#e65100')+'">'+(i.cantidad_disponible||0)+'</div>'+
+          '<div class="dash-alert-val" style="color:'+(i._crit?'#c62828':'#e65100')+'">' + (i.cantidad_disponible||0) + '</div>'+
           '<div style="flex:1">'+
-            '<div style="font-weight:600;font-size:13px">'+(i.descripcion||'')+(i.talla?' ('+i.talla+')':'')+'</div>'+
-            '<div style="font-size:11px;color:#888">'+(i.categoria||'')+' \u00b7 Corr. '+(i.correlativo||'\u2014')+'</div>'+
+            '<div style="font-weight:600;font-size:13px">' + (i.descripcion||"") + (i.talla?' ('+i.talla+')':'')+'</div>'+
+            '<div style="font-size:11px;color:#888">' + (i.categoria||"") + ' \u00b7 Corr. ' + (i.correlativo||'\u2014') + '</div>'+
           '</div></div>';
       }).join('')
     : '<div class="dash-nodata">\u2705 Sin \u00edtems cr\u00edticos o bajos</div>';
 
-  // Tendencia 6 meses
+  // Tendencia: a\u00f1o seleccionado → 12 meses; sin a\u00f1o → \u00faltimos 6 meses
   var meses = [];
-  for (var i=5; i>=0; i--) {
-    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
-    meses.push({ key: d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),
-                 lbl: d.toLocaleString('es-CL',{month:'short'}), epp:0, sal:0 });
+  if (filtroAnio) {
+    for (var mm=1; mm<=12; mm++) {
+      var dd = new Date(parseInt(filtroAnio,10), mm-1, 1);
+      meses.push({ key: filtroAnio+'-'+String(mm).padStart(2,'0'),
+                   lbl: dd.toLocaleString('es-CL',{month:'short'}), epp:0, sal:0 });
+    }
+  } else {
+    for (var i=5; i>=0; i--) {
+      var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+      meses.push({ key: d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),
+                   lbl: d.toLocaleString('es-CL',{month:'short'}), epp:0, sal:0 });
+    }
   }
-  movs.forEach(function(m) {
-    var mo = meses.find(function(x){ return x.key===(m.fecha||'').slice(0,7); });
+  var movsParaTrend = filtroAnio
+    ? movs.filter(function(m){ return (m.fecha||"").startsWith(filtroAnio); })
+    : movs;
+  movsParaTrend.forEach(function(m) {
+    var mo = meses.find(function(x){ return x.key===(m.fecha||"").slice(0,7); });
     if (!mo) return;
     if (m.tipo==='entrega_epp')   mo.epp += (m.cantidad||1);
     if (m.tipo==='salida_insumo') mo.sal += (m.cantidad||1);
   });
+  var trendTitle = filtroAnio
+    ? '\ud83d\udcc8 Tendencia '+filtroAnio+' (12 meses)'
+    : '\ud83d\udcc8 Tendencia \u00daltimos 6 Meses';
+  document.getElementById('dk-trend-title').textContent = trendTitle;
   var maxM = Math.max.apply(null, meses.map(function(m){ return m.epp+m.sal; }).concat([1]));
+  var gap  = filtroAnio ? '4' : '8';
   var tBars = meses.map(function(m){
     var eh = Math.max(Math.round(m.epp/maxM*70), m.epp?3:0);
     var sh = Math.max(Math.round(m.sal/maxM*70), m.sal?3:0);
-    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center">'+
+    var selMes = filtroMes && m.key.slice(5,7)===filtroMes;
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center'+(selMes?';outline:2px solid #1E4F8C;outline-offset:2px;border-radius:3px':'')+'">'+
       '<div style="display:flex;align-items:flex-end;gap:2px;height:72px">'+
         '<div style="width:14px;background:#1E4F8C;border-radius:2px 2px 0 0;height:'+eh+'px" title="EPP: '+m.epp+'"></div>'+
         '<div style="width:14px;background:#e65100;border-radius:2px 2px 0 0;height:'+sh+'px" title="Insumos: '+m.sal+'"></div>'+
       '</div>'+
-      '<div style="font-size:9px;color:#888;margin-top:4px">'+m.lbl+'</div>'+
+      '<div style="font-size:9px;color:'+(selMes?'#1E4F8C':'#888')+';font-weight:'+(selMes?'700':'400')+';margin-top:4px">'+m.lbl+'</div>'+
     '</div>';
   }).join('');
   document.getElementById('dk-trend').innerHTML =
-    '<div style="display:flex;align-items:flex-end;gap:8px;height:90px">'+tBars+'</div>'+
+    '<div style="display:flex;align-items:flex-end;gap:'+gap+'px;height:90px">'+tBars+'</div>'+
     '<div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:#666">'+
       '<span><span style="display:inline-block;width:10px;height:10px;background:#1E4F8C;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Entregas EPP</span>'+
       '<span><span style="display:inline-block;width:10px;height:10px;background:#e65100;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Salida Insumos</span>'+
     '</div>';
 
-  // EPP mayor rotación
+  // EPP mayor rotaci\u00f3n (filtrado)
   var eppCnt = {};
-  movs.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
+  movsFil.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
     eppCnt[m.item_id] = (eppCnt[m.item_id]||0)+(m.cantidad||1);
   });
   var topEpp = Object.keys(eppCnt).map(function(id){ return {it:items.find(function(x){return x.id===id;}),cnt:eppCnt[id]}; })
@@ -1736,11 +1818,11 @@ function renderDashboard() {
           '<div class="bar-val">'+x.cnt+'</div>'+
         '</div>';
       }).join('')
-    : '<div class="dash-nodata">Sin entregas registradas</div>';
+    : '<div class="dash-nodata">Sin entregas en el per\u00edodo</div>';
 
-  // Insumos más solicitados
+  // Insumos m\u00e1s solicitados (filtrado)
   var salCnt = {};
-  movs.filter(function(m){ return m.tipo==='salida_insumo'; }).forEach(function(m){
+  movsFil.filter(function(m){ return m.tipo==='salida_insumo'; }).forEach(function(m){
     salCnt[m.item_id] = (salCnt[m.item_id]||0)+(m.cantidad||1);
   });
   var topSal = Object.keys(salCnt).map(function(id){ return {it:items.find(function(x){return x.id===id;}),cnt:salCnt[id]}; })
@@ -1754,11 +1836,11 @@ function renderDashboard() {
           '<div class="bar-val">'+x.cnt+'</div>'+
         '</div>';
       }).join('')
-    : '<div class="dash-nodata">Sin salidas registradas</div>';
+    : '<div class="dash-nodata">Sin salidas en el per\u00edodo</div>';
 
-  // Trabajadores con más EPP
+  // Trabajadores con m\u00e1s EPP (filtrado)
   var wCnt = {};
-  movs.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
+  movsFil.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
     var k = m.nombre_trabajador||'\u2014'; wCnt[k]=(wCnt[k]||0)+1;
   });
   var topW = Object.keys(wCnt).map(function(k){ return [k,wCnt[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
@@ -1771,9 +1853,8 @@ function renderDashboard() {
           '<div class="bar-val">'+kv[1]+'</div>'+
         '</div>';
       }).join('')
-    : '<div class="dash-nodata">Sin entregas registradas</div>';
+    : '<div class="dash-nodata">Sin entregas en el per\u00edodo</div>';
 }
-
 function limpiarFE() {
   document.getElementById('fe-desde').value = '';
   document.getElementById('fe-hasta').value = '';

@@ -160,6 +160,35 @@ th.sortable:hover{background:#163d6e}
 </head>
 <body>
 
+<div class="modal-bd" id="modal-excel">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>Exportar Excel</h3>
+      <button class="mclose" onclick="cerrar('modal-excel')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label>Período desde</label><input type="date" id="xl-desde"/></div>
+        <div class="fg"><label>Período hasta</label><input type="date" id="xl-hasta"/></div>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 10px">Incluir en el archivo</p>
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="xl-inv" checked/> Inventario General (estado actual)
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="xl-epp" checked/> Entregas EPP / Ropa
+      </label>
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="xl-sal" checked/> Salida de Insumos
+      </label>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-excel')">Cancelar</button>
+      <button class="btn" style="background:#2e7d32;color:#fff" onclick="exportarExcel()">📊 Generar Excel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════
      LOGIN
 ══════════════════════════════════════ -->
@@ -182,7 +211,7 @@ th.sortable:hover{background:#163d6e}
     <img id="nav-logo" alt="Pucará"/>
     <h1>Control de Inventario — RN-2003</h1>
     <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
-    <button class="hdr-btn" onclick="exportarExcel()" style="background:rgba(0,140,0,.3)">📊 Excel</button>
+    <button class="hdr-btn" onclick="abrirExcel()" style="background:rgba(0,140,0,.3)">📊 Excel</button>
     <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
   </header>
 
@@ -1311,44 +1340,78 @@ async function eliminarSalida(movId) {
 }
 
 // -- Exportar Excel ------------------------------------------------
-function exportarExcel() {
-  const wb = XLSX.utils.book_new();
-  const wsInv = XLSX.utils.aoa_to_sheet([
-    ['Corr.','Categoria','Descripcion','Color','Talla','Marca/Modelo','Serie/SN','Norma','Total','Disponible','Estado','Ubicacion','Area','F.Ingreso','Observaciones'],
-    ...items.map(i => [i.correlativo,i.categoria,i.descripcion,i.color,i.talla,i.marca_modelo,i.serie_sn,i.norma,i.cantidad_total,i.cantidad_disponible,i.estado,i.ubicacion,i.area_responsable,i.fecha_ingreso,i.observaciones])
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsInv, 'Inventario');
-  const eppMovs = movs.filter(m => m.tipo === 'entrega_epp');
-  const wsEpp = XLSX.utils.aoa_to_sheet([
-    ['Fecha','Trabajador','RUT','Cargo','Turno','Item','Categoria','Talla','Cantidad','Estado Entrega','Responsable','Observaciones'],
-    ...eppMovs.map(m => [m.fecha,m.nombre_trabajador,m.rut_trabajador,m.cargo_trabajador,m.turno,m.descripcion,m.categoria,m.talla,m.cantidad,m.estado_entregar,m.responsable,m.observaciones])
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsEpp, 'Entrega EPP');
-  const salMovs = movs.filter(m => m.tipo === 'salida_insumo');
-  const wsSal = XLSX.utils.aoa_to_sheet([
-    ['Fecha','Turno','Item','Categoria','Cantidad','Responsable','Observaciones'],
-    ...salMovs.map(m => [m.fecha,m.turno,m.descripcion,m.categoria,m.cantidad,m.responsable,m.observaciones])
-  ]);
-  XLSX.utils.book_append_sheet(wb, wsSal, 'Salida Insumos');
+function abrirExcel() {
+  document.getElementById('xl-desde').value = '';
+  document.getElementById('xl-hasta').value = '';
+  document.getElementById('xl-inv').checked  = true;
+  document.getElementById('xl-epp').checked  = true;
+  document.getElementById('xl-sal').checked  = true;
+  abrir('modal-excel');
+}
 
-  // Hoja 4: Historial de Movimientos (modificaciones + entregas + salidas)
+function exportarExcel() {
+  const desde    = document.getElementById('xl-desde')?.value || '';
+  const hasta    = document.getElementById('xl-hasta')?.value || '';
+  const incInv   = document.getElementById('xl-inv')?.checked !== false;
+  const incEpp   = document.getElementById('xl-epp')?.checked !== false;
+  const incSal   = document.getElementById('xl-sal')?.checked !== false;
+  const wb = XLSX.utils.book_new();
   const fmtTs = d => { try { return new Date(d).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e){ return d||''; } };
+
+  if (incInv) {
+    const wsInv = XLSX.utils.aoa_to_sheet([
+      ['Corr.','Categoria','Descripcion','Color','Talla','Marca/Modelo','Serie/SN','Norma','Total','Disponible','Estado','Ubicacion','Area','F.Ingreso','Observaciones'],
+      ...items.map(i => [i.correlativo,i.categoria,i.descripcion,i.color,i.talla,i.marca_modelo,i.serie_sn,i.norma,i.cantidad_total,i.cantidad_disponible,i.estado,i.ubicacion,i.area_responsable,i.fecha_ingreso,i.observaciones])
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsInv, 'Inventario');
+  }
+
+  if (incEpp) {
+    let eppMovs = movs.filter(m => m.tipo === 'entrega_epp');
+    if (desde) eppMovs = eppMovs.filter(m => (m.fecha||'') >= desde);
+    if (hasta) eppMovs = eppMovs.filter(m => (m.fecha||'') <= hasta);
+    const wsEpp = XLSX.utils.aoa_to_sheet([
+      ['Fecha','Trabajador','RUT','Cargo','Turno','Item','Categoria','Talla','Cantidad','Estado Entrega','Responsable','Observaciones'],
+      ...eppMovs.map(m => [m.fecha,m.nombre_trabajador,m.rut_trabajador,m.cargo_trabajador,m.turno,m.descripcion,m.categoria,m.talla,m.cantidad,m.estado_entregar,m.responsable,m.observaciones])
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsEpp, 'Entrega EPP');
+  }
+
+  if (incSal) {
+    let salMovs = movs.filter(m => m.tipo === 'salida_insumo');
+    if (desde) salMovs = salMovs.filter(m => (m.fecha||'') >= desde);
+    if (hasta) salMovs = salMovs.filter(m => (m.fecha||'') <= hasta);
+    const wsSal = XLSX.utils.aoa_to_sheet([
+      ['Fecha','Turno','Item','Categoria','Cantidad','Responsable','Observaciones'],
+      ...salMovs.map(m => [m.fecha,m.turno,m.descripcion,m.categoria,m.cantidad,m.responsable,m.observaciones])
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsSal, 'Salida Insumos');
+  }
+
+  // Hoja Historial: siempre se incluye, filtrada por fecha si aplica
   const histRows = [];
-  // Modificaciones desde historial de ítems
   items.forEach(it => {
     (it.historial || []).forEach(h => {
+      if (desde && (h.fecha||'') < desde) return;
+      if (hasta && (h.fecha||'') > hasta) return;
       const cambios = (h.cambios || []).map(cc => cc.campo + ': ' + (cc.antes??'—') + ' → ' + (cc.despues??'—')).join(' | ');
       histRows.push({ ts: new Date(h.fecha||0), row: [fmtTs(h.fecha), 'Modificación', it.descripcion||'', it.correlativo||'', cambios, '', '', h.usuario||''] });
     });
   });
-  // Entregas EPP
-  movs.filter(m => m.tipo === 'entrega_epp').forEach(m => {
-    histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Entrega EPP', m.descripcion||'', '', '', m.nombre_trabajador||'', m.cantidad||'', m.responsable||''] });
-  });
-  // Salidas insumos
-  movs.filter(m => m.tipo === 'salida_insumo').forEach(m => {
-    histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Salida Insumo', m.descripcion||'', '', '', '', m.cantidad||'', m.responsable||''] });
-  });
+  if (incEpp) {
+    movs.filter(m => m.tipo === 'entrega_epp').forEach(m => {
+      if (desde && (m.fecha||'') < desde) return;
+      if (hasta && (m.fecha||'') > hasta) return;
+      histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Entrega EPP', m.descripcion||'', '', '', m.nombre_trabajador||'', m.cantidad||'', m.responsable||''] });
+    });
+  }
+  if (incSal) {
+    movs.filter(m => m.tipo === 'salida_insumo').forEach(m => {
+      if (desde && (m.fecha||'') < desde) return;
+      if (hasta && (m.fecha||'') > hasta) return;
+      histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Salida Insumo', m.descripcion||'', '', '', '', m.cantidad||'', m.responsable||''] });
+    });
+  }
   histRows.sort((a,b) => b.ts - a.ts);
   const wsHist = XLSX.utils.aoa_to_sheet([
     ['Fecha/Hora','Tipo','Ítem','Correlativo','Detalle/Cambios','Trabajador','Cantidad','Responsable'],
@@ -1356,6 +1419,12 @@ function exportarExcel() {
   ]);
   XLSX.utils.book_append_sheet(wb, wsHist, 'Historial');
 
+  if (wb.SheetNames.length === 1) {
+    alert('Selecciona al menos una sección para exportar.');
+    return;
+  }
+
+  cerrar('modal-excel');
   XLSX.writeFile(wb, 'Inventario_' + hoy() + '.xlsx');
 }
 

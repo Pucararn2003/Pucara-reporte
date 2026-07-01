@@ -132,6 +132,13 @@ th.sortable:hover{background:#163d6e}
 .hmov-cambio{font-size:12px;margin-top:2px;padding-left:6px}
 .hmov-user{font-size:11px;color:#aaa;margin-top:5px}
 
+/* ── Column header tooltip ── */
+#th-tip{position:fixed;background:#fff;color:#222;border:1px solid #dce8f0;border-radius:10px;padding:14px 16px;font-size:12px;max-width:270px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:2000;display:none;line-height:1.65;pointer-events:none}
+#th-tip .tip-ok{color:#2e7d32;font-weight:700}
+#th-tip .tip-no{color:#c62828;font-weight:700}
+.th-info-icon{display:inline-block;margin-left:5px;font-size:11px;opacity:.75;cursor:help;vertical-align:middle}
+.th-info-icon:hover{opacity:1}
+
 /* ── Historial tooltip ── */
 #hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:none;line-height:1.55;display:none}
 .hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px}
@@ -268,8 +275,8 @@ th.sortable:hover{background:#163d6e}
             <th class="sortable" onclick="sortBy('descripcion')">Descripción <span class="sort-icon" id="sort-descripcion"></span></th>
             <th class="sortable" onclick="sortBy('categoria')">Categoría <span class="sort-icon" id="sort-categoria"></span></th>
             <th>Talla</th>
-            <th class="sortable" onclick="sortBy('cantidad_total')" style="text-align:center">Total <span class="sort-icon" id="sort-cantidad_total"></span></th>
-            <th class="sortable" onclick="sortBy('cantidad_disponible')" style="text-align:center">Disponible <span class="sort-icon" id="sort-cantidad_disponible"></span></th>
+            <th class="sortable" onclick="sortBy('cantidad_total')" style="text-align:center" onmouseenter="mostrarThTip(event,'total')" onmouseleave="ocultarThTip()">Total<span class="th-info-icon">ℹ️</span><span class="sort-icon" id="sort-cantidad_total"></span></th>
+            <th class="sortable" onclick="sortBy('cantidad_disponible')" style="text-align:center" onmouseenter="mostrarThTip(event,'disponible')" onmouseleave="ocultarThTip()">Disponible<span class="th-info-icon">ℹ️</span><span class="sort-icon" id="sort-cantidad_disponible"></span></th>
             <th class="sortable" onclick="sortBy('estado')">Estado <span class="sort-icon" id="sort-estado"></span></th>
             <th class="sortable" onclick="sortBy('ubicacion')">Ubicación <span class="sort-icon" id="sort-ubicacion"></span></th>
             <th>Acciones</th>
@@ -1340,6 +1347,45 @@ function mostrarHistorial(e, itemId) {
 
 function ocultarHistorial() {
   _histTimer = setTimeout(() => { if (_histTip) _histTip.style.display = 'none'; }, 120);
+}
+
+// ── Column header tooltips ─────────────────────────────────────
+const TH_TIPS = {
+  disponible:
+    '<strong style="color:#1a3a5c">✅ Cantidad Disponible</strong><br>' +
+    '<span style="color:#555;font-size:11px">Es lo que realmente puedes entregar ahora,<br>sin dejar a nadie sin EPP.</span>' +
+    '<div style="margin-top:10px"><span class="tip-ok">✔ Incluye SOLO:</span><br>' +
+    '· En bodega<br>· Operativos<br>· Listos para entrega</div>' +
+    '<div style="margin-top:8px"><span class="tip-no">✘ NO incluye:</span><br>' +
+    '· Entregados a trabajadores<br>· Dañados<br>· En reparación<br>· Dados de baja</div>' +
+    '<div style="margin-top:8px;color:#1E4F8C;font-size:11px"><strong>Ejemplo:</strong> Total cascos: 20 → entregados 5, en reparación 2 → <strong>Disponible: 13</strong></div>',
+  total:
+    '<strong style="color:#1a3a5c">📦 Cantidad Total</strong><br>' +
+    '<span style="color:#555;font-size:11px">Total de unidades registradas,<br>sin importar su estado actual.</span>' +
+    '<div style="margin-top:10px"><span class="tip-ok">✔ Incluye TODO:</span><br>' +
+    '· Disponibles en bodega<br>· Entregados / En uso<br>· Dañados / En reparación<br>· Dados de baja</div>' +
+    '<div style="margin-top:8px;color:#555;font-size:11px">Disponible ≤ Total siempre.</div>'
+};
+
+let _thTip = null;
+function mostrarThTip(e, key) {
+  if (!_thTip) {
+    _thTip = document.createElement('div');
+    _thTip.id = 'th-tip';
+    document.body.appendChild(_thTip);
+  }
+  _thTip.innerHTML = TH_TIPS[key] || '';
+  _thTip.style.display = 'block';
+  const r = e.currentTarget.getBoundingClientRect();
+  let top  = r.bottom + 6;
+  let left = r.left + r.width / 2 - 135;
+  if (left < 8) left = 8;
+  if (left + 270 > window.innerWidth) left = window.innerWidth - 278;
+  _thTip.style.top  = top  + 'px';
+  _thTip.style.left = left + 'px';
+}
+function ocultarThTip() {
+  if (_thTip) _thTip.style.display = 'none';
 }
 
 // ── Modal Ítem ─────────────────────────────────────────────────

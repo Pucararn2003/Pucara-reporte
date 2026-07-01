@@ -418,13 +418,26 @@ th.sortable:hover{background:#163d6e}
             <option>Nuevo</option><option>Buen Estado</option><option>Regular</option><option>Mal Estado</option>
           </select>
         </div>
-        <div class="fg"><label>Responsable de Entrega</label><input type="text" id="me-resp"/></div>
+        <div class="fg">
+          <label>Responsable de Entrega</label>
+          <select id="me-resp"><option value="">Seleccionar…</option></select>
+        </div>
         <div class="fg full"><label>Observaciones</label><textarea id="me-obs" rows="2"></textarea></div>
+        <div class="fg full">
+          <label>Foto de Entrega</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" id="me-foto-file" accept="image/*" onchange="previewFotoE(this)"
+                   style="flex:1;min-width:0;padding:6px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="quitarFotoE()">✕ Quitar</button>
+          </div>
+          <img id="me-foto-preview" src="" alt="preview"
+               style="display:none;max-height:130px;max-width:100%;border-radius:7px;margin-top:8px;object-fit:contain;border:1px solid #eee"/>
+        </div>
       </div>
     </div>
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-entrega')">Cancelar</button>
-      <button class="btn btn-success" onclick="guardarEntrega()">Registrar Entrega</button>
+      <button id="btn-guardar-entrega" class="btn btn-success" onclick="guardarEntrega()">Registrar Entrega</button>
     </div>
   </div>
 </div>
@@ -460,7 +473,10 @@ th.sortable:hover{background:#163d6e}
           </div>
         </div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
-        <div class="fg"><label>Responsable de Retiro</label><input type="text" id="ms-resp"/></div>
+        <div class="fg">
+          <label>Responsable de Retiro</label>
+          <select id="ms-resp"><option value="">Seleccionar…</option></select>
+        </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
       </div>
     </div>
@@ -605,6 +621,17 @@ let sortDir = 'asc';
     o.dataset.cargo = t.cargo;
     sel.appendChild(o);
   });
+})();
+
+// Populate responsables (Jefes de Terreno + APR)
+(function(){
+  const resp = TRABAJADORES.filter(t =>
+    t.cargo.includes('Jefe de Terreno') || t.cargo.includes('Asesor en Prevención')
+  );
+  const opts = '<option value="">Seleccionar…</option>' +
+    resp.map(t => `<option value="${t.nombre}">${t.nombre} — ${t.cargo}</option>`).join('');
+  document.getElementById('me-resp').innerHTML = opts;
+  document.getElementById('ms-resp').innerHTML = opts;
 })();
 
 // Close modals on backdrop click
@@ -984,6 +1011,9 @@ function abrirModalEntrega() {
   document.getElementById('me-estado').value  = 'Nuevo';
   document.getElementById('me-resp').value    = '';
   document.getElementById('me-obs').value     = '';
+  document.getElementById('me-foto-file').value = '';
+  const fPrev = document.getElementById('me-foto-preview');
+  fPrev.src = ''; fPrev.style.display = 'none';
   document.getElementById('alerta-epp').style.display = 'none';
   abrir('modal-entrega');
 }
@@ -1013,6 +1043,14 @@ async function guardarEntrega() {
   const itSel = items.find(x => x.id === itemId);
   const disp  = itSel?.cantidad_disponible || 0;
   if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
+  const btnG = document.getElementById('btn-guardar-entrega');
+  if (btnG) { btnG.disabled = true; btnG.textContent = 'Guardando…'; }
+  let foto_url = null;
+  const fotoFile = document.getElementById('me-foto-file')?.files[0];
+  if (fotoFile) {
+    try { foto_url = await subirFotoEntrega(fotoFile); }
+    catch(e) { alert(e.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
+  }
   const { error: e1 } = await sb.from('inventario_movimientos').insert({
     tipo: 'entrega_epp',
     fecha,
@@ -1028,8 +1066,10 @@ async function guardarEntrega() {
     estado_entregar: document.getElementById('me-estado').value,
     responsable:     document.getElementById('me-resp').value.trim() || null,
     observaciones:   document.getElementById('me-obs').value.trim()  || null,
+    foto_url,
     usuario_email:   currentUser?.email || null,
   });
+  if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   if (e1) { alert('Error: ' + e1.message); return; }
   if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, disp - cant) }).eq('id', itemId);
   cerrar('modal-entrega');
@@ -1354,6 +1394,30 @@ function quitarImagen() {
   document.getElementById('mi-img-url').value  = '';
   const prev = document.getElementById('mi-img-preview');
   prev.src = ''; prev.style.display = 'none';
+}
+
+function previewFotoE(input) {
+  const prev = document.getElementById('me-foto-preview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function quitarFotoE() {
+  document.getElementById('me-foto-file').value = '';
+  const prev = document.getElementById('me-foto-preview');
+  prev.src = ''; prev.style.display = 'none';
+}
+
+async function subirFotoEntrega(file) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `entregas/${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('inventario').upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error('Error al subir foto: ' + error.message);
+  const { data } = sb.storage.from('inventario').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 function verDetalle(itemId) {

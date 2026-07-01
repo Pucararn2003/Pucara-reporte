@@ -242,7 +242,7 @@ th.sortable:hover{background:#163d6e}
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar</button></th>
           </tr>
         </thead>
-        <tbody id="tb-inv"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-inv"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -261,9 +261,9 @@ th.sortable:hover{background:#163d6e}
       <table>
         <thead><tr>
           <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
-          <th>Talla</th><th>Cant.</th><th>Estado</th><th>Responsable</th><th></th>
+          <th>Talla</th><th>Cant.</th><th>Restante</th><th>Estado</th><th>Responsable</th><th></th>
         </tr></thead>
-        <tbody id="tb-epp"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-epp"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -282,9 +282,9 @@ th.sortable:hover{background:#163d6e}
       <table>
         <thead><tr>
           <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
-          <th>Cant.</th><th>Responsable</th><th>Observaciones</th><th></th>
+          <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Observaciones</th><th></th>
         </tr></thead>
-        <tbody id="tb-sal"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-sal"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -358,13 +358,36 @@ th.sortable:hover{background:#163d6e}
         <div class="fg"><label>Área Responsable</label><input type="text" id="mi-area" value="GEOTÉCNIA"/></div>
         <div class="fg full"><label>Observaciones</label><textarea id="mi-obs" rows="2"></textarea></div>
         <div class="fg full">
-          <label>Imagen del Ítem</label>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="file" id="mi-img-file" accept="image/*" onchange="previewImg(this)" style="flex:1;min-width:0;padding:6px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImagen()">✕ Quitar</button>
+          <label>Imágenes del Ítem (hasta 3 — la 1ª es la miniatura)</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px">
+            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+              <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 1 (miniatura)</div>
+              <img id="mi-img-prev-1" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <input type="file" id="mi-img-file-1" accept="image/*" onchange="previewImgSlot(this,1)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(1)">✕</button>
+              </div>
+            </div>
+            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+              <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 2</div>
+              <img id="mi-img-prev-2" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <input type="file" id="mi-img-file-2" accept="image/*" onchange="previewImgSlot(this,2)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(2)">✕</button>
+              </div>
+            </div>
+            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+              <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 3</div>
+              <img id="mi-img-prev-3" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <input type="file" id="mi-img-file-3" accept="image/*" onchange="previewImgSlot(this,3)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(3)">✕</button>
+              </div>
+            </div>
           </div>
-          <img id="mi-img-preview" src="" alt="preview" style="display:none;max-height:140px;max-width:100%;border-radius:7px;margin-top:8px;object-fit:contain;border:1px solid #eee"/>
           <input type="hidden" id="mi-img-url"/>
+          <input type="hidden" id="mi-img-url-2"/>
+          <input type="hidden" id="mi-img-url-3"/>
         </div>
       </div>
     </div>
@@ -702,7 +725,7 @@ async function cargarDatos() {
 async function cargarItems() {
   const { data, error } = await sb.from('inventario_items').select('*').order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
-  items = data || [];
+  items = (data || []).map(it => ({ ...it, categoria: it.categoria === 'Ropa' ? 'Ropa de Trabajo' : it.categoria }));
   renderInventario();
   actualizarStats();
   poblarSelectItems();
@@ -800,7 +823,7 @@ function renderEntrega() {
   if (d) rows = rows.filter(m => m.fecha >= d);
   if (h) rows = rows.filter(m => m.fecha <= h);
   const tb = document.getElementById('tb-epp');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr>
     <td>${ff(m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
@@ -808,6 +831,7 @@ function renderEntrega() {
     <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
     <td>${m.talla||'—'}</td>
     <td style="text-align:center">${m.cantidad}</td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??(items.find(x=>x.id===m.item_id)?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
     <td style="white-space:nowrap">
@@ -825,13 +849,14 @@ function renderSalida() {
   if (d) rows = rows.filter(m => m.fecha >= d);
   if (h) rows = rows.filter(m => m.fecha <= h);
   const tb = document.getElementById('tb-sal');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr>
     <td>${ff(m.fecha)}</td>
     <td>${m.turno||'—'}</td>
     <td>${m.descripcion||'—'}</td>
     <td><span class="badge b-info">${m.categoria||'—'}</span></td>
     <td style="text-align:center">${m.cantidad}</td>
+    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??(items.find(x=>x.id===m.item_id)?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">${r}</span>`:'—'; })()}</td>
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
     <td style="white-space:nowrap">
@@ -945,11 +970,16 @@ function abrirModalItem(id) {
   document.getElementById('mi-fecha').value = it?.fecha_ingreso|| '';
   document.getElementById('mi-area').value  = it?.area_responsable || 'GEOTÉCNIA';
   document.getElementById('mi-obs').value   = it?.observaciones || '';
-  document.getElementById('mi-img-file').value = '';
-  document.getElementById('mi-img-url').value  = it?.imagen_url || '';
-  const imgPrev = document.getElementById('mi-img-preview');
-  if (it?.imagen_url) { imgPrev.src = it.imagen_url; imgPrev.style.display = 'block'; }
-  else { imgPrev.src = ''; imgPrev.style.display = 'none'; }
+  [1,2,3].forEach(n => { document.getElementById('mi-img-file-'+n).value = ''; });
+  document.getElementById('mi-img-url').value   = it?.imagen_url   || '';
+  document.getElementById('mi-img-url-2').value = it?.imagen_url_2 || '';
+  document.getElementById('mi-img-url-3').value = it?.imagen_url_3 || '';
+  [1,2,3].forEach(n => {
+    const url = n===1 ? (it?.imagen_url||'') : (it?.['imagen_url_'+n]||'');
+    const pr  = document.getElementById('mi-img-prev-'+n);
+    if (url) { pr.src = url; pr.style.display = 'block'; }
+    else     { pr.src = '';  pr.style.display = 'none';  }
+  });
   document.getElementById('mi-desc-err').style.display = 'none';
   abrir('modal-item');
 }
@@ -961,11 +991,19 @@ async function guardarItem() {
   if (!desc) { document.getElementById('mi-desc-err').style.display = 'block'; return; }
   const btnG = document.getElementById('btn-guardar-item');
   btnG.disabled = true; btnG.textContent = 'Guardando…';
-  let imagen_url = document.getElementById('mi-img-url').value || null;
-  const imgFile  = document.getElementById('mi-img-file').files[0];
-  if (imgFile) {
-    try { imagen_url = await subirImagen(imgFile, editId || 'new'); }
-    catch(e) { alert(e.message); btnG.disabled = false; btnG.textContent = 'Guardar Ítem'; return; }
+  let imagen_url   = document.getElementById('mi-img-url').value   || null;
+  let imagen_url_2 = document.getElementById('mi-img-url-2').value || null;
+  let imagen_url_3 = document.getElementById('mi-img-url-3').value || null;
+  for (const [slot, key] of [[1,'imagen_url'],[2,'imagen_url_2'],[3,'imagen_url_3']]) {
+    const f = document.getElementById('mi-img-file-'+slot)?.files[0];
+    if (f) {
+      try {
+        const u = await subirImagen(f, (editId||'new')+'_'+slot);
+        if (slot===1) imagen_url   = u;
+        if (slot===2) imagen_url_2 = u;
+        if (slot===3) imagen_url_3 = u;
+      } catch(e) { alert(e.message); btnG.disabled = false; btnG.textContent = 'Guardar Ítem'; return; }
+    }
   }
   const p = {
     correlativo:        document.getElementById('mi-corr').value.trim()  || null,
@@ -984,6 +1022,8 @@ async function guardarItem() {
     area_responsable:   document.getElementById('mi-area').value.trim()   || 'GEOTÉCNIA',
     observaciones:      document.getElementById('mi-obs').value.trim()    || null,
     imagen_url,
+    imagen_url_2,
+    imagen_url_3,
   };
   if (editId) {
     const oldIt = items.find(x => x.id === editId) || {};
@@ -1087,6 +1127,7 @@ async function guardarEntrega() {
     responsable:      document.getElementById('me-resp').value.trim() || null,
     observaciones:    document.getElementById('me-obs').value.trim()  || null,
     foto_url,
+    cantidad_restante: null,
     usuario_email:    currentUser?.email || null,
   };
   if (editMovId) {
@@ -1105,6 +1146,7 @@ async function guardarEntrega() {
     if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
     editMovId = null;
   } else {
+    payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
     if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
@@ -1169,6 +1211,7 @@ async function guardarSalida() {
     if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
     editMovSalId = null;
   } else {
+    payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); return; }
     if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
@@ -1283,6 +1326,32 @@ function exportarExcel() {
     ...salMovs.map(m => [m.fecha,m.turno,m.descripcion,m.categoria,m.cantidad,m.responsable,m.observaciones])
   ]);
   XLSX.utils.book_append_sheet(wb, wsSal, 'Salida Insumos');
+
+  // Hoja 4: Historial de Movimientos (modificaciones + entregas + salidas)
+  const fmtTs = d => { try { return new Date(d).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e){ return d||''; } };
+  const histRows = [];
+  // Modificaciones desde historial de ítems
+  items.forEach(it => {
+    (it.historial || []).forEach(h => {
+      const cambios = (h.cambios || []).map(cc => cc.campo + ': ' + (cc.antes??'—') + ' → ' + (cc.despues??'—')).join(' | ');
+      histRows.push({ ts: new Date(h.fecha||0), row: [fmtTs(h.fecha), 'Modificación', it.descripcion||'', it.correlativo||'', cambios, '', '', h.usuario||''] });
+    });
+  });
+  // Entregas EPP
+  movs.filter(m => m.tipo === 'entrega_epp').forEach(m => {
+    histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Entrega EPP', m.descripcion||'', '', '', m.nombre_trabajador||'', m.cantidad||'', m.responsable||''] });
+  });
+  // Salidas insumos
+  movs.filter(m => m.tipo === 'salida_insumo').forEach(m => {
+    histRows.push({ ts: new Date(m.created_at||m.fecha||0), row: [fmtTs(m.created_at||m.fecha), 'Salida Insumo', m.descripcion||'', '', '', '', m.cantidad||'', m.responsable||''] });
+  });
+  histRows.sort((a,b) => b.ts - a.ts);
+  const wsHist = XLSX.utils.aoa_to_sheet([
+    ['Fecha/Hora','Tipo','Ítem','Correlativo','Detalle/Cambios','Trabajador','Cantidad','Responsable'],
+    ...histRows.map(r => r.row)
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsHist, 'Historial');
+
   XLSX.writeFile(wb, 'Inventario_' + hoy() + '.xlsx');
 }
 
@@ -1550,8 +1619,8 @@ async function subirImagen(file, id) {
   return data.publicUrl;
 }
 
-function previewImg(input) {
-  const prev = document.getElementById('mi-img-preview');
+function previewImgSlot(input, slot) {
+  const prev = document.getElementById('mi-img-prev-' + slot);
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block'; };
@@ -1559,10 +1628,11 @@ function previewImg(input) {
   }
 }
 
-function quitarImagen() {
-  document.getElementById('mi-img-file').value = '';
-  document.getElementById('mi-img-url').value  = '';
-  const prev = document.getElementById('mi-img-preview');
+function quitarImgSlot(slot) {
+  document.getElementById('mi-img-file-' + slot).value = '';
+  const hiddenId = slot === 1 ? 'mi-img-url' : 'mi-img-url-' + slot;
+  document.getElementById(hiddenId).value = '';
+  const prev = document.getElementById('mi-img-prev-' + slot);
   prev.src = ''; prev.style.display = 'none';
 }
 
@@ -1593,8 +1663,11 @@ async function subirFotoEntrega(file) {
 function verDetalle(itemId) {
   const it = items.find(x => x.id === itemId);
   if (!it) return;
-  const imgHtml = it.imagen_url
-    ? `<img src="${it.imagen_url}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;background:#111;padding:8px">`
+  const _imgs = [it.imagen_url, it.imagen_url_2, it.imagen_url_3].filter(Boolean);
+  const imgHtml = _imgs.length
+    ? `<div style="display:grid;grid-template-columns:repeat(${Math.min(_imgs.length,3)},1fr);gap:8px">` +
+      _imgs.map(u => `<img src="${u}" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;background:#111;padding:6px;cursor:pointer" onclick="window.open('${u}','_blank')" title="Abrir en nueva pestaña">`).join('') +
+      `</div>`
     : `<div style="height:180px;border-radius:10px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:#444;font-size:56px">📷</div>`;
   const stat = (label, val, big, color) =>
     `<div style="background:rgba(255,255,255,.06);border-radius:8px;padding:12px 14px">
@@ -1628,6 +1701,25 @@ function verDetalle(itemId) {
         ${stat('Fecha de Ingreso',it.fecha_ingreso?ff(it.fecha_ingreso):'—')}
       </div>
       ${it.observaciones?`<div style="padding:12px 14px;background:rgba(255,255,255,.05);border-radius:8px;color:rgba(255,255,255,.65);font-size:13px;border-left:3px solid #1E4F8C"><span style="color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Observaciones</span>${it.observaciones}</div>`:''}
+      ${(() => {
+        const fmtD = d => { try { return new Date(d).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e){ return d||'?'; } };
+        const evts = [];
+        // Modificaciones del ítem
+        (it.historial||[]).forEach(h => {
+          evts.push({ ts: new Date(h.fecha||0), html: `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)"><div style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#1565c0;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:2px">✏️</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#7ec8ff">Modificación</div><div style="font-size:11px;color:#a9ccee;margin:2px 0">${fmtD(h.fecha)} · ${h.usuario||'?'}</div>${(h.cambios||[]).map(cc=>`<div style="font-size:11px;color:#ccc;margin-top:2px">• <b>${cc.campo}:</b> <span style="color:#ff9f9f">${cc.antes??'—'}</span> → <span style="color:#9fffa8">${cc.despues??'—'}</span></div>`).join('')}</div></div>`});
+        });
+        // Entregas EPP de este ítem
+        movs.filter(m => m.tipo==='entrega_epp' && m.item_id===it.id).forEach(m => {
+          evts.push({ ts: new Date(m.created_at||m.fecha||0), html: `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)"><div style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#2e7d32;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:2px">🦺</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#9fffa8">Entrega EPP</div><div style="font-size:11px;color:#a9ccee;margin:2px 0">${fmtD(m.created_at||m.fecha)}</div><div style="font-size:11px;color:#ccc">Trabajador: <b>${m.nombre_trabajador||'—'}</b> · Cant: <b>${m.cantidad||1}</b> · Responsable: ${m.responsable||'—'}</div></div></div>`});
+        });
+        // Salidas de insumo de este ítem
+        movs.filter(m => m.tipo==='salida_insumo' && m.item_id===it.id).forEach(m => {
+          evts.push({ ts: new Date(m.created_at||m.fecha||0), html: `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)"><div style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#e65100;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:2px">🔧</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#ffcc80">Salida Insumo</div><div style="font-size:11px;color:#a9ccee;margin:2px 0">${fmtD(m.created_at||m.fecha)}</div><div style="font-size:11px;color:#ccc">Cant: <b>${m.cantidad||1}</b> · Responsable: ${m.responsable||'—'}${m.observaciones?' · '+m.observaciones:''}</div></div></div>`});
+        });
+        if (!evts.length) return '';
+        evts.sort((a,b) => b.ts - a.ts);
+        return `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px 16px"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 Historial del ítem (${evts.length})</div>${evts.map(e=>e.html).join('')}</div>`;
+      })()}
     </div>`;
   ov.onclick = () => document.body.removeChild(ov);
   document.body.appendChild(ov);

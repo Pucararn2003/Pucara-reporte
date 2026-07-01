@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Inventario — Pucará</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:14px;background:#f0f4f8;color:#222}
@@ -177,6 +178,7 @@ th.sortable:hover{background:#163d6e}
     <img id="nav-logo" alt="Pucará"/>
     <h1>Control de Inventario — GEOTÉCNIA</h1>
     <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
+    <button class="hdr-btn" onclick="exportarExcel()" style="background:rgba(0,140,0,.3)">📊 Excel</button>
     <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
   </header>
 
@@ -259,9 +261,9 @@ th.sortable:hover{background:#163d6e}
       <table>
         <thead><tr>
           <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
-          <th>Talla</th><th>Cant.</th><th>Estado</th><th>Responsable</th>
+          <th>Talla</th><th>Cant.</th><th>Estado</th><th>Responsable</th><th></th>
         </tr></thead>
-        <tbody id="tb-epp"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-epp"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -280,9 +282,9 @@ th.sortable:hover{background:#163d6e}
       <table>
         <thead><tr>
           <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
-          <th>Cant.</th><th>Responsable</th><th>Observaciones</th>
+          <th>Cant.</th><th>Responsable</th><th>Observaciones</th><th></th>
         </tr></thead>
-        <tbody id="tb-sal"><tr><td colspan="7" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-sal"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -798,7 +800,7 @@ function renderEntrega() {
   if (d) rows = rows.filter(m => m.fecha >= d);
   if (h) rows = rows.filter(m => m.fecha <= h);
   const tb = document.getElementById('tb-epp');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr>
     <td>${ff(m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
@@ -808,6 +810,10 @@ function renderEntrega() {
     <td style="text-align:center">${m.cantidad}</td>
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-secondary btn-sm" onclick="editarEntrega('${m.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminarEntrega('${m.id}')">🗑️</button>
+    </td>
   </tr>`).join('');
 }
 
@@ -819,7 +825,7 @@ function renderSalida() {
   if (d) rows = rows.filter(m => m.fecha >= d);
   if (h) rows = rows.filter(m => m.fecha <= h);
   const tb = document.getElementById('tb-sal');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr>
     <td>${ff(m.fecha)}</td>
     <td>${m.turno||'—'}</td>
@@ -828,6 +834,10 @@ function renderSalida() {
     <td style="text-align:center">${m.cantidad}</td>
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-secondary btn-sm" onclick="editarSalida('${m.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminarSalida('${m.id}')">🗑️</button>
+    </td>
   </tr>`).join('');
 }
 
@@ -1041,44 +1051,67 @@ function mostrarAlertaStock(elId, disp) {
   else el.style.display = 'none';
 }
 
+let editMovId = null;
+
 async function guardarEntrega() {
   const fecha  = document.getElementById('me-fecha').value;
-  const trab   = document.getElementById('me-trab').value;
+  const trab   = document.getElementById('me-trab').value.trim();
   const itemId = document.getElementById('me-item-val').value;
   const cant   = parseInt(document.getElementById('me-cant').value) || 1;
   if (!fecha || !trab || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
   const itSel = items.find(x => x.id === itemId);
-  const disp  = itSel?.cantidad_disponible || 0;
-  if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
+  if (!editMovId) {
+    const disp = itSel?.cantidad_disponible || 0;
+    if (disp < cant && !confirm('Stock disponible (' + disp + ') menor a la cantidad solicitada (' + cant + '). ¿Continuar?')) return;
+  }
   const btnG = document.getElementById('btn-guardar-entrega');
-  if (btnG) { btnG.disabled = true; btnG.textContent = 'Guardando…'; }
-  let foto_url = null;
+  if (btnG) { btnG.disabled = true; btnG.textContent = editMovId ? 'Actualizando…' : 'Guardando…'; }
+  let foto_url = editMovId ? (movs.find(m => m.id === editMovId)?.foto_url || null) : null;
   const fotoFile = document.getElementById('me-foto-file')?.files[0];
   if (fotoFile) {
     try { foto_url = await subirFotoEntrega(fotoFile); }
     catch(e) { alert(e.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
   }
-  const { error: e1 } = await sb.from('inventario_movimientos').insert({
-    tipo: 'entrega_epp',
-    fecha,
-    turno:           document.getElementById('me-turno').value   || null,
-    item_id:         itemId,
-    descripcion:     itSel?.descripcion || null,
-    categoria:       itSel?.categoria   || null,
-    talla:           document.getElementById('me-talla').value.trim() || null,
-    cantidad:        cant,
-    nombre_trabajador: trab,
-    rut_trabajador:  document.getElementById('me-rut').value.trim()  || null,
-    cargo_trabajador:document.getElementById('me-cargo').value.trim()|| null,
-    estado_entregar: document.getElementById('me-estado').value,
-    responsable:     document.getElementById('me-resp').value.trim() || null,
-    observaciones:   document.getElementById('me-obs').value.trim()  || null,
+  const payload = {
+    tipo: 'entrega_epp', fecha,
+    turno:            document.getElementById('me-turno').value   || null,
+    item_id:          itemId,
+    descripcion:      itSel?.descripcion || null,
+    categoria:        itSel?.categoria   || null,
+    talla:            document.getElementById('me-talla').value.trim() || null,
+    cantidad:         cant,
+    nombre_trabajador:trab,
+    rut_trabajador:   document.getElementById('me-rut').value.trim()  || null,
+    cargo_trabajador: document.getElementById('me-cargo').value.trim()|| null,
+    estado_entregar:  document.getElementById('me-estado').value,
+    responsable:      document.getElementById('me-resp').value.trim() || null,
+    observaciones:    document.getElementById('me-obs').value.trim()  || null,
     foto_url,
-    usuario_email:   currentUser?.email || null,
-  });
+    usuario_email:    currentUser?.email || null,
+  };
+  if (editMovId) {
+    const oldMov = movs.find(m => m.id === editMovId);
+    if (oldMov?.item_id) {
+      const oldIt = items.find(x => x.id === oldMov.item_id);
+      if (oldIt) {
+        const restored = (oldIt.cantidad_disponible || 0) + (oldMov.cantidad || 0);
+        await sb.from('inventario_items').update({ cantidad_disponible: restored }).eq('id', oldMov.item_id);
+        oldIt.cantidad_disponible = restored;
+      }
+    }
+    const { error } = await sb.from('inventario_movimientos').update(payload).eq('id', editMovId);
+    if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } editMovId = null; return; }
+    const newIt = items.find(x => x.id === itemId);
+    if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    editMovId = null;
+  } else {
+    const { error } = await sb.from('inventario_movimientos').insert(payload);
+    if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
+    if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  }
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
-  if (e1) { alert('Error: ' + e1.message); return; }
-  if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, disp - cant) }).eq('id', itemId);
+  const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
+  if (mhdrE) mhdrE.textContent = 'Registrar Entrega EPP / Ropa';
   cerrar('modal-entrega');
   await cargarDatos();
 }
@@ -1097,17 +1130,20 @@ function abrirModalSalida() {
   abrir('modal-salida');
 }
 
+let editMovSalId = null;
+
 async function guardarSalida() {
   const fecha  = document.getElementById('ms-fecha').value;
   const itemId = document.getElementById('ms-item-val').value;
   const cant   = parseInt(document.getElementById('ms-cant').value) || 1;
   if (!fecha || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
   const itSel = items.find(x => x.id === itemId);
-  const disp  = itSel?.cantidad_disponible || 0;
-  if (disp < cant && !confirm(`Stock disponible (${disp}) menor a la cantidad solicitada (${cant}). ¿Continuar?`)) return;
-  const { error: e1 } = await sb.from('inventario_movimientos').insert({
-    tipo:         'salida_insumo',
-    fecha,
+  if (!editMovSalId) {
+    const disp = itSel?.cantidad_disponible || 0;
+    if (disp < cant && !confirm('Stock disponible (' + disp + ') menor a la cantidad solicitada (' + cant + '). ¿Continuar?')) return;
+  }
+  const payload = {
+    tipo: 'salida_insumo', fecha,
     turno:        document.getElementById('ms-turno').value  || null,
     item_id:      itemId,
     descripcion:  itSel?.descripcion || null,
@@ -1116,11 +1152,138 @@ async function guardarSalida() {
     responsable:  document.getElementById('ms-resp').value.trim() || null,
     observaciones:document.getElementById('ms-obs').value.trim()  || null,
     usuario_email:currentUser?.email || null,
-  });
-  if (e1) { alert('Error: ' + e1.message); return; }
-  if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, disp - cant) }).eq('id', itemId);
+  };
+  if (editMovSalId) {
+    const oldMov = movs.find(m => m.id === editMovSalId);
+    if (oldMov?.item_id) {
+      const oldIt = items.find(x => x.id === oldMov.item_id);
+      if (oldIt) {
+        const restored = (oldIt.cantidad_disponible || 0) + (oldMov.cantidad || 0);
+        await sb.from('inventario_items').update({ cantidad_disponible: restored }).eq('id', oldMov.item_id);
+        oldIt.cantidad_disponible = restored;
+      }
+    }
+    const { error } = await sb.from('inventario_movimientos').update(payload).eq('id', editMovSalId);
+    if (error) { alert('Error: ' + error.message); editMovSalId = null; return; }
+    const newIt = items.find(x => x.id === itemId);
+    if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    editMovSalId = null;
+  } else {
+    const { error } = await sb.from('inventario_movimientos').insert(payload);
+    if (error) { alert('Error: ' + error.message); return; }
+    if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
+  }
+  const mhdrS = document.querySelector('#modal-salida .mhdr h3');
+  if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
   cerrar('modal-salida');
   await cargarDatos();
+}
+
+// -- Editar / Eliminar EPP -----------------------------------------
+async function editarEntrega(movId) {
+  const mov = movs.find(m => m.id === movId);
+  if (!mov) return;
+  editMovId = movId;
+  document.getElementById('me-fecha').value   = mov.fecha || hoy();
+  document.getElementById('me-turno').value   = mov.turno || '';
+  document.getElementById('me-trab').value    = mov.nombre_trabajador || '';
+  document.getElementById('me-trab-list').style.display = 'none';
+  document.getElementById('me-rut').value     = mov.rut_trabajador  || '';
+  document.getElementById('me-cargo').value   = mov.cargo_trabajador || '';
+  const itE = items.find(x => x.id === mov.item_id);
+  const lblE = itE ? ((itE.correlativo ? '['+itE.correlativo+'] ' : '') + itE.descripcion + (itE.talla ? ' ('+itE.talla+')' : '')) : (mov.descripcion || '');
+  document.getElementById('me-item-search').value = lblE;
+  document.getElementById('me-item-val').value    = mov.item_id || '';
+  document.getElementById('me-item-list').style.display = 'none';
+  document.getElementById('me-talla').value   = mov.talla || '';
+  document.getElementById('me-cant').value    = mov.cantidad || 1;
+  document.getElementById('me-estado').value  = mov.estado_entregar || 'Nuevo';
+  document.getElementById('me-resp').value    = mov.responsable || '';
+  document.getElementById('me-obs').value     = mov.observaciones || '';
+  document.getElementById('me-foto-file').value = '';
+  const fPrevE = document.getElementById('me-foto-preview');
+  fPrevE.src = ''; fPrevE.style.display = 'none';
+  document.getElementById('alerta-epp').style.display = 'none';
+  document.querySelector('#modal-entrega .mhdr h3').textContent = 'Editar Entrega EPP / Ropa';
+  document.getElementById('btn-guardar-entrega').textContent = 'Actualizar Entrega';
+  abrir('modal-entrega');
+}
+
+async function eliminarEntrega(movId) {
+  if (!confirm('Eliminar esta entrega? El stock del item sera restaurado.')) return;
+  const mov = movs.find(m => m.id === movId);
+  const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
+  if (error) { alert('Error: ' + error.message); return; }
+  if (mov && mov.item_id) {
+    const it = items.find(x => x.id === mov.item_id);
+    if (it) {
+      const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
+      const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
+      const historial = [entrada, ...(it.historial || [])].slice(0, 50);
+      await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+    }
+  }
+  await cargarDatos();
+}
+
+// -- Editar / Eliminar Salida --------------------------------------
+async function editarSalida(movId) {
+  const mov = movs.find(m => m.id === movId);
+  if (!mov) return;
+  editMovSalId = movId;
+  document.getElementById('ms-fecha').value = mov.fecha || hoy();
+  document.getElementById('ms-turno').value = mov.turno || '';
+  const itS = items.find(x => x.id === mov.item_id);
+  const lblS = itS ? ((itS.correlativo ? '['+itS.correlativo+'] ' : '') + itS.descripcion + (itS.talla ? ' ('+itS.talla+')' : '')) : (mov.descripcion || '');
+  document.getElementById('ms-item-search').value = lblS;
+  document.getElementById('ms-item-val').value    = mov.item_id || '';
+  document.getElementById('ms-item-list').style.display = 'none';
+  document.getElementById('ms-cant').value  = mov.cantidad || 1;
+  document.getElementById('ms-resp').value  = mov.responsable || '';
+  document.getElementById('ms-obs').value   = mov.observaciones || '';
+  document.getElementById('alerta-sal').style.display = 'none';
+  document.querySelector('#modal-salida .mhdr h3').textContent = 'Editar Salida Insumo';
+  abrir('modal-salida');
+}
+
+async function eliminarSalida(movId) {
+  if (!confirm('Eliminar esta salida? El stock del item sera restaurado.')) return;
+  const mov = movs.find(m => m.id === movId);
+  const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
+  if (error) { alert('Error: ' + error.message); return; }
+  if (mov && mov.item_id) {
+    const it = items.find(x => x.id === mov.item_id);
+    if (it) {
+      const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
+      const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
+      const historial = [entrada, ...(it.historial || [])].slice(0, 50);
+      await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+    }
+  }
+  await cargarDatos();
+}
+
+// -- Exportar Excel ------------------------------------------------
+function exportarExcel() {
+  const wb = XLSX.utils.book_new();
+  const wsInv = XLSX.utils.aoa_to_sheet([
+    ['Corr.','Categoria','Descripcion','Color','Talla','Marca/Modelo','Serie/SN','Norma','Total','Disponible','Estado','Ubicacion','Area','F.Ingreso','Observaciones'],
+    ...items.map(i => [i.correlativo,i.categoria,i.descripcion,i.color,i.talla,i.marca_modelo,i.serie_sn,i.norma,i.cantidad_total,i.cantidad_disponible,i.estado,i.ubicacion,i.area_responsable,i.fecha_ingreso,i.observaciones])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsInv, 'Inventario');
+  const eppMovs = movs.filter(m => m.tipo === 'entrega_epp');
+  const wsEpp = XLSX.utils.aoa_to_sheet([
+    ['Fecha','Trabajador','RUT','Cargo','Turno','Item','Categoria','Talla','Cantidad','Estado Entrega','Responsable','Observaciones'],
+    ...eppMovs.map(m => [m.fecha,m.nombre_trabajador,m.rut_trabajador,m.cargo_trabajador,m.turno,m.descripcion,m.categoria,m.talla,m.cantidad,m.estado_entregar,m.responsable,m.observaciones])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsEpp, 'Entrega EPP');
+  const salMovs = movs.filter(m => m.tipo === 'salida_insumo');
+  const wsSal = XLSX.utils.aoa_to_sheet([
+    ['Fecha','Turno','Item','Categoria','Cantidad','Responsable','Observaciones'],
+    ...salMovs.map(m => [m.fecha,m.turno,m.descripcion,m.categoria,m.cantidad,m.responsable,m.observaciones])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsSal, 'Salida Insumos');
+  XLSX.writeFile(wb, 'Inventario_' + hoy() + '.xlsx');
 }
 
 // ── Historial de Movimientos ───────────────────────────────────

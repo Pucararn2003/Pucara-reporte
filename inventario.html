@@ -3193,7 +3193,7 @@ function generarPDF() {
         <td style="padding:5px 8px">${m.responsable||'—'}</td>
       </tr>`;
     }).join('');
-    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Entrega EPP / Ropa de Trabajo</h3>
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px;page-break-after:avoid;break-after:avoid">Entrega EPP / Ropa de Trabajo</h3>
     <p style="font-size:10pt;color:#666;margin-bottom:6px">Período: ${ff(desde)||'—'} — ${ff(hasta)||'—'}</p>
     <table style="width:100%;border-collapse:collapse;font-size:8.5pt">
       <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
@@ -3225,7 +3225,7 @@ function generarPDF() {
         <td style="padding:5px 8px">${m.observaciones||'—'}</td>
       </tr>`;
     }).join('');
-    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Salida de Insumos</h3>
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px;page-break-after:avoid;break-after:avoid">Salida de Insumos</h3>
     <p style="font-size:10pt;color:#666;margin-bottom:6px">Período: ${ff(desde)||'—'} — ${ff(hasta)||'—'}</p>
     <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
       <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">

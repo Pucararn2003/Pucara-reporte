@@ -3140,26 +3140,36 @@ function generarPDF() {
   let body = '';
 
   if (incInv) {
-    const filas = items.map(i => `<tr>
-      <td>${i.correlativo||'—'}</td>
-      <td>${i.descripcion}</td>
-      <td>${i.categoria||'—'}</td>
-      <td>${i.talla||'—'}</td>
-      <td style="text-align:center">${i.cantidad_total??0}</td>
-      <td style="text-align:center;font-weight:700;color:${(i.cantidad_disponible??0)<=1?'#c62828':'#2e7d32'}">${i.cantidad_disponible??0}</td>
-      <td>${i.estado||'—'}</td>
-      <td>${i.ubicacion||'—'}</td>
-    </tr>`).join('');
-    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px">Inventario General — Estado Actual</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
-      <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
-        <th style="padding:6px 8px">Corr.</th><th style="padding:6px 8px">Descripción</th>
-        <th style="padding:6px 8px">Categoría</th><th style="padding:6px 8px">Talla</th>
-        <th style="padding:6px 8px;text-align:center">Total</th><th style="padding:6px 8px;text-align:center">Disponible</th>
-        <th style="padding:6px 8px">Estado</th><th style="padding:6px 8px">Ubicación</th>
-      </tr></thead>
-      <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:12px;color:#999">Sin ítems</td></tr>'}</tbody>
-    </table>`;
+    function tablaInv(lista) {
+      const filas = lista.map(i => `<tr>
+        <td>${i.correlativo||'—'}</td>
+        <td>${i.descripcion}</td>
+        <td>${i.categoria||'—'}</td>
+        <td>${i.talla||'—'}</td>
+        <td style="text-align:center">${i.cantidad_total??0}</td>
+        <td style="text-align:center;font-weight:700;color:${(i.cantidad_disponible??0)<=1?'#c62828':'#2e7d32'}">${i.cantidad_disponible??0}</td>
+        <td>${i.estado||'—'}</td>
+        <td>${i.ubicacion||'—'}</td>
+      </tr>`).join('');
+      return `<table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:18px">
+        <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+          <th style="padding:6px 8px">Corr.</th><th style="padding:6px 8px">Descripción</th>
+          <th style="padding:6px 8px">Categoría</th><th style="padding:6px 8px">Talla</th>
+          <th style="padding:6px 8px;text-align:center">Total</th><th style="padding:6px 8px;text-align:center">Disponible</th>
+          <th style="padding:6px 8px">Estado</th><th style="padding:6px 8px">Ubicación</th>
+        </tr></thead>
+        <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:12px;color:#999">Sin ítems</td></tr>'}</tbody>
+      </table>`;
+    }
+    const itemsPucara  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR'));
+    const itemsGeotec  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO'));
+    const itemsOtros   = items.filter(i => !((i.area_responsable||'').toUpperCase().includes('PUCAR') || (i.area_responsable||'').toUpperCase().includes('GEO')));
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:2px solid #1E4F8C;padding-bottom:4px">Inventario General — Estado Actual</h3>`;
+    body += `<h4 style="margin:14px 0 6px;color:#1E4F8C;font-size:11pt;border-left:4px solid #1E4F8C;padding-left:8px">Ítems PUCARÁ</h4>` + tablaInv(itemsPucara);
+    body += `<h4 style="margin:14px 0 6px;color:#2e7d32;font-size:11pt;border-left:4px solid #2e7d32;padding-left:8px">Ítems GEOTÉCNIA</h4>` + tablaInv(itemsGeotec);
+    if (itemsOtros.length) {
+      body += `<h4 style="margin:14px 0 6px;color:#555;font-size:11pt;border-left:4px solid #aaa;padding-left:8px">Otros</h4>` + tablaInv(itemsOtros);
+    }
   }
 
   if (incEpp) {

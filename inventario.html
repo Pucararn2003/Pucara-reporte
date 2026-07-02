@@ -737,6 +737,7 @@ th.sortable:hover{background:#163d6e}
             <option>Dañado</option>
           </select>
         </div>
+        <div class="fg"><label>Fecha de Ingreso</label><input type="date" id="ma-fecha-ingreso"/></div>
         <div class="fg full"><label>Observaciones</label><textarea id="ma-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Foto de asignación</label>
@@ -1091,6 +1092,7 @@ function abrirModalAsignacion() {
   document.getElementById('alerta-asig').style.display    = 'none';
   document.getElementById('ma-serie').value         = '';
   document.getElementById('ma-estado-fisico').value = '';
+  document.getElementById('ma-fecha-ingreso').value = '';
   abrir('modal-asignacion');
 }
 
@@ -1109,8 +1111,9 @@ async function guardarAsignacion() {
   var dispActual   = itSel ? (itSel.cantidad_disponible || 0) : 0;
   var totalActual  = itSel ? (itSel.cantidad_total      || 0) : 0;
 
-  var estadoFisico = document.getElementById('ma-estado-fisico').value;
-  var serieSn      = document.getElementById('ma-serie').value.trim();
+  var estadoFisico  = document.getElementById('ma-estado-fisico').value;
+  var serieSn       = document.getElementById('ma-serie').value.trim();
+  var fechaIngreso  = document.getElementById('ma-fecha-ingreso').value || null;
 
   var btn = document.getElementById('btn-guardar-asignacion');
   btn.disabled = true; btn.textContent = 'Guardando…';
@@ -1176,12 +1179,15 @@ async function guardarAsignacion() {
       { campo: 'Asignado a', antes: null, despues: trab + (cargo ? ' (' + cargo + ')' : '') },
       { campo: 'Fecha asignación', antes: null, despues: fecha },
     ];
-    if (estadoFisico) cambiosAsig.push({ campo: 'Estado físico', antes: null, despues: estadoFisico });
-    if (serieSn)      cambiosAsig.push({ campo: 'N° Serie', antes: null, despues: serieSn });
+    if (estadoFisico)  cambiosAsig.push({ campo: 'Estado físico',   antes: null, despues: estadoFisico });
+    if (serieSn)       cambiosAsig.push({ campo: 'N° Serie',         antes: null, despues: serieSn });
+    if (fechaIngreso)  cambiosAsig.push({ campo: 'Fecha de ingreso', antes: null, despues: fechaIngreso });
     var entradaAsig = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: cambiosAsig };
     var histAsig = [entradaAsig].concat(itSel.historial || []).slice(0, 50);
+    var updItemHist = { historial: histAsig };
+    if (fechaIngreso) updItemHist.fecha_ingreso = fechaIngreso;
     await sb.from('inventario_items')
-      .update({ historial: histAsig })
+      .update(updItemHist)
       .eq('id', itemId);
   }
 

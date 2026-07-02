@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -163,6 +163,8 @@ th.sortable:hover{background:#163d6e}
 .item-search-wrap{position:relative}
 .item-dropdown{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1px solid #cdd8e3;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);max-height:230px;overflow-y:auto;z-index:600}
 .item-dd-row{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f5f5f5;line-height:1.4}
+.item-dd-row.dd-active{background:#1E4F8C;color:#fff !important}
+.item-dd-row.dd-active span{color:#fff !important}
 .item-dd-row:last-child{border-bottom:none}
 .item-dd-row:hover{background:#eef3ff}
 .item-dd-empty{padding:10px 12px;color:#999;font-size:13px;text-align:center}
@@ -373,11 +375,11 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
+            <th onclick="toggleSort('epp',renderEntrega)" style="cursor:pointer;user-select:none">Fecha <span id="ic-epp-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
             <th>Talla</th><th>Cant.</th><th>Restante</th><th>Estado</th><th>Responsable</th><th></th>
           </tr>
           <tr>
-            <th class="th-filter"><input type="text" id="fe-trab-q" placeholder="dd/mm/aaaa..." oninput="renderEntrega()" class="tf-inp"/></th>
+            <th class="th-filter"><input type="text" id="fe-trab-q" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderEntrega()" class="tf-inp"/></th>
             <th class="th-filter"><select id="fe-trab" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fe-cargo" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fe-item" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
@@ -408,11 +410,11 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
+            <th onclick="toggleSort('sal',renderSalida)" style="cursor:pointer;user-select:none">Fecha <span id="ic-sal-fecha">↓</span></th><th>Turno</th><th>Ítem</th><th>Categoría</th>
             <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Observaciones</th><th></th>
           </tr>
           <tr>
-            <th class="th-filter"><input type="text" id="fs-fecha-q" placeholder="dd/mm/aaaa..." oninput="renderSalida()" class="tf-inp"/></th>
+            <th class="th-filter"><input type="text" id="fs-fecha-q" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderSalida()" class="tf-inp"/></th>
             <th class="th-filter"><select id="fs-turno" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fs-item" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fs-categ" onchange="renderSalida()" class="tf-sel"><option value="">Todas</option></select></th>
@@ -441,19 +443,19 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
+            <th onclick="toggleSort('asig',renderAsignaciones)" style="cursor:pointer;user-select:none">Fecha Ingreso <span id="ic-asig-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
             <th>Cant.</th><th>Foto</th><th>Responsable</th><th>Observaciones</th><th></th>
           </tr>
           <tr>
-            <th class="th-filter"><input type="text" id="fa-fecha" placeholder="dd/mm/aaaa..." oninput="renderAsignaciones()" style="width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none" class="tf-inp"/></th>
+            <th class="th-filter"><input type="text" id="fa-fecha" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderAsignaciones()" style="width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none" class="tf-inp"/></th>
             <th class="th-filter"><select id="fa-trab" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fa-cargo" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fa-item" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fa-categ" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todas</option></select></th>
-            <th class="th-filter"></th>
+            <th class="th-filter"><select id="fa-cant" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todas</option></select></th>
             <th class="th-filter"></th>
             <th class="th-filter"><select id="fa-resp" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
-            <th class="th-filter"></th>
+            <th class="th-filter"><input type="text" id="fa-obs" placeholder="Buscar..." oninput="renderAsignaciones()" style="width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none" class="tf-inp"/></th>
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFA()">✕ Limpiar</button></th>
           </tr>
         </thead>
@@ -671,6 +673,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <div class="item-search-wrap">
             <input type="text" id="me-trab" placeholder="🔍 Buscar o escribir nombre del trabajador..."
                    oninput="filtrarTrab()" onfocus="filtrarTrab()" autocomplete="off"
+                   onkeydown="ddNav(event,'me-trab-list')"
                    onblur="setTimeout(()=>{const l=document.getElementById('me-trab-list');if(l)l.style.display='none'},160)"/>
             <div id="me-trab-list" class="item-dropdown"></div>
           </div>
@@ -682,6 +685,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <div class="item-search-wrap">
             <input type="text" id="me-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('me')" onfocus="filtrarItems('me')" autocomplete="off"
+                   onkeydown="ddNav(event,'me-item-list')"
                    style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
             <div id="me-item-list" class="item-dropdown"></div>
             <input type="hidden" id="me-item-val"/>
@@ -745,6 +749,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <div class="item-search-wrap">
             <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
+                   onkeydown="ddNav(event,'ms-item-list')"
                    style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
             <div id="ms-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ms-item-val"/>
@@ -799,7 +804,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <div class="item-search-wrap">
             <input type="text" id="ma-trab" placeholder="🔍 Buscar o escribir nombre del trabajador..."
                    oninput="filtrarTrabA()" onfocus="filtrarTrabA()" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#ma-trab-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
+                   onkeydown="ddNav(event,'ma-trab-list')"
                    onblur="setTimeout(()=>{const l=document.getElementById('ma-trab-list');if(l)l.style.display='none'},160)"/>
             <div id="ma-trab-list" class="item-dropdown"></div>
           </div>
@@ -811,7 +816,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <div class="item-search-wrap">
             <input type="text" id="ma-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('ma')" onfocus="filtrarItems('ma')" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#ma-item-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
+                   onkeydown="ddNav(event,'ma-item-list')"
                    style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
             <div id="ma-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ma-item-val"/>
@@ -967,22 +972,28 @@ const SUPABASE_URL = 'https://ftbsqhcvxnyrkajgavaa.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0YnNxaGN2eG55cmthamdhdmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg2OTIsImV4cCI6MjA5MDEwNDY5Mn0.v_Oif1dHmSp-pVp9Dctopona3NlTIDbX9pcdaRMrD0w';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+var _sortDir = { epp: 'desc', sal: 'desc', asig: 'desc' };
+function toggleSort(key, renderFn) {
+  _sortDir[key] = _sortDir[key] === 'desc' ? 'asc' : 'desc';
+  renderFn();
+}
+
 let TRABAJADORES = [
-  { nombre: 'Alexis Varela Guerrero',      cargo: 'Asesor en Prevención de Riesgos', rut: '16578999-7', email: 'avarela@pucara-sa.cl' },
-  { nombre: 'Luis Ahumada Berrios',        cargo: 'Jefe de Terreno',                 rut: '15555031-7', email: 'lahumada@pucara-sa.cl' },
-  { nombre: 'Kevin Lazcano Albornoz',      cargo: 'Minero Especialista A',           rut: '18379036-6' },
-  { nombre: 'Matías Adasme Miranda',       cargo: 'Minero Especialista B',           rut: '18168607-3' },
-  { nombre: 'David Ramírez Zambra',        cargo: 'Minero Especialista B',           rut: '21320911-6' },
-  { nombre: 'Marcelo Pérez Contreras',     cargo: 'Minero Especialista B',           rut: '12718922-6' },
-  { nombre: 'Cristian Salinas Ibarra',     cargo: 'Minero Especialista B',           rut: '20133176-5' },
-  { nombre: 'Alexander Naranjo Cárdenas',  cargo: 'Minero Especialista B',           rut: '19034150-K' },
-  { nombre: 'Máximo Aliaga Becerra',       cargo: 'Minero Especialista B',           rut: '18721952-3' },
-  { nombre: 'Cristian Yáñez Lillo',        cargo: 'Minero Especialista B',           rut: '16462390-4' },
-  { nombre: 'Eric Rojas Rojas',            cargo: 'Jefe de Terreno (ADC)',           rut: '15002789-6' },
-  { nombre: 'Víctor Conejeros Martínez',   cargo: 'Minero Especialista B',           rut: '16987717-3' },
-  { nombre: 'Jaime Cereceda Solano',       cargo: 'Minero Especialista B',           rut: '15445883-2' },
-  { nombre: 'Wladimir Muñoz Tapia',        cargo: 'Minero Especialista A',           rut: '18557374-5' },
-  { nombre: 'Esteban Moreira Ubilla', email: 'emoreira@pucara-sa.cl',      cargo: 'Asesor en Prevención de Riesgos', rut: '17808049-0' },
+  { nombre: 'Alexis Varela Guerrero',      cargo: 'Asesor en Prevención de Riesgos', rut: '16578999-7', email: 'avarela@pucara-sa.cl',  turno: 'A' },
+  { nombre: 'Luis Ahumada Berrios',        cargo: 'Jefe de Terreno',                 rut: '15555031-7', email: 'lahumada@pucara-sa.cl', turno: 'A' },
+  { nombre: 'Kevin Lazcano Albornoz',      cargo: 'Minero Especialista A',           rut: '18379036-6', turno: 'A' },
+  { nombre: 'Matías Adasme Miranda',       cargo: 'Minero Especialista B',           rut: '18168607-3', turno: 'A' },
+  { nombre: 'David Ramírez Zambra',        cargo: 'Minero Especialista B',           rut: '21320911-6', turno: 'A' },
+  { nombre: 'Marcelo Pérez Contreras',     cargo: 'Minero Especialista B',           rut: '12718922-6', turno: 'A' },
+  { nombre: 'Cristian Salinas Ibarra',     cargo: 'Minero Especialista B',           rut: '20133176-5', turno: 'A' },
+  { nombre: 'Alexander Naranjo Cárdenas',  cargo: 'Minero Especialista B',           rut: '19034150-K', turno: 'B' },
+  { nombre: 'Máximo Aliaga Becerra',       cargo: 'Minero Especialista B',           rut: '18721952-3', turno: 'B' },
+  { nombre: 'Cristian Yáñez Lillo',        cargo: 'Minero Especialista B',           rut: '16462390-4', turno: 'B' },
+  { nombre: 'Eric Rojas Rojas',            cargo: 'Jefe de Terreno (ADC)',           rut: '15002789-6', turno: 'B' },
+  { nombre: 'Víctor Conejeros Martínez',   cargo: 'Minero Especialista B',           rut: '16987717-3', turno: 'B' },
+  { nombre: 'Jaime Cereceda Solano',       cargo: 'Minero Especialista B',           rut: '15445883-2', turno: 'B' },
+  { nombre: 'Wladimir Muñoz Tapia',        cargo: 'Minero Especialista A',           rut: '18557374-5', turno: 'B' },
+  { nombre: 'Esteban Moreira Ubilla',      cargo: 'Asesor en Prevención de Riesgos', rut: '17808049-0', email: 'emoreira@pucara-sa.cl', turno: 'B' },
 ];
 (function(){
   try {
@@ -1003,10 +1014,43 @@ let sortDir = 'asc';
 
 
 
+function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function autoFecha(inp) {
+  var raw = inp.value.replace(/\D/g,'').substring(0,8);
+  var fmt = raw;
+  if (raw.length > 2) fmt = raw.substring(0,2) + '/' + raw.substring(2);
+  if (raw.length > 4) fmt = raw.substring(0,2) + '/' + raw.substring(2,4) + '/' + raw.substring(4);
+  inp.value = fmt;
+}
+function ddNav(e, listId) {
+  var list = document.getElementById(listId);
+  if (!list || list.style.display === 'none') return;
+  var rows = Array.from(list.querySelectorAll('.item-dd-row'));
+  if (!rows.length) return;
+  var cur = rows.indexOf(list.querySelector('.item-dd-row.dd-active'));
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    var next = cur < rows.length - 1 ? cur + 1 : 0;
+    rows.forEach(function(r){ r.classList.remove('dd-active'); });
+    rows[next].classList.add('dd-active');
+    rows[next].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    var prev = cur > 0 ? cur - 1 : rows.length - 1;
+    rows.forEach(function(r){ r.classList.remove('dd-active'); });
+    rows[prev].classList.add('dd-active');
+    rows[prev].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    var active = list.querySelector('.item-dd-row.dd-active') || rows[0];
+    if (active) active.dispatchEvent(new MouseEvent('mousedown'));
+  }
+}
+
 function filtrarTrab() {
-  const q    = (document.getElementById('me-trab').value || '').toLowerCase();
+  const q    = norm(document.getElementById('me-trab').value);
   const list = document.getElementById('me-trab-list');
-  const fil  = q ? TRABAJADORES.filter(t => t.nombre.toLowerCase().includes(q) || (t.cargo||'').toLowerCase().includes(q)) : TRABAJADORES;
+  const fil  = q ? TRABAJADORES.filter(t => norm(t.nombre).includes(q) || norm(t.cargo).includes(q)) : TRABAJADORES;
   var addBtn = '<div class="item-dd-row" style="color:#1E4F8C;font-weight:600;border-top:1px solid #eee;margin-top:2px;padding-top:8px" onmousedown="abrirNuevoTrabajador(function(t){ seleccionarTrab(t.nombre); })">➕ Agregar nuevo trabajador</div>';
   list.innerHTML = (fil.length
     ? fil.map(t => `<div class="item-dd-row" onmousedown="seleccionarTrab('${t.nombre.replace(/'/g,"\\'")}')">
@@ -1021,6 +1065,7 @@ function seleccionarTrab(nombre) {
   document.getElementById('me-trab').value  = nombre;
   document.getElementById('me-rut').value   = t?.rut   || '';
   document.getElementById('me-cargo').value = t?.cargo || '';
+  if (t?.turno) document.getElementById('me-turno').value = t.turno;
   document.getElementById('me-trab-list').style.display = 'none';
 }
 
@@ -1139,6 +1184,7 @@ function renderAsignaciones() {
     return itV ? itV.categoria : m.categoria;
   }));
   poblarSelect('fa-resp', allAsigs.map(function(m){ return m.responsable; }));
+  poblarSelect('fa-cant', allAsigs.map(function(m){ return String(m.cantidad || 1); }));
   // Leer filtros activos
   var fFecha = (document.getElementById('fa-fecha') ? document.getElementById('fa-fecha').value.toLowerCase() : '');
   var fTrab  = document.getElementById('fa-trab')  ? document.getElementById('fa-trab').value  : '';
@@ -1146,19 +1192,31 @@ function renderAsignaciones() {
   var fItem  = document.getElementById('fa-item')  ? document.getElementById('fa-item').value  : '';
   var fCateg = document.getElementById('fa-categ') ? document.getElementById('fa-categ').value : '';
   var fResp  = document.getElementById('fa-resp')  ? document.getElementById('fa-resp').value  : '';
+  var fCant  = document.getElementById('fa-cant')  ? document.getElementById('fa-cant').value  : '';
+  var fObs   = document.getElementById('fa-obs')   ? norm(document.getElementById('fa-obs').value) : '';
   // Aplicar filtros
   var asigs = allAsigs.filter(function(m) {
     var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
     var desc = (itV ? itV.descripcion : m.descripcion) || '';
     var catg = (itV ? itV.categoria   : m.categoria)   || '';
-    if (fFecha && !ffdt(m.created_at || m.fecha).toLowerCase().includes(fFecha)) return false;
+    if (fFecha && !ff((itV && itV.fecha_ingreso) || m.fecha || m.created_at).toLowerCase().includes(fFecha)) return false;
     if (fTrab  && m.nombre_trabajador !== fTrab)  return false;
     if (fCargo && m.cargo_trabajador  !== fCargo) return false;
     if (fItem  && desc !== fItem)                 return false;
     if (fCateg && catg !== fCateg)                return false;
     if (fResp  && m.responsable       !== fResp)  return false;
+    if (fCant  && String(m.cantidad || 1) !== fCant) return false;
+    if (fObs   && !norm(m.observaciones || '').includes(fObs)) return false;
     return true;
   });
+  asigs.sort(function(a,b){
+    var itA=a.item_id?items.find(function(x){return x.id===a.item_id;}):null;
+    var itB=b.item_id?items.find(function(x){return x.id===b.item_id;}):null;
+    var dA=(itA&&itA.fecha_ingreso)||a.created_at||a.fecha||'';
+    var dB=(itB&&itB.fecha_ingreso)||b.created_at||b.fecha||'';
+    return _sortDir.asig==='asc'?dA.localeCompare(dB):dB.localeCompare(dA);
+  });
+  var icA = document.getElementById('ic-asig-fecha'); if(icA) icA.textContent = _sortDir.asig==='asc'?'↑':'↓';
   const stEl = document.getElementById('st-asig-total');
   if (stEl) stEl.textContent = allAsigs.length;
   const tb = document.getElementById('tb-asig');
@@ -1175,8 +1233,8 @@ function renderAsignaciones() {
     const categ    = itVivo ? itVivo.categoria     : m.categoria;
     const itmInfo  = desc;
     const itmSub   = (corr ? 'Corr. ' + corr : '') + (corr && categ ? ' · ' : '') + (categ || '');
-    return '<tr onclick="clicFila(this,\'asig\',' + JSON.stringify(m.id) + ')" ondblclick="dblFila(this,\'asig\',' + JSON.stringify(m.id) + ')" style="cursor:pointer">' +
-      '<td>' + ffdt(m.created_at || m.fecha) + '</td>' +
+    return '<tr onclick="clicFila(this,\'asig\',\'' + m.id + '\')" ondblclick="dblFila(this,\'asig\',\'' + m.id + '\')" style="cursor:pointer">' +
+      '<td>' + ff((itVivo && itVivo.fecha_ingreso) || m.fecha || m.created_at) + '</td>' +
       '<td><strong>' + (m.nombre_trabajador || '—') + '</strong>' +
         (m.rut_trabajador ? '<br><small style="color:#888">' + m.rut_trabajador + '</small>' : '') + '</td>' +
       '<td>' + (m.cargo_trabajador || '—') + '</td>' +
@@ -1227,9 +1285,9 @@ function guardarNuevoTrabajador() {
 
 // ── Trabajadores picker (asignación) ─────────────────────────
 function filtrarTrabA() {
-  var q    = (document.getElementById('ma-trab').value || '').toLowerCase();
+  var q    = norm(document.getElementById('ma-trab').value);
   var list = document.getElementById('ma-trab-list');
-  var fil  = q ? TRABAJADORES.filter(function(t){ return t.nombre.toLowerCase().includes(q) || (t.cargo||'').toLowerCase().includes(q); }) : TRABAJADORES;
+  var fil  = q ? TRABAJADORES.filter(function(t){ return norm(t.nombre).includes(q) || norm(t.cargo).includes(q); }) : TRABAJADORES;
   var addBtnA = '<div class="item-dd-row" style="color:#1E4F8C;font-weight:600;border-top:1px solid #eee;margin-top:2px;padding-top:8px" onmousedown="abrirNuevoTrabajador(function(t){ seleccionarTrabA(t.nombre); })">➕ Agregar nuevo trabajador</div>';
   list.innerHTML = (fil.length
     ? fil.map(function(t){
@@ -1860,7 +1918,7 @@ function sortBy(col) {
 }
 
 function limpiarFA() {
-  ['fa-fecha','fa-trab','fa-cargo','fa-item','fa-categ','fa-resp'].forEach(function(id){
+  ['fa-fecha','fa-trab','fa-cargo','fa-item','fa-categ','fa-cant','fa-resp','fa-obs'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1890,7 +1948,7 @@ function limpiarFiltros() {
 }
 
 function renderInventario() {
-  const q      = (document.getElementById('fi-buscar').value || '').toLowerCase();
+  const q      = norm(document.getElementById('fi-buscar').value);
   const cat    = document.getElementById('fi-cat').value;
   const estado = document.getElementById('fi-estado').value;
   const ubic   = document.getElementById('fi-ubic').value;
@@ -1899,9 +1957,9 @@ function renderInventario() {
   if (estado) rows = rows.filter(i => i.estado === estado);
   if (ubic)   rows = rows.filter(i => (i.ubicacion||'') === ubic);
   if (q)      rows = rows.filter(i =>
-    (i.descripcion||'').toLowerCase().includes(q) ||
-    (i.correlativo||'').toLowerCase().includes(q) ||
-    (i.marca_modelo||'').toLowerCase().includes(q)
+    norm(i.descripcion).includes(q) ||
+    norm(i.correlativo).includes(q) ||
+    norm(i.marca_modelo).includes(q)
   );
   // Ordenar: ítems modificados recientemente primero; luego por created_at
   if (!sortCol) {
@@ -1976,6 +2034,8 @@ function renderEntrega() {
     if (fResp  && m.responsable       !== fResp)  return false;
     return true;
   });
+  rows.sort(function(a,b){ return _sortDir.epp==='asc'?(a.fecha||'').localeCompare(b.fecha||''):(b.fecha||'').localeCompare(a.fecha||''); });
+  var icE = document.getElementById('ic-epp-fecha'); if(icE) icE.textContent = _sortDir.epp==='asc'?'↑':'↓';
   const tb = document.getElementById('tb-epp');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'epp','${m.id}')" ondblclick="dblFila(this,'epp','${m.id}')" style="cursor:pointer">
@@ -1985,7 +2045,7 @@ function renderEntrega() {
     <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
     <td>${m.talla||'—'}</td>
     <td style="text-align:center"><span style="font-weight:700;color:#c62828">↓ ${m.cantidad}</span></td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">↑ ${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center">${(()=>{ if(m.cantidad_restante!=null){ const col=m.cantidad_restante<=0?'#c62828':m.cantidad_restante<=2?'#e65100':'#2e7d32'; return `<span style="font-weight:700;color:${col}">↑ ${m.cantidad_restante}</span>`; } const fb=(items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible; return fb!=null?`<span style="font-weight:700;color:${fb<=0?'#c62828':fb<=2?'#e65100':'#2e7d32'}">↑ ${fb}</span>`:'—'; })()}</td>
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
     <td style="white-space:nowrap">
@@ -2022,6 +2082,8 @@ function renderSalida() {
     if (fResp  && m.responsable !== fResp)  return false;
     return true;
   });
+  rows.sort(function(a,b){ return _sortDir.sal==='asc'?(a.fecha||'').localeCompare(b.fecha||''):(b.fecha||'').localeCompare(a.fecha||''); });
+  var icS = document.getElementById('ic-sal-fecha'); if(icS) icS.textContent = _sortDir.sal==='asc'?'↑':'↓';
   const tb = document.getElementById('tb-sal');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
   tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'sal','${m.id}')" ondblclick="dblFila(this,'sal','${m.id}')" style="cursor:pointer">
@@ -2030,7 +2092,7 @@ function renderSalida() {
     <td>${m.descripcion||'—'}</td>
     <td><span class="badge b-info">${m.categoria||'—'}</span></td>
     <td style="text-align:center"><span style="font-weight:700;color:#c62828">↓ ${m.cantidad}</span></td>
-    <td style="text-align:center">${(()=>{ const r=m.cantidad_restante??((items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible??null); return r!==null?`<span style="font-weight:700;color:${r<=0?'#c62828':r<=2?'#e65100':'#2e7d32'}">↑ ${r}</span>`:'—'; })()}</td>
+    <td style="text-align:center">${(()=>{ if(m.cantidad_restante!=null){ const col=m.cantidad_restante<=0?'#c62828':m.cantidad_restante<=2?'#e65100':'#2e7d32'; return `<span style="font-weight:700;color:${col}">↑ ${m.cantidad_restante}</span>`; } const fb=(items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible; return fb!=null?`<span style="font-weight:700;color:${fb<=0?'#c62828':fb<=2?'#e65100':'#2e7d32'}">↑ ${fb}</span>`:'—'; })()}</td>
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
     <td style="white-space:nowrap">
@@ -2042,7 +2104,7 @@ function renderSalida() {
 
 // ── Item Search Dropdown ────────────────────────────────────────
 function filtrarItems(prefix) {
-  const q    = (document.getElementById(prefix + '-item-search').value || '').toLowerCase();
+  const q    = norm(document.getElementById(prefix + '-item-search').value);
   const list = document.getElementById(prefix + '-item-list');
   let pool = items;
   if (prefix === 'ms') {
@@ -2052,16 +2114,16 @@ function filtrarItems(prefix) {
     });
   }
   const fil  = pool.filter(i =>
-    (i.descripcion || '').toLowerCase().includes(q) ||
-    (i.correlativo || '').toLowerCase().includes(q) ||
-    (i.categoria   || '').toLowerCase().includes(q)
+    norm(i.descripcion).includes(q) ||
+    norm(i.correlativo).includes(q) ||
+    norm(i.categoria).includes(q)
   );
   list.innerHTML = fil.length
     ? fil.map(i => {
         const stock = i.cantidad_disponible || 0;
         const sc    = stock <= 1 ? 'stock-low' : 'stock-ok';
         const lbl   = (i.correlativo ? '[' + i.correlativo + '] ' : '') + i.descripcion + (i.talla ? ' (' + i.talla + ')' : '');
-        return `<div class="item-dd-row" data-id="${i.id}" data-prefix="${prefix}" onclick="seleccionarItemDD(this)">${lbl} — <span class="${sc}">Disp: ${stock}</span></div>`;
+        return `<div class="item-dd-row" data-id="${i.id}" data-prefix="${prefix}" onmousedown="seleccionarItemDD(this)">${lbl} — <span class="${sc}">Disp: ${stock}</span></div>`;
       }).join('')
     : '<div class="item-dd-empty">Sin resultados</div>';
   list.style.display = 'block';
@@ -2418,7 +2480,14 @@ async function guardarEntrega() {
     payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
-    if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    // Leer valores reales post-trigger, sumar cant al total y descontar del disponible
+    const { data: _curE } = await sb.from('inventario_items').select('cantidad_total,cantidad_disponible').eq('id', itemId).single();
+    const _totalE = _curE ? (_curE.cantidad_total || 0) : (itSel?.cantidad_total || 0);
+    const _dispE  = _curE ? (_curE.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
+    await sb.from('inventario_items').update({
+      cantidad_total:      _totalE + cant,
+      cantidad_disponible: Math.max(0, _dispE - 1 - cant)
+    }).eq('id', itemId);
   }
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
@@ -2499,7 +2568,14 @@ async function guardarSalida() {
     payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); return; }
-    if (itSel) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (itSel.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    // Leer valores reales post-trigger, sumar cant al total y descontar del disponible
+    const { data: _curS } = await sb.from('inventario_items').select('cantidad_total,cantidad_disponible').eq('id', itemId).single();
+    const _totalS = _curS ? (_curS.cantidad_total || 0) : (itSel?.cantidad_total || 0);
+    const _dispS  = _curS ? (_curS.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
+    await sb.from('inventario_items').update({
+      cantidad_total:      _totalS + cant,
+      cantidad_disponible: Math.max(0, _dispS - 1 - cant)
+    }).eq('id', itemId);
   }
   const mhdrS = document.querySelector('#modal-salida .mhdr h3');
   if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
@@ -2873,13 +2949,14 @@ function mostrarDetalleMov(id) {
   }
   var rows = '';
   if (m.tipo === 'asignacion') {
-    rows += fila('Fecha',        ffdt(m.created_at || m.fecha));
+    rows += fila('Fecha de Creación', ffdt(m.created_at || m.fecha));
     rows += fila('Trabajador',   (m.nombre_trabajador || '—') + (m.rut_trabajador ? ' &nbsp;·&nbsp; ' + m.rut_trabajador : ''));
     rows += fila('Cargo',        m.cargo_trabajador);
     rows += fila('Ítem',         desc + (corr ? ' <span style="color:#888;font-size:11px">(Corr. ' + corr + ')</span>' : ''));
     rows += fila('Categoría',    categ || '—');
     rows += fila('Talla',        m.talla || (itVivo ? itVivo.talla : null));
-    rows += fila('Cantidad',     m.cantidad || 1);
+    rows += fila('Cantidad',      m.cantidad || 1);
+    rows += fila('Fecha Ingreso', itVivo && itVivo.fecha_ingreso ? ff(itVivo.fecha_ingreso) : null);
     rows += fila('Responsable',  m.responsable);
     rows += fila('Observaciones',m.observaciones);
   } else if (m.tipo === 'entrega_epp') {
@@ -3185,9 +3262,10 @@ function generarPDF() {
         <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:12px;color:#999">Sin ítems</td></tr>'}</tbody>
       </table>`;
     }
-    const itemsPucara  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR'));
-    const itemsGeotec  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO'));
-    const itemsOtros   = items.filter(i => !((i.area_responsable||'').toUpperCase().includes('PUCAR') || (i.area_responsable||'').toUpperCase().includes('GEO')));
+    const _sortDesc = (a, b) => (a.descripcion||'').localeCompare(b.descripcion||'', 'es');
+    const itemsPucara  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR')).sort(_sortDesc);
+    const itemsGeotec  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO')).sort(_sortDesc);
+    const itemsOtros   = items.filter(i => !((i.area_responsable||'').toUpperCase().includes('PUCAR') || (i.area_responsable||'').toUpperCase().includes('GEO'))).sort(_sortDesc);
     body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:2px solid #1E4F8C;padding-bottom:4px">Inventario General — Estado Actual</h3>`;
     body += `<h4 style="margin:14px 0 6px;color:#1E4F8C;font-size:11pt;border-left:4px solid #1E4F8C;padding-left:8px">Ítems PUCARÁ</h4>` + tablaInv(itemsPucara);
     body += `<h4 style="margin:14px 0 6px;color:#2e7d32;font-size:11pt;border-left:4px solid #2e7d32;padding-left:8px">Ítems GEOTÉCNIA</h4>` + tablaInv(itemsGeotec);
@@ -3545,7 +3623,7 @@ init();
           <div class="item-search-wrap">
             <input type="text" id="mb-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
               oninput="filtrarItems('mb')" onfocus="filtrarItems('mb')" autocomplete="off"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#mb-item-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
+              onkeydown="ddNav(event,'mb-item-list')"
               style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
             <div id="mb-item-list" class="item-dropdown"></div>
             <input type="hidden" id="mb-item-val"/>

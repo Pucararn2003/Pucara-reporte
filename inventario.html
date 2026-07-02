@@ -1147,17 +1147,24 @@ async function guardarAsignacion() {
     return;
   }
 
-  // El trigger de Supabase incrementa disponible automáticamente al insertar
-  // cualquier movimiento. Corregimos en un solo update:
-  //   • total    = totalActual + 1   (nueva unidad entra al inventario)
-  //   • disponible = dispActual      (restaurar al valor previo, deshaciendo el trigger)
-  //   • estado   según disponibilidad
-  var newTotal  = totalActual + 1;
-  var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
+  // Lógica de asignación:
+  // • Si hay stock (dispActual > 0): tomar del pool → Total sin cambio, Disponible-1
+  // • Si no hay stock (dispActual = 0): unidad nueva → Total+1, Disponible sin cambio
+  // El trigger Supabase suma 1 a disponible en cada INSERT, por eso nuestro update
+  // siempre sobreescribe el valor para corregirlo.
+  var newTotal, newDisp;
+  if (dispActual > 0) {
+    newTotal = totalActual;        // hay stock: no agrega unidad nueva al total
+    newDisp  = dispActual - 1;    // descuenta del disponible
+  } else {
+    newTotal = totalActual + 1;   // sin stock: nueva unidad entra al inventario
+    newDisp  = 0;                 // disponible queda en 0 (asignado directamente)
+  }
+  var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
   await sb.from('inventario_items')
     .update({
       cantidad_total:      newTotal,
-      cantidad_disponible: Math.max(0, dispActual - 1),  // resta 1 del pool (deshace +1 del trigger y descuenta stock)
+      cantidad_disponible: newDisp,  // corrige el +1 automático del trigger
       estado:              newEstado
     })
     .eq('id', itemId);

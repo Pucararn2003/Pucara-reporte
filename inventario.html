@@ -67,7 +67,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#1E4F8C;color:#fff;padding:10px 12px;text-align:left;white-space:nowrap;font-weight:600;font-size:12px}
 td{padding:5px 10px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#f7faff}
+tr:nth-child(even) td{background:#e8eef7}
+tr:hover td{background:#eaf1fb}
 th.sortable{cursor:pointer;user-select:none}
 th.sortable:hover{background:#163d6e}
 .sort-icon{font-size:10px;opacity:.85}
@@ -78,11 +79,15 @@ th.sortable:hover{background:#163d6e}
 .th-filter select option{background:#1E4F8C;color:#fff}
 .th-filter .btn-clear{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;width:100%;white-space:nowrap}
 .th-filter .btn-clear:hover{background:rgba(255,255,255,.28)}
+.tf-inp,.tf-sel{width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none;box-sizing:border-box}
+.tf-inp::placeholder{color:rgba(255,255,255,.6)}
+.tf-inp:focus,.tf-sel:focus{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.22)}
+.tf-sel option{background:#1E4F8C;color:#fff}
 
 /* ── Image thumb ── */
-.img-thumb{width:32px;height:32px;object-fit:cover;border-radius:5px;flex-shrink:0;cursor:pointer;border:1px solid #dde;transition:.15s}
+.img-thumb{width:22px;height:22px;object-fit:cover;border-radius:4px;flex-shrink:0;cursor:pointer;border:1px solid #dde;transition:.15s}
 .img-thumb:hover{transform:scale(1.12);box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.img-placeholder{width:32px;height:32px;border-radius:5px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:15px;flex-shrink:0}
+.img-placeholder{width:22px;height:22px;border-radius:4px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px;flex-shrink:0}
 
 /* ── Badges ── */
 .badge{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap}
@@ -181,6 +186,13 @@ th.sortable:hover{background:#163d6e}
 .bar-track{flex:1;background:#eef2f7;border-radius:4px;height:12px;overflow:hidden;cursor:default}
 .bar-fill{height:100%;border-radius:4px;background:#1E4F8C;transition:width .4s}
 .bar-val{width:28px;text-align:right;font-size:12px;font-weight:700;color:#333;flex-shrink:0}
+#dk-epp-tooltip{display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #cdd8e3;border-radius:9px;padding:11px 14px;box-shadow:0 6px 20px rgba(0,0,0,.15);min-width:200px;max-width:300px;pointer-events:none;font-family:Arial,sans-serif}
+#mdv-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9100}
+#mdv-modal{display:none;position:fixed;z-index:9101;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.3);width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;font-family:Arial,sans-serif}
+.mdv-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #f0f0f0;align-items:baseline;font-size:13px}
+.mdv-row:last-child{border-bottom:none}
+.mdv-lbl{min-width:130px;color:#666;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0}
+.mdv-val{color:#1a1a1a;flex:1;word-break:break-word}
 .dash-alert{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:7px;font-size:13px}
 .dash-alert.crit{background:#ffebee;border-left:4px solid #c62828}
 .dash-alert.warn{background:#fff8e1;border-left:4px solid #f9a825}
@@ -258,8 +270,32 @@ th.sortable:hover{background:#163d6e}
     <button class="tab-btn" onclick="switchTab('asignacion',this)">📌 Asignaciones</button>
     <button class="tab-btn" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
     <button class="tab-btn" onclick="switchTab('historial-movs',this)">📋 Historial de Movimientos</button>
+    <button class="tab-btn" onclick="switchTab('bajas',this)">🚫 Dados de Baja</button>
   </nav>
 
+  <!-- ── TAB: Dados de Baja ── -->
+  <div id="tab-bajas" class="tab-panel">
+    <div class="toolbar" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-danger" onclick="abrirModalBaja()">🚫 Registrar Baja</button>
+      <input type="text" id="fb-buscar" placeholder="🔍 Buscar ítem, motivo..." oninput="renderBajas()" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px"/>
+      <input type="date" id="fb-desde" onchange="renderBajas()" style="padding:8px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
+      <span style="color:#888;font-size:13px">—</span>
+      <input type="date" id="fb-hasta" onchange="renderBajas()" style="padding:8px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
+    </div>
+    <div style="max-width:1200px;margin:0 auto;padding:20px 16px">
+      <div id="st-bajas-total" style="font-size:2rem;font-weight:700;color:#c62828">0</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:16px">Ítems Dados de Baja</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fecha Baja</th><th>Ítem</th><th>N° Serie</th><th>Cant.</th>
+            <th>Revisó</th><th>Supervisor</th><th>Motivos</th><th>Foto</th><th></th>
+          </tr></thead>
+          <tbody id="tb-bajas"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <!-- ── TAB: Inventario General ── -->
   <div id="tab-inventario" class="tab-panel active">
     <div class="stats-row">
@@ -270,7 +306,10 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="toolbar" style="gap:8px">
       <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
-      <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;flex:1;max-width:320px;color:#222"/>
+      <div style="position:relative;flex:1;max-width:320px">
+        <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario();document.getElementById('fi-buscar-x').style.display=this.value?'flex':'none'" style="padding:8px 36px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;width:100%;box-sizing:border-box;color:#222"/>
+        <button id="fi-buscar-x" onclick="document.getElementById('fi-buscar').value='';renderInventario();this.style.display='none'" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999;font-size:16px;line-height:1;padding:2px 4px;align-items:center;justify-content:center">×</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table>
@@ -331,10 +370,24 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
-          <th>Talla</th><th>Cant.</th><th>Restante</th><th>Estado</th><th>Responsable</th><th></th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
+            <th>Talla</th><th>Cant.</th><th>Restante</th><th>Estado</th><th>Responsable</th><th></th>
+          </tr>
+          <tr>
+            <th class="th-filter"><input type="text" id="fe-trab-q" placeholder="dd/mm/aaaa..." oninput="renderEntrega()" class="tf-inp"/></th>
+            <th class="th-filter"><select id="fe-trab" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fe-cargo" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fe-item" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fe-talla" onchange="renderEntrega()" class="tf-sel"><option value="">Todas</option></select></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"><select id="fe-estado" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fe-resp" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><button class="btn-clear" onclick="limpiarFE2()">✕ Limpiar</button></th>
+          </tr>
+        </thead>
         <tbody id="tb-epp"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -352,10 +405,23 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
-          <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Observaciones</th><th></th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Turno</th><th>Ítem</th><th>Categoría</th>
+            <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Observaciones</th><th></th>
+          </tr>
+          <tr>
+            <th class="th-filter"><input type="text" id="fs-fecha-q" placeholder="dd/mm/aaaa..." oninput="renderSalida()" class="tf-inp"/></th>
+            <th class="th-filter"><select id="fs-turno" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fs-item" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fs-categ" onchange="renderSalida()" class="tf-sel"><option value="">Todas</option></select></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"><select id="fs-resp" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"><button class="btn-clear" onclick="limpiarFS2()">✕ Limpiar</button></th>
+          </tr>
+        </thead>
         <tbody id="tb-sal"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -372,10 +438,24 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
-          <th>Foto</th><th>Responsable</th><th>Observaciones</th><th></th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
+            <th>Cant.</th><th>Foto</th><th>Responsable</th><th>Observaciones</th><th></th>
+          </tr>
+          <tr>
+            <th class="th-filter"><input type="text" id="fa-fecha" placeholder="dd/mm/aaaa..." oninput="renderAsignaciones()" style="width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none" class="tf-inp"/></th>
+            <th class="th-filter"><select id="fa-trab" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fa-cargo" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fa-item" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"><select id="fa-categ" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todas</option></select></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"><select id="fa-resp" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
+            <th class="th-filter"></th>
+            <th class="th-filter"><button class="btn-clear" onclick="limpiarFA()">✕ Limpiar</button></th>
+          </tr>
+        </thead>
         <tbody id="tb-asig"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -516,7 +596,7 @@ th.sortable:hover{background:#163d6e}
           </select>
         </div>
         <div class="fg"><label>Fecha de Ingreso</label><input type="date" id="mi-fecha"/></div>
-        <div class="fg"><label>Área Responsable</label><select id="mi-area"><option>GEOTÉCNIA</option><option>PUCARÁ</option></select></div>
+        <div class="fg"><label>Área Responsable</label><select id="mi-area"><option>PUCARÁ</option><option>GEOTÉCNIA</option></select></div>
         <div class="fg full"><label>Observaciones</label><textarea id="mi-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Imágenes del Ítem (hasta 3 — la 1ª es la miniatura)</label>
@@ -579,9 +659,9 @@ th.sortable:hover{background:#163d6e}
       <div class="fgrid">
         <div class="fg"><label>Fecha *</label><input type="date" id="me-fecha"/></div>
         <div class="fg">
-          <label>Turno</label>
+          <label>Turno *</label>
           <select id="me-turno">
-            <option value="">Sin turno</option>
+            <option value="">Seleccionar turno…</option>
             <option>Turno A</option><option>Turno B</option>
           </select>
         </div>
@@ -606,7 +686,7 @@ th.sortable:hover{background:#163d6e}
             <input type="hidden" id="me-item-val"/>
           </div>
         </div>
-        <div class="fg"><label>Talla</label><input type="text" id="me-talla"/></div>
+        <div class="fg"><label>Talla *</label><input type="text" id="me-talla"/></div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="me-cant" min="1" value="1"/></div>
         <div class="fg">
           <label>Estado al Entregar</label>
@@ -651,10 +731,11 @@ th.sortable:hover{background:#163d6e}
       <div id="alerta-sal" class="alert alert-warn" style="display:none"></div>
       <div class="fgrid">
         <div class="fg"><label>Fecha *</label><input type="date" id="ms-fecha"/></div>
+        <div class="fg"><label>Hora</label><input type="time" id="ms-hora"/></div>
         <div class="fg">
-          <label>Turno</label>
+          <label>Turno *</label>
           <select id="ms-turno">
-            <option value="">Sin turno</option>
+            <option value="">Seleccionar turno…</option>
             <option>Turno A</option><option>Turno B</option>
           </select>
         </div>
@@ -674,6 +755,16 @@ th.sortable:hover{background:#163d6e}
           <select id="ms-resp"><option value="">Seleccionar…</option></select>
         </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
+        <div class="fg full">
+          <label>Foto</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" id="ms-foto-file" accept="image/*" capture="environment" onchange="previewFotoS(this)"
+                   style="flex:1;min-width:0;padding:6px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="quitarFotoS()">✕ Quitar</button>
+          </div>
+          <img id="ms-foto-preview" src="" alt="preview"
+               style="display:none;max-height:130px;max-width:100%;border-radius:7px;margin-top:8px;object-fit:contain;border:1px solid #eee"/>
+        </div>
       </div>
     </div>
     <div class="mftr">
@@ -726,12 +817,26 @@ th.sortable:hover{background:#163d6e}
           </div>
         </div>
         <div class="fg">
+          <label>Cantidad</label>
+          <input type="number" id="ma-cantidad" min="1" value="1" style="width:100%"/>
+        </div>
+        <div class="fg full" style="display:flex;align-items:center;gap:10px;padding:6px 0">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;color:#1a3a5c;margin:0">
+            <input type="checkbox" id="ma-no-descontar" style="width:16px;height:16px;cursor:pointer"/>
+            No descontar del inventario general
+          </label>
+        </div>
+        <div class="fg">
           <label>N° de Serie / S·N</label>
-          <input type="text" id="ma-serie" readonly placeholder="Se auto-completa al seleccionar el ítem" style="background:#f8fafc;color:#555"/>
+          <input type="text" id="ma-serie" placeholder="Se auto-completa o escribe manualmente"/>
         </div>
         <div class="fg">
           <label>Color</label>
-          <input type="text" id="ma-color" readonly placeholder="Se auto-completa al seleccionar el ítem" style="background:#f8fafc;color:#555"/>
+          <input type="text" id="ma-color" placeholder="Se auto-completa o escribe manualmente"/>
+        </div>
+        <div class="fg">
+          <label>Talla</label>
+          <input type="text" id="ma-talla" placeholder="Se auto-completa o escribe manualmente"/>
         </div>
         <div class="fg">
           <label>Estado Físico *</label>
@@ -861,9 +966,9 @@ const SUPABASE_URL = 'https://ftbsqhcvxnyrkajgavaa.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0YnNxaGN2eG55cmthamdhdmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg2OTIsImV4cCI6MjA5MDEwNDY5Mn0.v_Oif1dHmSp-pVp9Dctopona3NlTIDbX9pcdaRMrD0w';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const TRABAJADORES = [
-  { nombre: 'Alexis Varela Guerrero',      cargo: 'Asesor en Prevención de Riesgos', rut: '16578999-7' },
-  { nombre: 'Luis Ahumada Berrios',        cargo: 'Jefe de Terreno',                 rut: '15555031-7' },
+let TRABAJADORES = [
+  { nombre: 'Alexis Varela Guerrero',      cargo: 'Asesor en Prevención de Riesgos', rut: '16578999-7', email: 'avarela@pucara-sa.cl' },
+  { nombre: 'Luis Ahumada Berrios',        cargo: 'Jefe de Terreno',                 rut: '15555031-7', email: 'lahumada@pucara-sa.cl' },
   { nombre: 'Kevin Lazcano Albornoz',      cargo: 'Minero Especialista A',           rut: '18379036-6' },
   { nombre: 'Matías Adasme Miranda',       cargo: 'Minero Especialista B',           rut: '18168607-3' },
   { nombre: 'David Ramírez Zambra',        cargo: 'Minero Especialista B',           rut: '21320911-6' },
@@ -876,8 +981,16 @@ const TRABAJADORES = [
   { nombre: 'Víctor Conejeros Martínez',   cargo: 'Minero Especialista B',           rut: '16987717-3' },
   { nombre: 'Jaime Cereceda Solano',       cargo: 'Minero Especialista B',           rut: '15445883-2' },
   { nombre: 'Wladimir Muñoz Tapia',        cargo: 'Minero Especialista A',           rut: '18557374-5' },
-  { nombre: 'Esteban Moreira Ubilla',      cargo: 'Asesor en Prevención de Riesgos', rut: '17808049-0' },
+  { nombre: 'Esteban Moreira Ubilla', email: 'emoreira@pucara-sa.cl',      cargo: 'Asesor en Prevención de Riesgos', rut: '17808049-0' },
 ];
+(function(){
+  try {
+    var custom = JSON.parse(localStorage.getItem('inv_trabajadores_custom') || '[]');
+    custom.forEach(function(t){
+      if (!TRABAJADORES.find(function(x){ return x.nombre === t.nombre; })) TRABAJADORES.push(t);
+    });
+  } catch(e) {}
+})();
 
 // ── State ────────────────────────────────────────────────────
 let currentUser = null;
@@ -893,11 +1006,12 @@ function filtrarTrab() {
   const q    = (document.getElementById('me-trab').value || '').toLowerCase();
   const list = document.getElementById('me-trab-list');
   const fil  = q ? TRABAJADORES.filter(t => t.nombre.toLowerCase().includes(q) || (t.cargo||'').toLowerCase().includes(q)) : TRABAJADORES;
-  list.innerHTML = fil.length
+  var addBtn = '<div class="item-dd-row" style="color:#1E4F8C;font-weight:600;border-top:1px solid #eee;margin-top:2px;padding-top:8px" onmousedown="abrirNuevoTrabajador(function(t){ seleccionarTrab(t.nombre); })">➕ Agregar nuevo trabajador</div>';
+  list.innerHTML = (fil.length
     ? fil.map(t => `<div class="item-dd-row" onmousedown="seleccionarTrab('${t.nombre.replace(/'/g,"\\'")}')">
         <strong>${t.nombre}</strong><br><small style="color:#888">${t.cargo}</small>
       </div>`).join('')
-    : `<div class="item-dd-empty">Sin resultados — se usará el nombre escrito</div>`;
+    : `<div class="item-dd-empty">Sin resultados</div>`) + addBtn;
   list.style.display = 'block';
 }
 
@@ -911,19 +1025,24 @@ function seleccionarTrab(nombre) {
 
 // Populate responsables (Jefes de Terreno + APR)
 (function(){
-  const resp = TRABAJADORES.filter(t =>
+  const sup  = TRABAJADORES.filter(t =>
     t.cargo.includes('Jefe de Terreno') || t.cargo.includes('Asesor en Prevención')
   );
-  const opts = '<option value="">Seleccionar…</option>' +
-    resp.map(t => `<option value="${t.nombre}">${t.nombre} — ${t.cargo}</option>`).join('');
-  document.getElementById('me-resp').innerHTML = opts;
-  document.getElementById('ms-resp').innerHTML = opts;
-  document.getElementById('ma-resp').innerHTML = opts;
+  const optsSupv = '<option value="">Seleccionar…</option>' +
+    sup.map(t => `<option value="${t.nombre}">${t.nombre} — ${t.cargo}</option>`).join('');
+  const optsAll  = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.map(t => `<option value="${t.nombre}">${t.nombre} — ${t.cargo}</option>`).join('');
+  document.getElementById('me-resp').innerHTML = optsSupv;
+  document.getElementById('ms-resp').innerHTML = optsAll;
+  document.getElementById('ma-resp').innerHTML = optsSupv;
 })();
 
-// Close modals on backdrop click
+// Close modals on backdrop click — solo modales sin formulario
 document.querySelectorAll('.modal-bd').forEach(bd => {
-  bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
+  const formModals = ['modal-item','modal-entrega','modal-salida','modal-asignacion','modal-baja'];
+  if (!formModals.includes(bd.id)) {
+    bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
+  }
 });
 
 // Enter key on password
@@ -954,7 +1073,7 @@ async function login() {
   errEl.style.display = 'none';
   if (!email || !pwd) { errEl.textContent = 'Completa todos los campos'; errEl.style.display = 'block'; return; }
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
-  if (error) { errEl.textContent = 'Credenciales incorrectas'; errEl.style.display = 'block'; return; }
+  if (error) { errEl.textContent = 'Error: ' + error.message; errEl.style.display = 'block'; return; }
   currentUser = data.user;
   showApp();
   await cargarDatos();
@@ -973,6 +1092,7 @@ async function cargarDatos() {
   renderSalida();
   renderAsignaciones();
   renderHistorialMovimientos();
+  renderBajas();
 }
 
 async function cargarItems() {
@@ -985,7 +1105,7 @@ async function cargarItems() {
 }
 
 async function cargarMovs() {
-  const { data, error } = await sb.from('inventario_movimientos').select('*').order('fecha', { ascending: false }).limit(500);
+  const { data, error } = await sb.from('inventario_movimientos').select('*').order('created_at', { ascending: false }).limit(500);
   if (error) { console.error(error); return; }
   movs = data || [];
 }
@@ -1005,36 +1125,103 @@ function actualizarStats() {
 
 // ── Render Asignaciones ───────────────────────────────────────
 function renderAsignaciones() {
-  const asigs = movs.filter(function(m){ return m.tipo === 'asignacion'; });
+  var allAsigs = movs.filter(function(m){ return m.tipo === 'asignacion'; });
+  // Poblar selects con todos los valores disponibles
+  poblarSelect('fa-trab',  allAsigs.map(function(m){ return m.nombre_trabajador; }));
+  poblarSelect('fa-cargo', allAsigs.map(function(m){ return m.cargo_trabajador; }));
+  poblarSelect('fa-item',  allAsigs.map(function(m){
+    var itV = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    return itV ? itV.descripcion : m.descripcion;
+  }));
+  poblarSelect('fa-categ', allAsigs.map(function(m){
+    var itV = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    return itV ? itV.categoria : m.categoria;
+  }));
+  poblarSelect('fa-resp', allAsigs.map(function(m){ return m.responsable; }));
+  // Leer filtros activos
+  var fFecha = (document.getElementById('fa-fecha') ? document.getElementById('fa-fecha').value.toLowerCase() : '');
+  var fTrab  = document.getElementById('fa-trab')  ? document.getElementById('fa-trab').value  : '';
+  var fCargo = document.getElementById('fa-cargo') ? document.getElementById('fa-cargo').value : '';
+  var fItem  = document.getElementById('fa-item')  ? document.getElementById('fa-item').value  : '';
+  var fCateg = document.getElementById('fa-categ') ? document.getElementById('fa-categ').value : '';
+  var fResp  = document.getElementById('fa-resp')  ? document.getElementById('fa-resp').value  : '';
+  // Aplicar filtros
+  var asigs = allAsigs.filter(function(m) {
+    var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    var desc = (itV ? itV.descripcion : m.descripcion) || '';
+    var catg = (itV ? itV.categoria   : m.categoria)   || '';
+    if (fFecha && !ffdt(m.created_at || m.fecha).toLowerCase().includes(fFecha)) return false;
+    if (fTrab  && m.nombre_trabajador !== fTrab)  return false;
+    if (fCargo && m.cargo_trabajador  !== fCargo) return false;
+    if (fItem  && desc !== fItem)                 return false;
+    if (fCateg && catg !== fCateg)                return false;
+    if (fResp  && m.responsable       !== fResp)  return false;
+    return true;
+  });
   const stEl = document.getElementById('st-asig-total');
-  if (stEl) stEl.textContent = asigs.length;
+  if (stEl) stEl.textContent = allAsigs.length;
   const tb = document.getElementById('tb-asig');
   if (!tb) return;
   if (!asigs.length) {
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin asignaciones activas</td></tr>';
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin resultados</td></tr>';
     return;
   }
   tb.innerHTML = asigs.map(function(m) {
-    const itmInfo = m.descripcion || '—';
-    const itmSub  = (m.correlativo ? 'Corr. ' + m.correlativo : '') + (m.correlativo && m.categoria ? ' · ' : '') + (m.categoria || '');
-    return '<tr>' +
-      '<td>' + ff(m.fecha) + '</td>' +
+    // Usar datos actuales del ítem si existe en inventario; si fue eliminado, usar snapshot
+    const itVivo  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    const desc     = (itVivo ? itVivo.descripcion : m.descripcion) || '—';
+    const corr     = itVivo ? itVivo.correlativo   : m.correlativo;
+    const categ    = itVivo ? itVivo.categoria     : m.categoria;
+    const itmInfo  = desc;
+    const itmSub   = (corr ? 'Corr. ' + corr : '') + (corr && categ ? ' · ' : '') + (categ || '');
+    return '<tr onclick="mostrarDetalleMov(\'' + m.id + '\')" style="cursor:pointer">' +
+      '<td>' + ffdt(m.created_at || m.fecha) + '</td>' +
       '<td><strong>' + (m.nombre_trabajador || '—') + '</strong>' +
         (m.rut_trabajador ? '<br><small style="color:#888">' + m.rut_trabajador + '</small>' : '') + '</td>' +
       '<td>' + (m.cargo_trabajador || '—') + '</td>' +
       '<td><strong>' + itmInfo + '</strong>' + (itmSub ? '<br><small style="color:#888">' + itmSub + '</small>' : '') + '</td>' +
-      '<td>' + (m.categoria ? '<span class="badge b-info">' + m.categoria + '</span>' : '—') + '</td>' +
+      '<td>' + (categ ? '<span class="badge b-info">' + categ + '</span>' : '—') + '</td>' +
+      '<td style="text-align:center;font-weight:600">' + (m.cantidad || 1) + '</td>' +
       '<td>' + (m.foto_url ? '<img src="' + m.foto_url + '" class="img-thumb" style="cursor:pointer" onclick="window.open(\'' + m.foto_url + '\')" title="Ver foto">' : '<span style="color:#bbb;font-size:11px">Sin foto</span>') + '</td>' +
       '<td>' + (m.responsable || '—') + '</td>' +
       '<td>' + (m.observaciones || '—') + '</td>' +
       '<td style="white-space:nowrap">'
-        + '<button class="btn btn-secondary btn-sm" onclick="editarAsignacion('' + m.id + '')" title="Editar">✏️ Editar</button> ' +
-        '<button class="btn btn-warn btn-sm" onclick="liberarAsignacion(\'' + m.id + '\',' +
+        + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarAsignacion(\'' + m.id + '\')" title="Editar">✏️ Editar</button> ' +
+        '<button class="btn btn-warn btn-sm" onclick="event.stopPropagation();liberarAsignacion(\'' + m.id + '\',' +
           '\'' + (m.item_id || '') + '\',' +
           '\'' + (m.descripcion || '').replace(/'/g,"\\'") + '\')" title="Devolver ítem">↩ Liberar</button> ' +
-        '<button class="btn btn-danger btn-sm" onclick="eliminarAsignacion(\'' + m.id + '\')" title="Eliminar">🗑️</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarAsignacion(\'' + m.id + '\')" title="Eliminar">🗑️</button>' +
       '</td></tr>';
   }).join('');
+}
+
+// ── Nuevo trabajador ─────────────────────────────────────────
+var _nuevoTrabCb = null;
+function abrirNuevoTrabajador(cb) {
+  _nuevoTrabCb = cb || null;
+  ['nt-nombre','nt-rut','nt-cargo'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('modal-nuevo-trab').classList.add('open');
+  setTimeout(function(){ document.getElementById('nt-nombre').focus(); }, 120);
+}
+function guardarNuevoTrabajador() {
+  var nombre = document.getElementById('nt-nombre').value.trim();
+  var rut    = document.getElementById('nt-rut').value.trim();
+  var cargo  = document.getElementById('nt-cargo').value.trim();
+  if (!nombre || !cargo) { alert('Nombre y cargo son obligatorios.'); return; }
+  if (TRABAJADORES.find(function(t){ return t.nombre.toLowerCase() === nombre.toLowerCase(); })) {
+    alert('Ya existe un trabajador con ese nombre.'); return;
+  }
+  var nuevo = { nombre: nombre, cargo: cargo };
+  if (rut) nuevo.rut = rut;
+  nuevo.custom = true;
+  TRABAJADORES.push(nuevo);
+  try {
+    var custom = JSON.parse(localStorage.getItem('inv_trabajadores_custom') || '[]');
+    custom.push(nuevo);
+    localStorage.setItem('inv_trabajadores_custom', JSON.stringify(custom));
+  } catch(e) {}
+  cerrar('modal-nuevo-trab');
+  if (_nuevoTrabCb) { _nuevoTrabCb(nuevo); _nuevoTrabCb = null; }
 }
 
 // ── Trabajadores picker (asignación) ─────────────────────────
@@ -1042,12 +1229,13 @@ function filtrarTrabA() {
   var q    = (document.getElementById('ma-trab').value || '').toLowerCase();
   var list = document.getElementById('ma-trab-list');
   var fil  = q ? TRABAJADORES.filter(function(t){ return t.nombre.toLowerCase().includes(q) || (t.cargo||'').toLowerCase().includes(q); }) : TRABAJADORES;
-  list.innerHTML = fil.length
+  var addBtnA = '<div class="item-dd-row" style="color:#1E4F8C;font-weight:600;border-top:1px solid #eee;margin-top:2px;padding-top:8px" onmousedown="abrirNuevoTrabajador(function(t){ seleccionarTrabA(t.nombre); })">➕ Agregar nuevo trabajador</div>';
+  list.innerHTML = (fil.length
     ? fil.map(function(t){
         return '<div class="item-dd-row" onmousedown="seleccionarTrabA(\'' + t.nombre.replace(/'/g,"\\'") + '\')">' +
           '<strong>' + t.nombre + '</strong><br><small style="color:#888">' + t.cargo + '</small></div>';
       }).join('')
-    : '<div class="item-dd-row" style="color:#999">Sin coincidencias</div>';
+    : '<div class="item-dd-row" style="color:#999">Sin coincidencias</div>') + addBtnA;
   list.style.display = 'block';
 }
 
@@ -1085,7 +1273,13 @@ async function subirFotoAsignacion(file) {
 // ── Abrir modal ───────────────────────────────────────────────
 function abrirModalAsignacion() {
   document.getElementById('ma-fecha').value = hoy();
-  document.getElementById('ma-resp').value  = '';
+  // Preseleccionar responsable según usuario logueado
+  if (currentUser) {
+    var trabResp = TRABAJADORES.find(function(t){ return t.email === currentUser.email; });
+    document.getElementById('ma-resp').value = trabResp ? trabResp.nombre : '';
+  } else {
+    document.getElementById('ma-resp').value = '';
+  }
   document.getElementById('ma-trab').value  = '';
   document.getElementById('ma-trab-list').style.display = 'none';
   document.getElementById('ma-rut').value   = '';
@@ -1102,7 +1296,10 @@ function abrirModalAsignacion() {
   document.getElementById('ma-estado-fisico').value = '';
   document.getElementById('ma-fecha-ingreso').value = '';
   document.getElementById('ma-color').value           = '';
+  document.getElementById('ma-talla').value           = '';
   document.getElementById('ma-edit-id').value         = '';
+  document.getElementById('ma-cantidad').value        = '1';
+  document.getElementById('ma-no-descontar').checked  = false;
   document.querySelector('#modal-asignacion .mhdr h3').textContent = '📌 Registrar Asignación de Ítem';
   document.getElementById('btn-guardar-asignacion').textContent = '📌 Registrar Asignación';
   document.getElementById('ma-item-search').readOnly = false;
@@ -1128,6 +1325,7 @@ function editarAsignacion(movId) {
   document.getElementById('ma-item-list').style.display = 'none';
   document.getElementById('ma-serie').value            = itSel ? (itSel.serie_sn || '') : '';
   document.getElementById('ma-color').value            = itSel ? (itSel.color    || '') : '';
+  document.getElementById('ma-talla').value            = itSel ? (itSel.talla    || '') : '';
   document.getElementById('ma-estado-fisico').value    = m.estado_entregar || '';
   document.getElementById('ma-fecha-ingreso').value    = itSel ? (itSel.fecha_ingreso || '') : '';
   document.getElementById('ma-obs').value              = m.observaciones || '';
@@ -1137,6 +1335,8 @@ function editarAsignacion(movId) {
   document.getElementById('ma-trab-list').style.display = 'none';
   // Bloquear cambio de ítem en modo edición
   document.getElementById('ma-item-search').readOnly   = true;
+  document.getElementById('ma-cantidad').value          = m.cantidad || 1;
+  document.getElementById('ma-no-descontar').checked    = false;
   document.querySelector('#modal-asignacion .mhdr h3').textContent = '✏️ Editar Asignación';
   document.getElementById('btn-guardar-asignacion').textContent = '💾 Guardar Cambios';
   abrir('modal-asignacion');
@@ -1161,7 +1361,10 @@ async function guardarAsignacion() {
   var estadoFisico  = document.getElementById('ma-estado-fisico').value;
   var serieSn       = document.getElementById('ma-serie').value.trim();
   var colorVal      = document.getElementById('ma-color').value.trim() || null;
+  var tallaVal      = document.getElementById('ma-talla').value.trim() || null;
   var fechaIngreso  = document.getElementById('ma-fecha-ingreso').value || null;
+  var cantAsig      = parseInt(document.getElementById('ma-cantidad').value) || 1;
+  var noDescontar   = document.getElementById('ma-no-descontar').checked;
 
   var btn = document.getElementById('btn-guardar-asignacion');
   btn.disabled = true; btn.textContent = 'Guardando…';
@@ -1182,8 +1385,9 @@ async function guardarAsignacion() {
     nombre_trabajador: trab,
     cargo_trabajador:  document.getElementById('ma-cargo').value.trim() || null,
     rut_trabajador:    document.getElementById('ma-rut').value.trim()   || null,
-    cantidad:          1,
-    cantidad_restante: dispActual,   // disponible no cambia en asignación
+    talla:             tallaVal,
+    cantidad:          cantAsig,
+    cantidad_restante: dispActual,
     responsable:       document.getElementById('ma-resp').value  || null,
     observaciones:     document.getElementById('ma-obs').value.trim() || null,
     foto_url:          foto_url,
@@ -1199,6 +1403,8 @@ async function guardarAsignacion() {
       nombre_trabajador: payload.nombre_trabajador,
       cargo_trabajador:  payload.cargo_trabajador,
       rut_trabajador:    payload.rut_trabajador,
+      talla:             tallaVal,
+      cantidad:          cantAsig,
       responsable:       payload.responsable,
       observaciones:     payload.observaciones,
       estado_entregar:   payload.estado_entregar,
@@ -1215,23 +1421,27 @@ async function guardarAsignacion() {
   }
 
   if (!editId) {
-    // Solo en modo nuevo: actualizar stock del ítem
-    var newTotal, newDisp;
-    if (dispActual > 0) {
-      newTotal = totalActual;
-      newDisp  = dispActual - 1;
+    // Leer estado real de la DB luego del INSERT (el trigger ya corrió y sumó 1 a disponible)
+    const { data: _cur } = await sb.from('inventario_items')
+      .select('cantidad_total,cantidad_disponible')
+      .eq('id', itemId).single();
+    const _curTotal = _cur ? (_cur.cantidad_total      || 0) : totalActual;
+    const _curDisp  = _cur ? (_cur.cantidad_disponible || 0) : (dispActual + 1); // post-trigger
+
+    if (!noDescontar) {
+      // Asignación suma al total; cancela el +1 del trigger y descuenta cantAsig del disponible
+      var newTotal  = _curTotal + cantAsig;
+      var newDisp   = Math.max(0, _curDisp - 1 - cantAsig);
+      var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
+      await sb.from('inventario_items')
+        .update({ cantidad_total: newTotal, cantidad_disponible: newDisp, estado: newEstado })
+        .eq('id', itemId);
     } else {
-      newTotal = totalActual + 1;
-      newDisp  = 0;
+      // 'No descontar': solo cancelar el +1 del trigger, no tocar el total
+      await sb.from('inventario_items')
+        .update({ cantidad_disponible: _curDisp - 1 })
+        .eq('id', itemId);
     }
-    var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
-    await sb.from('inventario_items')
-      .update({
-        cantidad_total:      newTotal,
-        cantidad_disponible: newDisp,
-        estado:              newEstado
-      })
-      .eq('id', itemId);
   }
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
@@ -1244,6 +1454,7 @@ async function guardarAsignacion() {
     if (estadoFisico)  cambiosAsig.push({ campo: 'Estado físico',   antes: null, despues: estadoFisico });
     if (serieSn)       cambiosAsig.push({ campo: 'N° Serie',         antes: null, despues: serieSn });
     if (colorVal)      cambiosAsig.push({ campo: 'Color',             antes: null, despues: colorVal });
+    if (tallaVal)      cambiosAsig.push({ campo: 'Talla',             antes: null, despues: tallaVal });
     if (fechaIngreso)  cambiosAsig.push({ campo: 'Fecha de ingreso', antes: null, despues: fechaIngreso });
     var entradaAsig = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: cambiosAsig };
     var histAsig = [entradaAsig].concat(itSel.historial || []).slice(0, 50);
@@ -1256,13 +1467,340 @@ async function guardarAsignacion() {
 
   cerrar('modal-asignacion');
   btn.disabled = false; btn.textContent = editId ? '💾 Guardar Cambios' : '📌 Registrar Asignación';
+  if (!editId) marcarItemReciente(itemId);
   await Promise.all([cargarItems(), cargarMovs()]);
   renderEntrega(); renderSalida(); renderAsignaciones(); renderHistorialMovimientos();
 }
 
 // ── Liberar (devolver) ────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// MÓDULO: DADOS DE BAJA
+// ══════════════════════════════════════════════════════════════
+
+function abrirModalBaja() {
+  document.getElementById('mb-fecha').value            = hoy();
+  document.getElementById('mb-cantidad').value         = '1';
+  document.getElementById('mb-item-search').value      = '';
+  document.getElementById('mb-item-list').style.display= 'none';
+  document.getElementById('mb-item-val').value         = '';
+  document.getElementById('mb-serie').value            = '';
+  document.getElementById('mb-talla').value            = '';
+  document.getElementById('mb-fecha-ingreso').value    = '';
+  document.getElementById('mb-fecha-primer-uso').value = '';
+  document.getElementById('mb-motivos').value          = '';
+  document.getElementById('mb-obs').value              = '';
+  var f1 = document.getElementById('mb-foto1-file');
+  var f2 = document.getElementById('mb-foto2-file');
+  if (f1) f1.value = ''; if (f2) f2.value = '';
+  document.getElementById('mb-foto1-prev').style.display = 'none';
+  document.getElementById('mb-foto2-prev').style.display = 'none';
+
+  // Poblar selects de quien revisó (todos) y supervisor (solo Jefes de Terreno)
+  var optsAll = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.map(function(t){
+      return '<option value="' + t.nombre + '">' + t.nombre + ' — ' + t.cargo + '</option>';
+    }).join('');
+  var optsJefes = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.filter(function(t){ return t.cargo.toLowerCase().includes('jefe de terreno'); })
+    .map(function(t){
+      return '<option value="' + t.nombre + '">' + t.nombre + ' — ' + t.cargo + '</option>';
+    }).join('');
+  document.getElementById('mb-quien-reviso').innerHTML = optsAll;
+  document.getElementById('mb-supervisor').innerHTML   = optsJefes;
+
+  // Preseleccionar usuario actual
+  if (currentUser) {
+    var me = TRABAJADORES.find(function(t){ return t.email === currentUser.email; });
+    if (me) document.getElementById('mb-quien-reviso').value = me.nombre;
+  }
+  abrir('modal-baja');
+}
+
+function prevFotoBaja(n) {
+  var file = document.getElementById('mb-foto' + n + '-file').files[0];
+  var prev = document.getElementById('mb-foto' + n + '-prev');
+  if (file) { prev.src = URL.createObjectURL(file); prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+}
+
+async function guardarBaja() {
+  var fecha    = document.getElementById('mb-fecha').value;
+  var itemId   = document.getElementById('mb-item-val').value;
+  var motivos  = document.getElementById('mb-motivos').value.trim();
+  var quienRev = document.getElementById('mb-quien-reviso').value;
+  var superv   = document.getElementById('mb-supervisor').value;
+  if (!fecha)    { alert('Ingresa la fecha de baja'); return; }
+  if (!itemId)   { alert('Selecciona un ítem'); return; }
+  if (!motivos)  { alert('Describe los motivos/daños'); return; }
+  if (!quienRev) { alert('Selecciona quien revisó'); return; }
+
+  var itSel    = items.find(function(x){ return x.id === itemId; });
+  var cantBaja = parseInt(document.getElementById('mb-cantidad').value) || 1;
+  var btn = document.getElementById('btn-guardar-baja');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  // Subir fotos
+  var foto1 = null, foto2 = null;
+  try {
+    var f1 = document.getElementById('mb-foto1-file').files[0];
+    var f2 = document.getElementById('mb-foto2-file').files[0];
+    if (f1) foto1 = await subirFotoAsignacion(f1);
+    if (f2) foto2 = await subirFotoAsignacion(f2);
+  } catch(e) { alert(e.message); btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; return; }
+
+  var obsExtra = document.getElementById('mb-obs').value.trim();
+  var motFull  = motivos + (obsExtra ? '\n\nObservaciones: ' + obsExtra : '');
+
+  var payload = {
+    tipo:              'baja',
+    fecha:             fecha,
+    item_id:           itemId,
+    descripcion:       itSel ? itSel.descripcion : null,
+    categoria:         itSel ? itSel.categoria   : null,
+    cantidad:          cantBaja,
+    nombre_trabajador: quienRev,
+    responsable:       superv || null,
+    observaciones:     motFull,
+    foto_url:          foto1,
+    estado_entregar:   foto2,
+    turno:             document.getElementById('mb-fecha-primer-uso').value || null,
+    usuario_email:     currentUser ? currentUser.email : null,
+    rut_trabajador:    document.getElementById('mb-serie').value.trim()  || null,
+    cargo_trabajador:  document.getElementById('mb-talla').value.trim()  || null,
+  };
+
+  var res = await sb.from('inventario_movimientos').insert(payload);
+  if (res.error) { alert('Error: ' + res.error.message); btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; return; }
+
+  // Actualizar estado del ítem a 'Dado de Baja' y descontar disponible
+  if (itSel) {
+    var newTotal = Math.max(0, (itSel.cantidad_total || 0) - cantBaja);
+    var dispActual = itSel.cantidad_disponible || 0;
+    // Descuenta del total; el disponible queda igual (trigger +1 se neutraliza con -1)
+    await sb.from('inventario_items')
+      .update({ estado: 'Dado de Baja', cantidad_total: newTotal, cantidad_disponible: dispActual - 1 })
+      .eq('id', itemId);
+    // Historial
+    var entrada = {
+      fecha: new Date().toISOString(), usuario: currentUser ? currentUser.email : '?',
+      cambios: [{ campo: 'Baja', antes: itSel.estado,
+        despues: 'Dado de Baja — ' + motivos.substring(0, 60) }]
+    };
+    var hist = [entrada].concat(itSel.historial || []).slice(0, 50);
+    await sb.from('inventario_items').update({ historial: hist }).eq('id', itemId);
+  }
+
+  cerrar('modal-baja');
+  btn.disabled = false; btn.textContent = '🚫 Registrar Baja';
+  marcarItemReciente(itemId);
+  await Promise.all([cargarItems(), cargarMovs()]);
+  renderBajas(); renderInventario();
+}
+
+function poblarSelect(id, vals, current) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var prev = el.value;
+  var uniq = [''].concat(Array.from(new Set(vals.filter(Boolean))).sort(function(a,b){return String(a).localeCompare(String(b));}));
+  el.innerHTML = uniq.map(function(v){
+    var lbl = v || (id.includes('categ') ? 'Todas' : 'Todos');
+    return '<option value="' + v + '"' + (v === prev ? ' selected' : '') + '>' + lbl + '</option>';
+  }).join('');
+}
+
+function tryParseJson(str) {
+  try { return JSON.parse(str) || {}; } catch(e) { return { motivos: str || '' }; }
+}
+
+function renderBajas() {
+  var bajas = movs.filter(function(m){ return m.tipo === 'baja'; });
+  var qEl   = document.getElementById('fb-buscar');
+  var dEl   = document.getElementById('fb-desde');
+  var hEl   = document.getElementById('fb-hasta');
+  var q     = qEl  ? qEl.value.toLowerCase()  : '';
+  var desde = dEl  ? dEl.value                : '';
+  var hasta = hEl  ? hEl.value                : '';
+
+  if (q) bajas = bajas.filter(function(m){
+    var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    var desc = (itV ? itV.descripcion : m.descripcion) || '';
+    return desc.toLowerCase().includes(q)
+        || (m.observaciones||'').toLowerCase().includes(q)
+        || (m.nombre_trabajador||'').toLowerCase().includes(q);
+  });
+  if (desde) bajas = bajas.filter(function(m){ return m.fecha >= desde; });
+  if (hasta) bajas = bajas.filter(function(m){ return m.fecha <= hasta; });
+
+  var stEl = document.getElementById('st-bajas-total');
+  if (stEl) stEl.textContent = bajas.length;
+
+  var tb = document.getElementById('tb-bajas');
+  if (!tb) return;
+  if (!bajas.length) {
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin registros de baja</td></tr>';
+    return;
+  }
+  tb.innerHTML = bajas.map(function(m) {
+    var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    var desc = (itV ? itV.descripcion : m.descripcion) || '—';
+    var corr = itV ? itV.correlativo : null;
+    var serie = m.rut_trabajador || '—';
+    var motivosShort = (m.observaciones || '').substring(0, 80) + ((m.observaciones||'').length > 80 ? '…' : '');
+    return '<tr>' +
+      '<td>' + ff(m.fecha) + '</td>' +
+      '<td><strong>' + desc + '</strong>' + (corr ? '<br><small style="color:#888">Corr. ' + corr + '</small>' : '') + '</td>' +
+      '<td><small>' + serie + '</small></td>' +
+      '<td style="text-align:center;font-weight:600">' + (m.cantidad || 1) + '</td>' +
+      '<td>' + (m.nombre_trabajador || '—') + '</td>' +
+      '<td>' + (m.responsable || '—') + '</td>' +
+      '<td style="max-width:200px"><small style="color:#555">' + motivosShort + '</small></td>' +
+      '<td>' + (m.foto_url
+        ? '<img src="' + m.foto_url + '" class="img-thumb" style="cursor:pointer" onclick="window.open(\'' + m.foto_url + '\')">'
+        : '<span style="color:#bbb;font-size:11px">Sin foto</span>') + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn btn-sm" style="background:#1a3a5c;color:#fff;margin-right:4px" ' +
+          'onclick="generarFichaBaja(\'' + m.id + '\')" title="Generar Ficha PDF">📄 Ficha</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="eliminarBaja(\'' + m.id + '\')" title="Eliminar">🗑️</button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+async function eliminarBaja(id) {
+  if (!confirm('¿Eliminar este registro de baja?')) return;
+
+  // Leer el registro antes de borrarlo para poder revertir el ítem
+  var m = movs.find(function(x){ return x.id === id; });
+
+  await sb.from('inventario_movimientos').delete().eq('id', id);
+
+  // Restaurar cantidades en el ítem
+  if (m && m.item_id) {
+    var itSel       = items.find(function(x){ return x.id === m.item_id; });
+    var cantBaja    = m.cantidad || 1;
+    var totalActual = itSel ? (itSel.cantidad_total     || 0) : 0;
+    var dispActual  = itSel ? (itSel.cantidad_disponible || 0) : 0;
+    var newTotal    = totalActual + cantBaja;   // devolver unidades al total
+    var newDisp     = dispActual  + 1;          // deshacer el -1 que aplicó guardarBaja
+    var newEstado   = newDisp > 0 ? 'Disponible' : 'En Uso';
+    await sb.from('inventario_items')
+      .update({ cantidad_total: newTotal, cantidad_disponible: newDisp, estado: newEstado })
+      .eq('id', m.item_id);
+  }
+
+  if (m && m.item_id) marcarItemReciente(m.item_id);
+  await Promise.all([cargarItems(), cargarMovs()]);
+  renderBajas();
+}
+
+function generarFichaBaja(movId) {
+  var m = movs.find(function(x){ return x.id === movId; });
+  if (!m) return;
+  var itV        = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+  var desc       = (itV ? itV.descripcion : m.descripcion) || '—';
+  var serie      = m.rut_trabajador  || (itV ? itV.serie_sn : '') || 'Sin número de serie';
+  var talla      = m.cargo_trabajador|| (itV ? (itV.talla || itV.marca_modelo || '') : '');
+  var fIngreso   = itV ? (itV.fecha_ingreso || '') : '';
+  var fPrimerUso = m.turno || '';
+  var motivos    = m.observaciones || '—';
+  var foto1      = m.foto_url        || '';
+  var foto2      = m.estado_entregar || '';
+  var hoyStr     = new Date().toLocaleDateString('es-CL');
+  var fBaja      = m.fecha ? new Date(m.fecha + 'T12:00:00').toLocaleDateString('es-CL') : '—';
+  var fIng2      = fIngreso   ? new Date(fIngreso   + 'T12:00:00').toLocaleDateString('es-CL') : '—';
+  var fPrim2     = fPrimerUso ? new Date(fPrimerUso + 'T12:00:00').toLocaleDateString('es-CL') : 'Indeterminado';
+  var categ      = m.categoria || (itV ? itV.categoria : '') || '—';
+
+  var fotosHtml = '';
+  if (foto1 || foto2) {
+    fotosHtml = '<div style="display:flex;gap:8px;padding:8px;align-items:flex-start">'
+      + (foto1 ? '<img src="' + foto1 + '" style="max-width:48%;max-height:170px;object-fit:cover;border-radius:4px;border:1px solid #ccc"/>' : '')
+      + (foto2 ? '<img src="' + foto2 + '" style="max-width:48%;max-height:170px;object-fit:cover;border-radius:4px;border:1px solid #ccc"/>' : '')
+      + '</div>';
+  }
+
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>'
+    + '<title>Ficha Baja — ' + desc + '</title><style>'
+    + '@page{size:A4;margin:18mm 15mm}'
+    + '*{box-sizing:border-box;margin:0;padding:0}'
+    + 'body{font-family:Arial,sans-serif;font-size:11px;color:#111}'
+    + '.hdr-tbl{width:100%;border-collapse:collapse;border:1.5px solid #333}'
+    + '.hdr-tbl td,.hdr-tbl th{border:1px solid #555;padding:5px 8px;vertical-align:middle}'
+    + '.logo-cell{width:90px;text-align:center}'
+    + '.title-cell{text-align:center;font-size:14px;font-weight:bold;text-transform:uppercase;background:#f5f5f5}'
+    + '.sec-hdr{background:#1a3a5c;color:#fff;text-align:center;font-weight:bold;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:5px 8px;border:1px solid #333;margin-top:0}'
+    + '.info-tbl{width:100%;border-collapse:collapse}'
+    + '.info-tbl td{border:1px solid #bbb;padding:6px 10px}'
+    + '.lbl{font-weight:bold;width:40%;background:#f8f8f8;font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:#333}'
+    + '.firma-row{display:flex}'
+    + '.firma-cell{flex:1;padding:8px 14px 32px;border:1px solid #bbb;border-top:none}'
+    + '.firma-cell+.firma-cell{border-left:none}'
+    + '.firma-label{font-size:9px;text-transform:uppercase;font-weight:bold;color:#555;margin-bottom:4px}'
+    + '.firma-name{font-size:11.5px;font-weight:600;margin-bottom:18px}'
+    + '.firma-line{border-top:1px solid #555;margin-top:18px;font-size:9px;color:#888;padding-top:3px}'
+    + '@media print{.no-print{display:none!important}}'
+    + '</style></head><body>'
+
+    + '<div class="no-print" style="text-align:center;padding:12px;background:#1a3a5c">'
+    + '<button onclick="window.print()" style="background:#fff;color:#1a3a5c;border:none;padding:8px 28px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer">'
+    + '🖸️ Imprimir / Guardar PDF</button></div>'
+
+    // Encabezado
+    + '<table class="hdr-tbl"><tr>'
+    + '<td class="logo-cell" rowspan="2"><img src="' + LOGO_URL + '" style="width:72px;height:auto;display:block;margin:0 auto" alt="Pucará"/></td>'
+    + '<td class="title-cell" rowspan="2">FICHA DADA DE BAJA<br/>EQUIPO Y/O CUERDAS</td>'
+    + '<td style="font-size:10px;width:130px"><div style="font-weight:bold;color:#444;font-size:9px;text-transform:uppercase">Revisión</div><div style="font-size:12px;font-weight:600">0</div></td>'
+    + '</tr><tr>'
+    + '<td style="font-size:10px"><div style="font-weight:bold;color:#444;font-size:9px;text-transform:uppercase">Código</div><div style="font-size:12px;font-weight:600">PR-RN-00-F25</div></td>'
+    + '</tr><tr>'
+    + '<td colspan="2" style="font-size:10px;padding:4px 8px"><span style="font-weight:bold;color:#444;font-size:9px;text-transform:uppercase">Fecha emisión: </span>' + hoyStr + '</td>'
+    + '<td style="font-size:10px;padding:4px 8px"><div style="font-weight:bold;color:#444;font-size:9px;text-transform:uppercase">Página</div><div style="font-size:12px;font-weight:600">1 de 1</div></td>'
+    + '</tr></table>'
+
+    // Datos del equipo
+    + '<div class="sec-hdr">EQUIPO Y/O CUERDA</div>'
+    + '<table class="info-tbl">'
+    + '<tr><td class="lbl">Tipo de Equipo / Modelo</td><td>' + desc + (talla ? ' — ' + talla : '') + '</td></tr>'
+    + '<tr><td class="lbl">Número de Serie</td><td>' + serie + '</td></tr>'
+    + '<tr><td class="lbl">Categoría</td><td>' + categ + '</td></tr>'
+    + '<tr><td class="lbl">Cantidad Dada de Baja</td><td><strong>' + (m.cantidad || 1) + '</strong> unidad(es)</td></tr>'
+    + '<tr><td class="lbl">Fecha Ingreso a la Obra</td><td>' + fIng2 + '</td></tr>'
+    + '<tr><td class="lbl">Fecha Primer Uso</td><td>' + fPrim2 + '</td></tr>'
+    + '<tr><td class="lbl">Fecha Dada de Baja</td><td><strong>' + fBaja + '</strong></td></tr>'
+    + '</table>'
+
+    // Firmas
+    + '<div class="firma-row">'
+    + '<div class="firma-cell"><div class="firma-label">Nombre y Firma de Quien Revisó</div>'
+    + '<div class="firma-name">' + (m.nombre_trabajador || '—') + '</div>'
+    + '<div class="firma-line">Firma</div></div>'
+    + '<div class="firma-cell"><div class="firma-label">Nombre y Firma Supervisor Responsable</div>'
+    + '<div class="firma-name">' + (m.responsable || '—') + '</div>'
+    + '<div class="firma-line">Firma</div></div>'
+    + '</div>'
+
+    // Motivos + fotos
+    + '<div class="sec-hdr">Describa los Motivos y/o Daños que Dan Motivo para Dar de Baja</div>'
+    + '<div style="display:flex;border:1px solid #bbb;border-top:none">'
+    + '<div style="flex:1;padding:14px 16px;font-size:11px;line-height:1.7;min-height:100px">' + motivos + '</div>'
+    + (fotosHtml ? fotosHtml : '')
+    + '</div>'
+
+    // Observaciones
+    + '<div class="sec-hdr">Observaciones</div>'
+    + '<div style="border:1px solid #bbb;border-top:none;padding:10px;min-height:40px;font-size:11px">'
+    + (m.observaciones || '') + '</div>'
+
+    + '</body></html>';
+
+  var w = window.open('', '_blank', 'width=920,height=720');
+  w.document.write(html);
+  w.document.close();
+}
+
 async function liberarAsignacion(movId, itemId, desc) {
   if (!confirm('¿Devolver "' + desc + '" y marcarlo como Disponible?')) return;
+  marcarItemReciente(itemId);
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
     const it = items.find(function(x){ return x.id === itemId; });
@@ -1285,8 +1823,28 @@ async function liberarAsignacion(movId, itemId, desc) {
 // ── Eliminar asignación ──────────────────────────────────────────
 async function eliminarAsignacion(id) {
   if (!confirm('¿Eliminar esta asignación?')) return;
+
+  // Leer el registro antes de borrarlo para revertir el ítem
+  var m = movs.find(function(x){ return x.id === id; });
+
   await sb.from('inventario_movimientos').delete().eq('id', id);
-  await cargarMovs();
+
+  // Descontar del total y devolver al disponible
+  if (m && m.item_id) {
+    var itSel       = items.find(function(x){ return x.id === m.item_id; });
+    var cantAsig    = m.cantidad || 1;
+    var totalActual = itSel ? (itSel.cantidad_total      || 0) : 0;
+    var dispActual  = itSel ? (itSel.cantidad_disponible || 0) : 0;
+    var newTotal    = Math.max(0, totalActual - cantAsig);
+    var newDisp     = dispActual + cantAsig;
+    var newEstado   = newDisp > 0 ? 'Disponible' : (newTotal > 0 ? 'En Uso' : 'Disponible');
+    await sb.from('inventario_items')
+      .update({ cantidad_total: newTotal, cantidad_disponible: newDisp, estado: newEstado })
+      .eq('id', m.item_id);
+  }
+
+  if (m && m.item_id) marcarItemReciente(m.item_id);
+  await Promise.all([cargarItems(), cargarMovs()]);
   renderAsignaciones();
 }
 
@@ -1298,6 +1856,28 @@ function sortBy(col) {
   const icon = document.getElementById('sort-' + col);
   if (icon) icon.textContent = sortDir === 'asc' ? ' ▲' : ' ▼';
   renderInventario();
+}
+
+function limpiarFA() {
+  ['fa-fecha','fa-trab','fa-cargo','fa-item','fa-categ','fa-resp'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderAsignaciones();
+}
+function limpiarFE2() {
+  ['fe-trab-q','fe-trab','fe-cargo','fe-item','fe-talla','fe-estado','fe-resp'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderEntrega();
+}
+function limpiarFS2() {
+  ['fs-fecha-q','fs-turno','fs-item','fs-categ','fs-resp'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderSalida();
 }
 
 function limpiarFiltros() {
@@ -1322,7 +1902,15 @@ function renderInventario() {
     (i.correlativo||'').toLowerCase().includes(q) ||
     (i.marca_modelo||'').toLowerCase().includes(q)
   );
-  if (sortCol) {
+  // Ordenar: ítems modificados recientemente primero; luego por created_at
+  if (!sortCol) {
+    rows.sort(function(a, b) {
+      var ta = (window._recentMods || {})[a.id] || 0;
+      var tb = (window._recentMods || {})[b.id] || 0;
+      if (ta !== tb) return tb - ta;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  } else {
     rows.sort((a, b) => {
       let va = a[sortCol] ?? '';
       let vb = b[sortCol] ?? '';
@@ -1335,7 +1923,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="verDetalle('${i.id}')">
     <td>${i.correlativo||'—'}</td>
-    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:9px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<div><strong>${i.descripcion}</strong>${i.marca_modelo?`<br><small style="color:#888">${i.marca_modelo}</small>`:''}</div>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
+    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -1358,12 +1946,38 @@ function badgeEstado(e) {
 function renderEntrega() {
   const d = document.getElementById('fe-desde').value;
   const h = document.getElementById('fe-hasta').value;
-  let rows = movs.filter(m => m.tipo === 'entrega_epp');
-  if (d) rows = rows.filter(m => m.fecha >= d);
-  if (h) rows = rows.filter(m => m.fecha <= h);
+  var allRows = movs.filter(function(m){ return m.tipo === 'entrega_epp'; });
+  // Poblar selects
+  poblarSelect('fe-trab',   allRows.map(function(m){ return m.nombre_trabajador; }));
+  poblarSelect('fe-cargo',  allRows.map(function(m){ return m.cargo_trabajador; }));
+  poblarSelect('fe-item',   allRows.map(function(m){ return m.descripcion; }));
+  poblarSelect('fe-talla',  allRows.map(function(m){ return m.talla; }));
+  poblarSelect('fe-estado', allRows.map(function(m){ return m.estado_entregar; }));
+  poblarSelect('fe-resp',   allRows.map(function(m){ return m.responsable; }));
+  // Filtros de fecha (barra superior)
+  if (d) allRows = allRows.filter(function(m){ return m.fecha >= d; });
+  if (h) allRows = allRows.filter(function(m){ return m.fecha <= h; });
+  // Filtros de columna
+  var fFecha = (document.getElementById('fe-trab-q') ? document.getElementById('fe-trab-q').value.toLowerCase() : '');
+  var fTrab  = document.getElementById('fe-trab')   ? document.getElementById('fe-trab').value   : '';
+  var fCargo = document.getElementById('fe-cargo')  ? document.getElementById('fe-cargo').value  : '';
+  var fItem  = document.getElementById('fe-item')   ? document.getElementById('fe-item').value   : '';
+  var fTalla = document.getElementById('fe-talla')  ? document.getElementById('fe-talla').value  : '';
+  var fEstad = document.getElementById('fe-estado') ? document.getElementById('fe-estado').value : '';
+  var fResp  = document.getElementById('fe-resp')   ? document.getElementById('fe-resp').value   : '';
+  var rows = allRows.filter(function(m) {
+    if (fFecha && !ff(m.fecha).includes(fFecha)) return false;
+    if (fTrab  && m.nombre_trabajador !== fTrab)  return false;
+    if (fCargo && m.cargo_trabajador  !== fCargo) return false;
+    if (fItem  && m.descripcion       !== fItem)  return false;
+    if (fTalla && m.talla             !== fTalla) return false;
+    if (fEstad && m.estado_entregar   !== fEstad) return false;
+    if (fResp  && m.responsable       !== fResp)  return false;
+    return true;
+  });
   const tb = document.getElementById('tb-epp');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr>
+  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" style="cursor:pointer">
     <td>${ff(m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
     <td>${m.cargo_trabajador||'—'}</td>
@@ -1374,8 +1988,8 @@ function renderEntrega() {
     <td>${m.estado_entregar?`<span class="badge b-ok">${m.estado_entregar}</span>`:'—'}</td>
     <td>${m.responsable||'—'}</td>
     <td style="white-space:nowrap">
-      <button class="btn btn-secondary btn-sm" onclick="editarEntrega('${m.id}')">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="eliminarEntrega('${m.id}')">🗑️</button>
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarEntrega('${m.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarEntrega('${m.id}')">🗑️</button>
     </td>
   </tr>`).join('');
 }
@@ -1384,13 +1998,33 @@ function renderEntrega() {
 function renderSalida() {
   const d = document.getElementById('fs-desde').value;
   const h = document.getElementById('fs-hasta').value;
-  let rows = movs.filter(m => m.tipo === 'salida_insumo');
-  if (d) rows = rows.filter(m => m.fecha >= d);
-  if (h) rows = rows.filter(m => m.fecha <= h);
+  var allRows = movs.filter(function(m){ return m.tipo === 'salida_insumo'; });
+  // Poblar selects
+  poblarSelect('fs-turno', allRows.map(function(m){ return m.turno; }));
+  poblarSelect('fs-item',  allRows.map(function(m){ return m.descripcion; }));
+  poblarSelect('fs-categ', allRows.map(function(m){ return m.categoria; }));
+  poblarSelect('fs-resp',  allRows.map(function(m){ return m.responsable; }));
+  // Filtros de fecha (barra superior)
+  if (d) allRows = allRows.filter(function(m){ return (m.fecha||'').substring(0,10) >= d; });
+  if (h) allRows = allRows.filter(function(m){ return (m.fecha||'').substring(0,10) <= h; });
+  // Filtros de columna
+  var fFecha = (document.getElementById('fs-fecha-q') ? document.getElementById('fs-fecha-q').value.toLowerCase() : '');
+  var fTurno = document.getElementById('fs-turno') ? document.getElementById('fs-turno').value : '';
+  var fItem  = document.getElementById('fs-item')  ? document.getElementById('fs-item').value  : '';
+  var fCateg = document.getElementById('fs-categ') ? document.getElementById('fs-categ').value : '';
+  var fResp  = document.getElementById('fs-resp')  ? document.getElementById('fs-resp').value  : '';
+  var rows = allRows.filter(function(m) {
+    if (fFecha && !ff(m.fecha).includes(fFecha)) return false;
+    if (fTurno && m.turno       !== fTurno) return false;
+    if (fItem  && m.descripcion !== fItem)  return false;
+    if (fCateg && m.categoria   !== fCateg) return false;
+    if (fResp  && m.responsable !== fResp)  return false;
+    return true;
+  });
   const tb = document.getElementById('tb-sal');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr>
-    <td>${ff(m.fecha)}</td>
+  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" style="cursor:pointer">
+    <td>${ff(m.fecha)}${ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':''}</td>
     <td>${m.turno||'—'}</td>
     <td>${m.descripcion||'—'}</td>
     <td><span class="badge b-info">${m.categoria||'—'}</span></td>
@@ -1399,8 +2033,8 @@ function renderSalida() {
     <td>${m.responsable||'—'}</td>
     <td>${m.observaciones||'—'}</td>
     <td style="white-space:nowrap">
-      <button class="btn btn-secondary btn-sm" onclick="editarSalida('${m.id}')">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="eliminarSalida('${m.id}')">🗑️</button>
+      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarSalida('${m.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarSalida('${m.id}')">🗑️</button>
     </td>
   </tr>`).join('');
 }
@@ -1444,11 +2078,16 @@ function seleccionarItemDD(el) {
   if (prefix === 'me') {
     document.getElementById('me-talla').value = it.talla || '';
     mostrarAlertaStock('alerta-epp', it.cantidad_disponible || 0);
+  } else if (prefix === 'mb') {
+    document.getElementById('mb-serie').value  = it.serie_sn     || '';
+    document.getElementById('mb-talla').value  = (it.talla || it.marca_modelo || '');
+    document.getElementById('mb-fecha-ingreso').value = it.fecha_ingreso || '';
   } else if (prefix === 'ma') {
     // En asignación, la unidad se agrega al total — no se descuenta del stock
     document.getElementById('alerta-asig').style.display = 'none';
     document.getElementById('ma-serie').value = it.serie_sn || '';
     document.getElementById('ma-color').value = it.color    || '';
+    document.getElementById('ma-talla').value = it.talla    || '';
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
   }
@@ -1572,7 +2211,7 @@ function abrirModalItem(id) {
   document.getElementById('mi-ubic').value  = it?.ubicacion   || '';
   document.getElementById('mi-estado').value= it?.estado      || 'Disponible';
   document.getElementById('mi-fecha').value = it?.fecha_ingreso|| '';
-  document.getElementById('mi-area').value  = it?.area_responsable || 'GEOTÉCNIA';
+  document.getElementById('mi-area').value  = it?.area_responsable || 'PUCARÁ';
   document.getElementById('mi-obs').value   = it?.observaciones || '';
   [1,2,3].forEach(n => { document.getElementById('mi-img-file-'+n).value = ''; });
   window._imgDropped = {};
@@ -1592,8 +2231,18 @@ function abrirModalItem(id) {
 function editarItem(id) { abrirModalItem(id); }
 
 async function guardarItem() {
-  const desc = document.getElementById('mi-desc').value.trim();
-  if (!desc) { document.getElementById('mi-desc-err').style.display = 'block'; return; }
+  const desc    = document.getElementById('mi-desc').value.trim();
+  const catVal  = document.getElementById('mi-cat').value;
+  const corrVal = document.getElementById('mi-corr').value.trim();
+  if (!desc)   { document.getElementById('mi-desc-err').style.display = 'block'; return; }
+  if (!catVal) { alert('⚠️ Debes seleccionar una Categoría para el ítem.'); return; }
+  if (corrVal) {
+    var dupItem = items.find(function(x){ return x.correlativo === corrVal && x.id !== editId; });
+    if (dupItem) {
+      alert('⚠️ El correlativo "' + corrVal + '" ya está en uso por:\n"' + dupItem.descripcion + '"\n\nElige un correlativo diferente.');
+      return;
+    }
+  }
   const btnG = document.getElementById('btn-guardar-item');
   btnG.disabled = true; btnG.textContent = 'Guardando…';
   let imagen_url   = document.getElementById('mi-img-url').value   || null;
@@ -1624,7 +2273,7 @@ async function guardarItem() {
     ubicacion:          document.getElementById('mi-ubic').value.trim()   || null,
     estado:             document.getElementById('mi-estado').value,
     fecha_ingreso:      document.getElementById('mi-fecha').value         || null,
-    area_responsable:   document.getElementById('mi-area').value.trim()   || 'GEOTÉCNIA',
+    area_responsable:   document.getElementById('mi-area').value.trim()   || 'PUCARÁ',
     observaciones:      document.getElementById('mi-obs').value.trim()    || null,
     imagen_url,
     imagen_url_2,
@@ -1652,8 +2301,20 @@ async function guardarItem() {
     : await sb.from('inventario_items').insert(p);
   btnG.disabled = false; btnG.textContent = 'Guardar Ítem';
   if (error) { alert('Error: ' + error.message); return; }
+  // Registrar como reciente para ordenar arriba
+  var savedId = editId || null;
+  if (!savedId) {
+    // Para nuevo item: obtener el ID insertado
+    var tmpData = await sb.from('inventario_items').select('id').order('created_at', { ascending: false }).limit(1);
+    if (tmpData.data && tmpData.data.length) savedId = tmpData.data[0].id;
+  }
+  if (savedId) {
+    window._recentMods[savedId] = Date.now();
+    try { localStorage.setItem('inv_recentMods', JSON.stringify(window._recentMods)); } catch(e) {}
+  }
   cerrar('modal-item');
   await cargarItems();
+  renderAsignaciones();
 }
 
 async function borrarItem(id, desc) {
@@ -1703,7 +2364,9 @@ async function guardarEntrega() {
   const trab   = document.getElementById('me-trab').value.trim();
   const itemId = document.getElementById('me-item-val').value;
   const cant   = parseInt(document.getElementById('me-cant').value) || 1;
-  if (!fecha || !trab || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
+  const turno  = document.getElementById('me-turno').value;
+  const talla  = document.getElementById('me-talla').value.trim();
+  if (!fecha || !trab || !itemId || !turno || !talla) { alert('Completa los campos obligatorios (*)'); return; }
   const itSel = items.find(x => x.id === itemId);
   if (!editMovId) {
     const disp = itSel?.cantidad_disponible || 0;
@@ -1759,13 +2422,16 @@ async function guardarEntrega() {
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
   if (mhdrE) mhdrE.textContent = 'Registrar Entrega EPP / Ropa';
+  marcarItemReciente(itemId);
   cerrar('modal-entrega');
   await cargarDatos();
 }
 
 // ── Modal Salida ───────────────────────────────────────────────
 function abrirModalSalida() {
+  var ahora = new Date();
   document.getElementById('ms-fecha').value = hoy();
+  document.getElementById('ms-hora').value  = String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
   document.getElementById('ms-turno').value = '';
   document.getElementById('ms-item-search').value = '';
   document.getElementById('ms-item-val').value    = '';
@@ -1773,6 +2439,9 @@ function abrirModalSalida() {
   document.getElementById('ms-cant').value  = '1';
   document.getElementById('ms-resp').value  = '';
   document.getElementById('ms-obs').value   = '';
+  document.getElementById('ms-foto-file').value = '';
+  var fPrevS = document.getElementById('ms-foto-preview');
+  if (fPrevS) { fPrevS.src = ''; fPrevS.style.display = 'none'; }
   document.getElementById('alerta-sal').style.display = 'none';
   abrir('modal-salida');
 }
@@ -1781,23 +2450,33 @@ let editMovSalId = null;
 
 async function guardarSalida() {
   const fecha  = document.getElementById('ms-fecha').value;
+  const hora   = document.getElementById('ms-hora').value;
   const itemId = document.getElementById('ms-item-val').value;
   const cant   = parseInt(document.getElementById('ms-cant').value) || 1;
-  if (!fecha || !itemId) { alert('Completa los campos obligatorios (*)'); return; }
+  const turnoS = document.getElementById('ms-turno').value;
+  if (!fecha || !itemId || !turnoS) { alert('Completa los campos obligatorios (*)'); return; }
+  const fechaHora = hora ? fecha + 'T' + hora : fecha;
   const itSel = items.find(x => x.id === itemId);
   if (!editMovSalId) {
     const disp = itSel?.cantidad_disponible || 0;
     if (disp < cant && !confirm('Stock disponible (' + disp + ') menor a la cantidad solicitada (' + cant + '). ¿Continuar?')) return;
   }
+  let foto_url = editMovSalId ? (movs.find(m => m.id === editMovSalId)?.foto_url || null) : null;
+  const fotoFile = document.getElementById('ms-foto-file')?.files[0];
+  if (fotoFile) {
+    try { foto_url = await subirFotoSalida(fotoFile); }
+    catch(e) { alert(e.message); return; }
+  }
   const payload = {
-    tipo: 'salida_insumo', fecha,
-    turno:        document.getElementById('ms-turno').value  || null,
+    tipo: 'salida_insumo', fecha: fechaHora,
+    turno:        turnoS,
     item_id:      itemId,
     descripcion:  itSel?.descripcion || null,
     categoria:    itSel?.categoria   || null,
     cantidad:     cant,
     responsable:  document.getElementById('ms-resp').value.trim() || null,
     observaciones:document.getElementById('ms-obs').value.trim()  || null,
+    foto_url:     foto_url,
     usuario_email:currentUser?.email || null,
   };
   if (editMovSalId) {
@@ -1823,6 +2502,7 @@ async function guardarSalida() {
   }
   const mhdrS = document.querySelector('#modal-salida .mhdr h3');
   if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
+  marcarItemReciente(itemId);
   cerrar('modal-salida');
   await cargarDatos();
 }
@@ -1871,6 +2551,7 @@ async function eliminarEntrega(movId) {
       await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
     }
   }
+  if (mov && mov.item_id) marcarItemReciente(mov.item_id);
   await cargarDatos();
 }
 
@@ -1879,8 +2560,14 @@ async function editarSalida(movId) {
   const mov = movs.find(m => m.id === movId);
   if (!mov) return;
   editMovSalId = movId;
-  document.getElementById('ms-fecha').value = mov.fecha || hoy();
+  var _msFechaRaw = mov.fecha || hoy();
+  document.getElementById('ms-fecha').value = _msFechaRaw.substring(0,10);
+  document.getElementById('ms-hora').value  = _msFechaRaw.length > 10 ? _msFechaRaw.substring(11,16) : '';
   document.getElementById('ms-turno').value = mov.turno || '';
+  var fPrevSE = document.getElementById('ms-foto-preview');
+  if (mov.foto_url) { fPrevSE.src = mov.foto_url; fPrevSE.style.display = 'block'; }
+  else { fPrevSE.src = ''; fPrevSE.style.display = 'none'; }
+  document.getElementById('ms-foto-file').value = '';
   const itS = items.find(x => x.id === mov.item_id);
   const lblS = itS ? ((itS.correlativo ? '['+itS.correlativo+'] ' : '') + itS.descripcion + (itS.talla ? ' ('+itS.talla+')' : '')) : (mov.descripcion || '');
   document.getElementById('ms-item-search').value = lblS;
@@ -1908,6 +2595,7 @@ async function eliminarSalida(movId) {
       await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
     }
   }
+  if (mov && mov.item_id) marcarItemReciente(mov.item_id);
   await cargarDatos();
 }
 
@@ -2141,6 +2829,107 @@ function limpiarFiltrosDash() {
   renderDashboard();
 }
 
+// ── Modal detalle movimiento ──────────────────────────────────
+function mostrarDetalleMov(id) {
+  var m = movs.find(function(x){ return x.id === id; });
+  if (!m) return;
+  var itVivo = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+  var desc  = (itVivo ? itVivo.descripcion : m.descripcion) || '—';
+  var categ = (itVivo ? itVivo.categoria   : m.categoria)   || '';
+  var corr  = itVivo ? itVivo.correlativo  : m.correlativo;
+  var TIPOS = {
+    'asignacion':    { label:'📌 Asignación',          color:'#1a3a5c' },
+    'entrega_epp':   { label:'🦺 Entrega EPP / Ropa',  color:'#2e7d32' },
+    'salida_insumo': { label:'🔧 Salida de Insumo',    color:'#e65100' }
+  };
+  var ti = TIPOS[m.tipo] || { label: m.tipo, color:'#555' };
+  function fila(lbl, val) {
+    if (!val && val !== 0) return '';
+    return '<div class="mdv-row"><span class="mdv-lbl">' + lbl + '</span><span class="mdv-val">' + val + '</span></div>';
+  }
+  var rows = '';
+  if (m.tipo === 'asignacion') {
+    rows += fila('Fecha',        ffdt(m.created_at || m.fecha));
+    rows += fila('Trabajador',   (m.nombre_trabajador || '—') + (m.rut_trabajador ? ' &nbsp;·&nbsp; ' + m.rut_trabajador : ''));
+    rows += fila('Cargo',        m.cargo_trabajador);
+    rows += fila('Ítem',         desc + (corr ? ' <span style="color:#888;font-size:11px">(Corr. ' + corr + ')</span>' : ''));
+    rows += fila('Categoría',    categ || '—');
+    rows += fila('Talla',        m.talla || (itVivo ? itVivo.talla : null));
+    rows += fila('Cantidad',     m.cantidad || 1);
+    rows += fila('Responsable',  m.responsable);
+    rows += fila('Observaciones',m.observaciones);
+  } else if (m.tipo === 'entrega_epp') {
+    rows += fila('Fecha',         ff(m.fecha));
+    rows += fila('Trabajador',    m.nombre_trabajador);
+    rows += fila('Cargo',         m.cargo_trabajador);
+    rows += fila('Ítem',          desc);
+    rows += fila('Categoría',     categ || '—');
+    rows += fila('Talla',         m.talla);
+    rows += fila('Cantidad',      m.cantidad || 1);
+    rows += fila('Estado Entrega',m.estado_entregar);
+    rows += fila('Responsable',   m.responsable);
+    rows += fila('Observaciones', m.observaciones);
+  } else {
+    rows += fila('Fecha',        ff(m.fecha));
+    rows += fila('Turno',        m.turno);
+    rows += fila('Ítem',         desc);
+    rows += fila('Categoría',    categ || '—');
+    rows += fila('Cantidad',     m.cantidad || 1);
+    rows += fila('Responsable',  m.responsable);
+    rows += fila('Observaciones',m.observaciones);
+  }
+  var foto = m.foto_url
+    ? '<div style="margin-top:14px;text-align:center"><img src="' + m.foto_url + '" style="max-width:100%;max-height:220px;border-radius:6px;cursor:pointer;object-fit:contain" onclick="window.open(\'' + m.foto_url + '\')" title="Ver foto completa"></div>'
+    : '';
+  document.getElementById('mdv-modal').innerHTML =
+    '<div style="background:' + ti.color + ';color:#fff;padding:14px 18px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0">' +
+      '<span style="font-weight:700;font-size:14px">' + ti.label + '</span>' +
+      '<button onclick="cerrarDetalleMov()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0 2px">×</button>' +
+    '</div>' +
+    '<div style="padding:16px 20px">' + rows + foto + '</div>';
+  document.getElementById('mdv-modal').style.display  = 'block';
+  document.getElementById('mdv-overlay').style.display = 'block';
+  document.addEventListener('keydown', _mdvEsc);
+}
+function cerrarDetalleMov() {
+  document.getElementById('mdv-modal').style.display   = 'none';
+  document.getElementById('mdv-overlay').style.display  = 'none';
+  document.removeEventListener('keydown', _mdvEsc);
+}
+function _mdvEsc(e) { if (e.key === 'Escape') cerrarDetalleMov(); }
+
+window._eppWorkerItems = {};
+window._eppTopW = [];
+function mostrarTooltipEPP(e, idx) {
+  var key  = window._eppTopW[idx];
+  var it   = window._eppWorkerItems[key] || {};
+  var sorted = Object.keys(it).sort(function(a,b){ return it[b]-it[a]; });
+  var html = '<div style="font-weight:700;font-size:12px;color:#1a3a5c;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:7px">'
+    + key + '</div>';
+  sorted.forEach(function(d){
+    html += '<div style="font-size:11px;padding:2px 0;display:flex;justify-content:space-between;gap:14px">'
+      + '<span style="color:#444;flex:1">' + d + '</span>'
+      + '<span style="font-weight:700;color:#2e7d32;white-space:nowrap">\xd7' + it[d] + '</span></div>';
+  });
+  var el = document.getElementById('dk-epp-tooltip');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  moverTooltip(e);
+}
+function moverTooltip(e) {
+  var el = document.getElementById('dk-epp-tooltip');
+  if (!el || el.style.display === 'none') return;
+  var x = e.clientX + 16, y = e.clientY + 16;
+  if (x + el.offsetWidth  > window.innerWidth  - 8) x = e.clientX - el.offsetWidth  - 16;
+  if (y + el.offsetHeight > window.innerHeight - 8) y = e.clientY - el.offsetHeight - 16;
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+}
+function ocultarTooltip() {
+  var el = document.getElementById('dk-epp-tooltip');
+  if (el) el.style.display = 'none';
+}
+
 function renderDashboard() {
   var filtroMes  = document.getElementById('dk-filtro-mes').value  || '';
   var filtroAnio = document.getElementById('dk-filtro-anio').value || '';
@@ -2298,17 +3087,25 @@ function renderDashboard() {
     : '<div class="dash-nodata">Sin salidas en el per\u00edodo</div>';
 
   // Trabajadores con m\u00e1s EPP (filtrado)
-  var wCnt = {};
+  var wCnt = {}, wItemsMap = {};
   movsFil.filter(function(m){ return m.tipo==='entrega_epp'; }).forEach(function(m){
-    var k = m.nombre_trabajador||'\u2014'; wCnt[k]=(wCnt[k]||0)+1;
+    var k = m.nombre_trabajador||'\u2014';
+    wCnt[k] = (wCnt[k]||0) + 1;
+    if (!wItemsMap[k]) wItemsMap[k] = {};
+    var desc = m.descripcion;
+    if (!desc) { var itM = items.find(function(x){ return x.id===m.item_id; }); desc = itM ? itM.descripcion : '\u2014'; }
+    wItemsMap[k][desc] = (wItemsMap[k][desc]||0) + 1;
   });
+  window._eppWorkerItems = wItemsMap;
   var topW = Object.keys(wCnt).map(function(k){ return [k,wCnt[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+  window._eppTopW = topW.map(function(kv){ return kv[0]; });
   var maxW = topW.length ? topW[0][1] : 1;
   document.getElementById('dk-workers').innerHTML = topW.length
-    ? topW.map(function(kv){
-        return '<div class="bar-row" style="break-inside:avoid">'+
+    ? topW.map(function(kv, i){
+        return '<div class="bar-row" style="break-inside:avoid;cursor:default"'+
+          ' onmouseenter="mostrarTooltipEPP(event,'+i+')" onmousemove="moverTooltip(event)" onmouseleave="ocultarTooltip()">'+
           '<div class="bar-lbl" title="'+kv[0]+'">'+kv[0]+'</div>'+
-          '<div class="bar-track" title="'+kv[0]+'  —  '+kv[1]+' entregas EPP"><div class="bar-fill" style="width:'+Math.round(kv[1]/maxW*100)+'%;background:#2e7d32"></div></div>'+
+          '<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(kv[1]/maxW*100)+'%;background:#2e7d32"></div></div>'+
           '<div class="bar-val">'+kv[1]+'</div>'+
         '</div>';
       }).join('')
@@ -2431,6 +3228,8 @@ function generarPDF() {
     </table>`;
   }
 
+  const _pdfUser = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  const _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser?.email || '');
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
 <title>Informe Inventario</title>
 <style>
@@ -2443,18 +3242,21 @@ function generarPDF() {
   <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
     <tr>
       <td style="border:none;width:70px;vertical-align:middle">
-        <img src="${PDF_LOGO_URL}" style="width:60px" alt="Pucará"/>
+        <img src="${LOGO_URL}" style="width:60px;height:60px;object-fit:contain;border-radius:8px" alt="Pucará"/>
       </td>
-      <td style="border:none;vertical-align:middle;padding-left:14px">
-        <div style="font-size:16pt;font-weight:700;color:#1E4F8C">Control de Inventario — RN-2003</div>
-        <div style="font-size:10pt;color:#666;margin-top:3px">Informe generado el ${ff(hoy())} | ${currentUser?.email||''}</div>
+      <td style="border:none;vertical-align:middle;text-align:center">
+        <div style="font-size:17pt;font-weight:700;color:#1E4F8C">Control de Inventario — RN-2003</div>
+        <div style="font-size:9.5pt;color:#888;margin-top:4px">Informe generado el ${ff(hoy())} &nbsp;|&nbsp; Generado por ${_pdfNombre}</div>
       </td>
+      <td style="border:none;width:70px"></td>
     </tr>
   </table>
   <hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 8px"/>
   ${body}
 </div>
 <script>window.onload=()=>window.print();<\/script>
+
+
 </body></html>`;
 
   const w = window.open('','_blank');
@@ -2465,6 +3267,12 @@ function generarPDF() {
 
 // ── Drag-drop image slots ─────────────────────────────────────
 window._imgDropped = {};
+window._recentMods = (function(){ try{ return JSON.parse(localStorage.getItem('inv_recentMods')||'{}'); }catch(e){ return {}; } })();
+function marcarItemReciente(id) {
+  if (!id) return;
+  window._recentMods[id] = Date.now();
+  try { localStorage.setItem('inv_recentMods', JSON.stringify(window._recentMods)); } catch(e) {}
+}
 
 function imgDragOver(e) { e.preventDefault(); }
 
@@ -2554,6 +3362,25 @@ function quitarFotoE() {
   prev.src = ''; prev.style.display = 'none';
 }
 
+function previewFotoS(input) {
+  var f = input.files[0]; if (!f) return;
+  var pr = document.getElementById('ms-foto-preview');
+  pr.src = URL.createObjectURL(f); pr.style.display = 'block';
+}
+function quitarFotoS() {
+  document.getElementById('ms-foto-file').value = '';
+  var pr = document.getElementById('ms-foto-preview');
+  pr.src = ''; pr.style.display = 'none';
+}
+async function subirFotoSalida(file) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `salidas/${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('inventario').upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error('Error al subir foto: ' + error.message);
+  const { data } = sb.storage.from('inventario').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 async function subirFotoEntrega(file) {
   const ext  = file.name.split('.').pop().toLowerCase();
   const path = `entregas/${Date.now()}.${ext}`;
@@ -2632,10 +3459,101 @@ function verDetalle(itemId) {
 function abrir(id)  { document.getElementById(id).classList.add('open'); }
 function cerrar(id) { document.getElementById(id).classList.remove('open'); }
 function hoy()      { return new Date().toISOString().split('T')[0]; }
-function ff(d)      { if(!d) return '—'; const [y,m,dia]=d.split('-'); return `${dia}/${m}/${y}`; }
+function ff(d)      { if(!d) return '—'; const s=d.substring(0,10); const [y,m,dia]=s.split('-'); return `${dia}/${m}/${y}`; }
+function ffh(d)     { if(!d||d.length<16) return ''; return d.substring(11,16); }
+function ffdt(dt)   {
+  if (!dt) return '—';
+  var d   = new Date(dt);
+  var dia = String(d.getDate()).padStart(2,'0');
+  var mes = String(d.getMonth()+1).padStart(2,'0');
+  var hh  = String(d.getHours()).padStart(2,'0');
+  var mm  = String(d.getMinutes()).padStart(2,'0');
+  return dia+'/'+mes+'/'+d.getFullYear()+'<br><small style="color:#999;font-size:10px">'+hh+':'+mm+'</small>';
+}
 function esc(s)     { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 init();
 </script>
+<!-- ══════════════════════════════════════
+     MODAL: Registrar Baja
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-nuevo-trab">
+  <div class="modal" style="max-width:400px">
+    <div class="mhdr">
+      <h3>👷 Nuevo Trabajador</h3>
+      <button class="mclose" onclick="cerrar('modal-nuevo-trab')">✕</button>
+    </div>
+    <div class="mbdy">
+      <div class="fg"><label>Nombre completo *</label><input type="text" id="nt-nombre" placeholder="Juan Pérez González" onkeydown="if(event.key==='Enter')document.getElementById('nt-rut').focus()"/></div>
+      <div class="fg"><label>RUT</label><input type="text" id="nt-rut" placeholder="12345678-9" onkeydown="if(event.key==='Enter')document.getElementById('nt-cargo').focus()"/></div>
+      <div class="fg"><label>Cargo *</label><input type="text" id="nt-cargo" placeholder="Minero Especialista B" onkeydown="if(event.key==='Enter')guardarNuevoTrabajador()"/></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="guardarNuevoTrabajador()">💾 Guardar</button>
+        <button class="btn btn-secondary" onclick="cerrar('modal-nuevo-trab')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bd" id="modal-baja">
+  <div class="modal" style="max-width:700px">
+    <div class="mhdr">
+      <h3>🚫 Registrar Ítem Dado de Baja</h3>
+      <button class="mclose" onclick="cerrar('modal-baja')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label>Fecha de Baja *</label><input type="date" id="mb-fecha"/></div>
+        <div class="fg"><label>Cantidad *</label><input type="number" id="mb-cantidad" min="1" value="1"/></div>
+        <div class="fg full">
+          <label>Ítem *</label>
+          <div class="item-search-wrap">
+            <input type="text" id="mb-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+              oninput="filtrarItems('mb')" onfocus="filtrarItems('mb')" autocomplete="off"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#mb-item-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
+              style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="mb-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="mb-item-val"/>
+          </div>
+        </div>
+        <div class="fg"><label>N° de Serie</label><input type="text" id="mb-serie" placeholder="Se auto-completa o escribe manualmente"/></div>
+        <div class="fg"><label>Talla / Modelo</label><input type="text" id="mb-talla" placeholder="Se auto-completa o escribe manualmente"/></div>
+        <div class="fg"><label>Fecha de Ingreso a Obra</label><input type="date" id="mb-fecha-ingreso"/></div>
+        <div class="fg"><label>Fecha Primer Uso</label><input type="date" id="mb-fecha-primer-uso"/></div>
+        <div class="fg">
+          <label>Quien Revisó *</label>
+          <select id="mb-quien-reviso"><option value="">Seleccionar…</option></select>
+        </div>
+        <div class="fg">
+          <label>Supervisor Responsable *</label>
+          <select id="mb-supervisor"><option value="">Seleccionar…</option></select>
+        </div>
+        <div class="fg full">
+          <label>Motivos / Daños que dan Baja *</label>
+          <textarea id="mb-motivos" rows="4" placeholder="Describa los motivos y/o daños que dan motivo para dar de baja..."></textarea>
+        </div>
+        <div class="fg">
+          <label>Foto 1</label>
+          <input type="file" id="mb-foto1-file" accept="image/*" onchange="prevFotoBaja(1)"/>
+          <img id="mb-foto1-prev" src="" style="display:none;max-width:100%;max-height:120px;margin-top:6px;border-radius:6px"/>
+        </div>
+        <div class="fg">
+          <label>Foto 2</label>
+          <input type="file" id="mb-foto2-file" accept="image/*" onchange="prevFotoBaja(2)"/>
+          <img id="mb-foto2-prev" src="" style="display:none;max-width:100%;max-height:120px;margin-top:6px;border-radius:6px"/>
+        </div>
+        <div class="fg full"><label>Observaciones</label><textarea id="mb-obs" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-baja')">Cancelar</button>
+      <button id="btn-guardar-baja" class="btn btn-danger" onclick="guardarBaja()">🚫 Registrar Baja</button>
+    </div>
+  </div>
+</div>
+
+<div id="mdv-overlay" onclick="cerrarDetalleMov()"></div>
+<div id="mdv-modal"></div>
+<div id="dk-epp-tooltip"></div>
 </body>
 </html>

@@ -1151,9 +1151,15 @@ async function guardarAsignacion() {
   var newTotal = totalActual + 1;
   // Si no quedan unidades disponibles, marcar como En Uso
   var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
-  await sb.from('inventario_items')
+  var updRes = await sb.from('inventario_items')
     .update({ cantidad_total: newTotal, estado: newEstado })
-    .eq('id', itemId);
+    .eq('id', itemId)
+    .select('id,cantidad_total');
+  if (updRes.error) {
+    alert('⚠️ Error al actualizar el total del ítem: ' + updRes.error.message);
+  } else if (!updRes.data || !updRes.data.length) {
+    alert('⚠️ No se encontró el ítem para actualizar (id: ' + itemId + '). Recarga la página e intenta de nuevo.');
+  }
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
   if (itSel) {

@@ -1088,6 +1088,12 @@ async function guardarAsignacion() {
   if (!trab)   { alert('Ingresa el nombre del trabajador'); return; }
   if (!itemId) { alert('Selecciona un ítem del listado'); return; }
 
+  // Advertir si no hay stock disponible
+  var dispActual = itSel ? (itSel.cantidad_disponible || 0) : 0;
+  if (dispActual <= 0) {
+    if (!confirm('⚠️ Este ítem no tiene stock disponible (Disponible: ' + dispActual + ').\n¿Registrar la asignación de todas formas?')) return;
+  }
+
   var btn = document.getElementById('btn-guardar-asignacion');
   btn.disabled = true; btn.textContent = 'Guardando…';
 
@@ -1104,11 +1110,11 @@ async function guardarAsignacion() {
     item_id:           itemId,
     descripcion:       itSel ? (itSel.descripcion || null) : null,
     categoria:         itSel ? (itSel.categoria   || null) : null,
-    correlativo:       itSel ? (itSel.correlativo || null) : null,
     nombre_trabajador: trab,
     cargo_trabajador:  document.getElementById('ma-cargo').value.trim() || null,
     rut_trabajador:    document.getElementById('ma-rut').value.trim()   || null,
     cantidad:          1,
+    cantidad_restante: Math.max(0, dispActual - 1),
     responsable:       document.getElementById('ma-resp').value  || null,
     observaciones:     document.getElementById('ma-obs').value.trim() || null,
     foto_url:          foto_url,
@@ -1122,9 +1128,12 @@ async function guardarAsignacion() {
     return;
   }
 
-  // Marcar ítem como En Uso
-  if (itemId) {
-    await sb.from('inventario_items').update({ estado: 'En Uso' }).eq('id', itemId);
+  // Descontar disponible y marcar En Uso
+  if (itSel) {
+    await sb.from('inventario_items').update({
+      estado: 'En Uso',
+      cantidad_disponible: Math.max(0, dispActual - 1)
+    }).eq('id', itemId);
   }
 
   cerrar('modal-asignacion');
@@ -1138,7 +1147,11 @@ async function liberarAsignacion(movId, itemId, desc) {
   if (!confirm('¿Devolver "' + desc + '" y marcarlo como Disponible?')) return;
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
-    await sb.from('inventario_items').update({ estado: 'Disponible' }).eq('id', itemId);
+    const it = items.find(function(x){ return x.id === itemId; });
+    await sb.from('inventario_items').update({
+      estado: 'Disponible',
+      cantidad_disponible: (it ? (it.cantidad_disponible || 0) : 0) + 1
+    }).eq('id', itemId);
   }
   await Promise.all([cargarItems(), cargarMovs()]);
   renderEntrega(); renderSalida(); renderAsignaciones(); renderHistorialMovimientos();

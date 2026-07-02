@@ -695,6 +695,7 @@ th.sortable:hover{background:#163d6e}
     </div>
     <div class="mbody">
       <div id="alerta-asig" class="alert alert-warn" style="display:none"></div>
+      <input type="hidden" id="ma-edit-id" value=""/>
       <div class="fgrid">
         <div class="fg"><label>Fecha *</label><input type="date" id="ma-fecha"/></div>
         <div class="fg">
@@ -706,6 +707,7 @@ th.sortable:hover{background:#163d6e}
           <div class="item-search-wrap">
             <input type="text" id="ma-trab" placeholder="🔍 Buscar o escribir nombre del trabajador..."
                    oninput="filtrarTrabA()" onfocus="filtrarTrabA()" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#ma-trab-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
                    onblur="setTimeout(()=>{const l=document.getElementById('ma-trab-list');if(l)l.style.display='none'},160)"/>
             <div id="ma-trab-list" class="item-dropdown"></div>
           </div>
@@ -717,6 +719,7 @@ th.sortable:hover{background:#163d6e}
           <div class="item-search-wrap">
             <input type="text" id="ma-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('ma')" onfocus="filtrarItems('ma')" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();var r=document.querySelector('#ma-item-list .item-dd-row');if(r)r.dispatchEvent(new MouseEvent('mousedown'));}"
                    style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
             <div id="ma-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ma-item-val"/>
@@ -725,6 +728,10 @@ th.sortable:hover{background:#163d6e}
         <div class="fg">
           <label>N° de Serie / S·N</label>
           <input type="text" id="ma-serie" readonly placeholder="Se auto-completa al seleccionar el ítem" style="background:#f8fafc;color:#555"/>
+        </div>
+        <div class="fg">
+          <label>Color</label>
+          <input type="text" id="ma-color" readonly placeholder="Se auto-completa al seleccionar el ítem" style="background:#f8fafc;color:#555"/>
         </div>
         <div class="fg">
           <label>Estado Físico *</label>
@@ -1020,7 +1027,8 @@ function renderAsignaciones() {
       '<td>' + (m.foto_url ? '<img src="' + m.foto_url + '" class="img-thumb" style="cursor:pointer" onclick="window.open(\'' + m.foto_url + '\')" title="Ver foto">' : '<span style="color:#bbb;font-size:11px">Sin foto</span>') + '</td>' +
       '<td>' + (m.responsable || '—') + '</td>' +
       '<td>' + (m.observaciones || '—') + '</td>' +
-      '<td style="white-space:nowrap">' +
+      '<td style="white-space:nowrap">'
+        + '<button class="btn btn-secondary btn-sm" onclick="editarAsignacion('' + m.id + '')" title="Editar">✏️ Editar</button> ' +
         '<button class="btn btn-warn btn-sm" onclick="liberarAsignacion(\'' + m.id + '\',' +
           '\'' + (m.item_id || '') + '\',' +
           '\'' + (m.descripcion || '').replace(/'/g,"\\'") + '\')" title="Devolver ítem">↩ Liberar</button> ' +
@@ -1093,11 +1101,50 @@ function abrirModalAsignacion() {
   document.getElementById('ma-serie').value         = '';
   document.getElementById('ma-estado-fisico').value = '';
   document.getElementById('ma-fecha-ingreso').value = '';
+  document.getElementById('ma-color').value           = '';
+  document.getElementById('ma-edit-id').value         = '';
+  document.querySelector('#modal-asignacion .mhdr h3').textContent = '📌 Registrar Asignación de Ítem';
+  document.getElementById('btn-guardar-asignacion').textContent = '📌 Registrar Asignación';
+  document.getElementById('ma-item-search').readOnly = false;
+  abrir('modal-asignacion');
+}
+
+// ── Editar asignación existente ─────────────────────────────────
+function editarAsignacion(movId) {
+  var m = movs.find(function(x){ return x.id === movId; });
+  if (!m) return;
+  var itSel = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+
+  // Limpiar y rellenar todos los campos
+  document.getElementById('ma-edit-id').value          = movId;
+  document.getElementById('ma-fecha').value            = m.fecha || '';
+  document.getElementById('ma-resp').value             = m.responsable || '';
+  document.getElementById('ma-trab').value             = m.nombre_trabajador || '';
+  document.getElementById('ma-rut').value              = m.rut_trabajador || '';
+  document.getElementById('ma-cargo').value            = m.cargo_trabajador || '';
+  var lbl = itSel ? ((itSel.correlativo ? '['+itSel.correlativo+'] ' : '') + (itSel.descripcion||'') + (itSel.talla ? ' ('+itSel.talla+')' : '')) : (m.descripcion || '');
+  document.getElementById('ma-item-search').value      = lbl;
+  document.getElementById('ma-item-val').value         = m.item_id || '';
+  document.getElementById('ma-item-list').style.display = 'none';
+  document.getElementById('ma-serie').value            = itSel ? (itSel.serie_sn || '') : '';
+  document.getElementById('ma-color').value            = itSel ? (itSel.color    || '') : '';
+  document.getElementById('ma-estado-fisico').value    = m.estado_entregar || '';
+  document.getElementById('ma-fecha-ingreso').value    = itSel ? (itSel.fecha_ingreso || '') : '';
+  document.getElementById('ma-obs').value              = m.observaciones || '';
+  document.getElementById('ma-foto-file').value        = '';
+  document.getElementById('ma-foto-preview').style.display = 'none';
+  document.getElementById('alerta-asig').style.display = 'none';
+  document.getElementById('ma-trab-list').style.display = 'none';
+  // Bloquear cambio de ítem en modo edición
+  document.getElementById('ma-item-search').readOnly   = true;
+  document.querySelector('#modal-asignacion .mhdr h3').textContent = '✏️ Editar Asignación';
+  document.getElementById('btn-guardar-asignacion').textContent = '💾 Guardar Cambios';
   abrir('modal-asignacion');
 }
 
 // ── Guardar ───────────────────────────────────────────────────
 async function guardarAsignacion() {
+  var editId = document.getElementById('ma-edit-id').value || null;
   var fecha  = document.getElementById('ma-fecha').value;
   var trab   = document.getElementById('ma-trab').value.trim();
   var itemId = document.getElementById('ma-item-val').value;
@@ -1113,6 +1160,7 @@ async function guardarAsignacion() {
 
   var estadoFisico  = document.getElementById('ma-estado-fisico').value;
   var serieSn       = document.getElementById('ma-serie').value.trim();
+  var colorVal      = document.getElementById('ma-color').value.trim() || null;
   var fechaIngreso  = document.getElementById('ma-fecha-ingreso').value || null;
 
   var btn = document.getElementById('btn-guardar-asignacion');
@@ -1143,34 +1191,48 @@ async function guardarAsignacion() {
     usuario_email:     currentUser ? (currentUser.email || null) : null,
   };
 
-  var res = await sb.from('inventario_movimientos').insert(payload);
+  var res;
+  if (editId) {
+    // MODO EDICIÓN: actualizar solo los campos editables
+    var updateFields = {
+      fecha:             payload.fecha,
+      nombre_trabajador: payload.nombre_trabajador,
+      cargo_trabajador:  payload.cargo_trabajador,
+      rut_trabajador:    payload.rut_trabajador,
+      responsable:       payload.responsable,
+      observaciones:     payload.observaciones,
+      estado_entregar:   payload.estado_entregar,
+    };
+    if (foto_url) updateFields.foto_url = foto_url;
+    res = await sb.from('inventario_movimientos').update(updateFields).eq('id', editId);
+  } else {
+    res = await sb.from('inventario_movimientos').insert(payload);
+  }
   if (res.error) {
     alert('Error: ' + res.error.message);
-    btn.disabled = false; btn.textContent = '📌 Registrar Asignación';
+    btn.disabled = false; btn.textContent = editId ? '💾 Guardar Cambios' : '📌 Registrar Asignación';
     return;
   }
 
-  // Lógica de asignación:
-  // • Si hay stock (dispActual > 0): tomar del pool → Total sin cambio, Disponible-1
-  // • Si no hay stock (dispActual = 0): unidad nueva → Total+1, Disponible sin cambio
-  // El trigger Supabase suma 1 a disponible en cada INSERT, por eso nuestro update
-  // siempre sobreescribe el valor para corregirlo.
-  var newTotal, newDisp;
-  if (dispActual > 0) {
-    newTotal = totalActual;        // hay stock: no agrega unidad nueva al total
-    newDisp  = dispActual - 1;    // descuenta del disponible
-  } else {
-    newTotal = totalActual + 1;   // sin stock: nueva unidad entra al inventario
-    newDisp  = 0;                 // disponible queda en 0 (asignado directamente)
+  if (!editId) {
+    // Solo en modo nuevo: actualizar stock del ítem
+    var newTotal, newDisp;
+    if (dispActual > 0) {
+      newTotal = totalActual;
+      newDisp  = dispActual - 1;
+    } else {
+      newTotal = totalActual + 1;
+      newDisp  = 0;
+    }
+    var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
+    await sb.from('inventario_items')
+      .update({
+        cantidad_total:      newTotal,
+        cantidad_disponible: newDisp,
+        estado:              newEstado
+      })
+      .eq('id', itemId);
   }
-  var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
-  await sb.from('inventario_items')
-    .update({
-      cantidad_total:      newTotal,
-      cantidad_disponible: newDisp,  // corrige el +1 automático del trigger
-      estado:              newEstado
-    })
-    .eq('id', itemId);
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
   if (itSel) {
@@ -1181,6 +1243,7 @@ async function guardarAsignacion() {
     ];
     if (estadoFisico)  cambiosAsig.push({ campo: 'Estado físico',   antes: null, despues: estadoFisico });
     if (serieSn)       cambiosAsig.push({ campo: 'N° Serie',         antes: null, despues: serieSn });
+    if (colorVal)      cambiosAsig.push({ campo: 'Color',             antes: null, despues: colorVal });
     if (fechaIngreso)  cambiosAsig.push({ campo: 'Fecha de ingreso', antes: null, despues: fechaIngreso });
     var entradaAsig = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: cambiosAsig };
     var histAsig = [entradaAsig].concat(itSel.historial || []).slice(0, 50);
@@ -1192,7 +1255,7 @@ async function guardarAsignacion() {
   }
 
   cerrar('modal-asignacion');
-  btn.disabled = false; btn.textContent = '📌 Registrar Asignación';
+  btn.disabled = false; btn.textContent = editId ? '💾 Guardar Cambios' : '📌 Registrar Asignación';
   await Promise.all([cargarItems(), cargarMovs()]);
   renderEntrega(); renderSalida(); renderAsignaciones(); renderHistorialMovimientos();
 }
@@ -1385,6 +1448,7 @@ function seleccionarItemDD(el) {
     // En asignación, la unidad se agrega al total — no se descuenta del stock
     document.getElementById('alerta-asig').style.display = 'none';
     document.getElementById('ma-serie').value = it.serie_sn || '';
+    document.getElementById('ma-color').value = it.color    || '';
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
   }

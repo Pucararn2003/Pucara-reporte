@@ -187,6 +187,7 @@ th.sortable:hover{background:#163d6e}
 .bar-fill{height:100%;border-radius:4px;background:#1E4F8C;transition:width .4s}
 .bar-val{width:28px;text-align:right;font-size:12px;font-weight:700;color:#333;flex-shrink:0}
 #dk-epp-tooltip{display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #cdd8e3;border-radius:9px;padding:11px 14px;box-shadow:0 6px 20px rgba(0,0,0,.15);min-width:200px;max-width:300px;pointer-events:none;font-family:Arial,sans-serif}
+tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 #mdv-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9100}
 #mdv-modal{display:none;position:fixed;z-index:9101;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.3);width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;font-family:Arial,sans-serif}
 .mdv-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #f0f0f0;align-items:baseline;font-size:13px}
@@ -1174,7 +1175,7 @@ function renderAsignaciones() {
     const categ    = itVivo ? itVivo.categoria     : m.categoria;
     const itmInfo  = desc;
     const itmSub   = (corr ? 'Corr. ' + corr : '') + (corr && categ ? ' · ' : '') + (categ || '');
-    return '<tr onclick="mostrarDetalleMov(\'' + m.id + '\')" ondblclick="cerrarDetalleMov();editarAsignacion(\'' + m.id + '\')" style="cursor:pointer" title="Doble clic para editar">' +
+    return '<tr onclick="clicFila(this,\'asig\',' + JSON.stringify(m.id) + ')" ondblclick="dblFila(this,\'asig\',' + JSON.stringify(m.id) + ')" style="cursor:pointer">' +
       '<td>' + ffdt(m.created_at || m.fecha) + '</td>' +
       '<td><strong>' + (m.nombre_trabajador || '—') + '</strong>' +
         (m.rut_trabajador ? '<br><small style="color:#888">' + m.rut_trabajador + '</small>' : '') + '</td>' +
@@ -1921,7 +1922,7 @@ function renderInventario() {
   }
   const tb = document.getElementById('tb-inv');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
-  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="verDetalle('${i.id}')" ondblclick="event.stopPropagation();editarItem('${i.id}')" title="Doble clic para editar">
+  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
     <td>${i.correlativo||'—'}</td>
     <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
@@ -1977,7 +1978,7 @@ function renderEntrega() {
   });
   const tb = document.getElementById('tb-epp');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" ondblclick="cerrarDetalleMov();editarEntrega('${m.id}')" style="cursor:pointer" title="Doble clic para editar">
+  tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'epp','${m.id}')" ondblclick="dblFila(this,'epp','${m.id}')" style="cursor:pointer">
     <td>${ff(m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
     <td>${m.cargo_trabajador||'—'}</td>
@@ -2023,7 +2024,7 @@ function renderSalida() {
   });
   const tb = document.getElementById('tb-sal');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" ondblclick="cerrarDetalleMov();editarSalida('${m.id}')" style="cursor:pointer" title="Doble clic para editar">
+  tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'sal','${m.id}')" ondblclick="dblFila(this,'sal','${m.id}')" style="cursor:pointer">
     <td>${ff(m.fecha)}${ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':''}</td>
     <td>${m.turno||'—'}</td>
     <td>${m.descripcion||'—'}</td>
@@ -2830,6 +2831,29 @@ function limpiarFiltrosDash() {
 }
 
 // ── Modal detalle movimiento ──────────────────────────────────
+var _rowTimer = null, _rowSel = null;
+function clicFila(tr, tipo, id) {
+  if (_rowSel && _rowSel !== tr) Array.from(_rowSel.cells||[]).forEach(function(td){td.style.background='';});
+  if (_rowSel && _rowSel !== tr) _rowSel.classList.remove('row-sel');
+  tr.classList.add('row-sel');
+  _rowSel = tr;
+  if (_rowTimer) clearTimeout(_rowTimer);
+  _rowTimer = setTimeout(function() {
+    _rowTimer = null;
+    if (tipo === 'inv') verDetalle(id);
+    else mostrarDetalleMov(id);
+  }, 2000);
+}
+function dblFila(tr, tipo, id) {
+  if (_rowTimer) { clearTimeout(_rowTimer); _rowTimer = null; }
+  if (_rowSel) _rowSel.classList.remove('row-sel');
+  cerrarDetalleMov();
+  if (tipo === 'inv') editarItem(id);
+  else if (tipo === 'epp')  editarEntrega(id);
+  else if (tipo === 'sal')  editarSalida(id);
+  else if (tipo === 'asig') editarAsignacion(id);
+}
+
 function mostrarDetalleMov(id) {
   var m = movs.find(function(x){ return x.id === id; });
   if (!m) return;

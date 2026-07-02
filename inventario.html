@@ -1147,19 +1147,27 @@ async function guardarAsignacion() {
     return;
   }
 
-  // 1) Sumar al total — la unidad entra al inventario directamente asignada
+  // 1a) Actualizar SOLO cantidad_total (aislado para detectar problema)
   var newTotal = totalActual + 1;
-  // Si no quedan unidades disponibles, marcar como En Uso
-  var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
-  var updRes = await sb.from('inventario_items')
-    .update({ cantidad_total: newTotal, estado: newEstado })
+  var updTotal = await sb.from('inventario_items')
+    .update({ cantidad_total: newTotal })
     .eq('id', itemId)
     .select('id,cantidad_total');
-  if (updRes.error) {
-    alert('⚠️ Error al actualizar el total del ítem: ' + updRes.error.message);
-  } else if (!updRes.data || !updRes.data.length) {
-    alert('⚠️ No se encontró el ítem para actualizar (id: ' + itemId + '). Recarga la página e intenta de nuevo.');
+  if (updTotal.error) {
+    alert('❌ Error cantidad_total: ' + updTotal.error.message);
+  } else if (!updTotal.data || !updTotal.data.length) {
+    alert('❌ ítem no encontrado (id="'+ itemId +'") — revisa si hay espacios extra.');
+  } else {
+    var realTotal = updTotal.data[0].cantidad_total;
+    if (realTotal !== newTotal) {
+      alert('⚠️ Trigger Supabase detectado: intenté poner Total=' + newTotal + ' pero la DB devolvió Total=' + realTotal + '. Revisa los triggers en el dashboard de Supabase.');
+    }
   }
+  // 1b) Actualizar estado
+  var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
+  await sb.from('inventario_items')
+    .update({ estado: newEstado })
+    .eq('id', itemId);
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
   if (itSel) {

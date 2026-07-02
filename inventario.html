@@ -1149,7 +1149,13 @@ async function guardarAsignacion() {
     return;
   }
 
-  // Descontar disponible, marcar En Uso y registrar en historial
+  // 1) Descontar disponible — update simple y directo (sin historial para garantizar éxito)
+  var newDisp = Math.max(0, dispActual - 1);
+  await sb.from('inventario_items')
+    .update({ cantidad_disponible: newDisp })
+    .eq('id', itemId);
+
+  // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
   if (itSel) {
     var cargo = document.getElementById('ma-cargo').value.trim();
     var cambiosAsig = [
@@ -1160,11 +1166,9 @@ async function guardarAsignacion() {
     if (serieSn)      cambiosAsig.push({ campo: 'N° Serie', antes: null, despues: serieSn });
     var entradaAsig = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: cambiosAsig };
     var histAsig = [entradaAsig].concat(itSel.historial || []).slice(0, 50);
-    await sb.from('inventario_items').update({
-      estado: 'En Uso',
-      cantidad_disponible: Math.max(0, dispActual - 1),
-      historial: histAsig
-    }).eq('id', itemId);
+    await sb.from('inventario_items')
+      .update({ historial: histAsig })
+      .eq('id', itemId);
   }
 
   cerrar('modal-asignacion');
@@ -1179,13 +1183,17 @@ async function liberarAsignacion(movId, itemId, desc) {
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
     const it = items.find(function(x){ return x.id === itemId; });
+    // 1) Restaurar disponible — update simple
+    var restoredDisp = (it ? (it.cantidad_disponible || 0) : 0) + 1;
+    await sb.from('inventario_items')
+      .update({ cantidad_disponible: restoredDisp })
+      .eq('id', itemId);
+    // 2) Historial — aparte
     var entradaLib = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: [{ campo: 'Devolución', antes: 'En Uso', despues: 'Disponible — ' + desc }] };
     var histLib = [entradaLib].concat(it ? (it.historial || []) : []).slice(0, 50);
-    await sb.from('inventario_items').update({
-      estado: 'Disponible',
-      cantidad_disponible: (it ? (it.cantidad_disponible || 0) : 0) + 1,
-      historial: histLib
-    }).eq('id', itemId);
+    await sb.from('inventario_items')
+      .update({ historial: histLib })
+      .eq('id', itemId);
   }
   await Promise.all([cargarItems(), cargarMovs()]);
   renderEntrega(); renderSalida(); renderAsignaciones(); renderHistorialMovimientos();

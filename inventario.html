@@ -1147,26 +1147,19 @@ async function guardarAsignacion() {
     return;
   }
 
-  // 1a) Actualizar SOLO cantidad_total (aislado para detectar problema)
-  var newTotal = totalActual + 1;
-  var updTotal = await sb.from('inventario_items')
-    .update({ cantidad_total: newTotal })
-    .eq('id', itemId)
-    .select('id,cantidad_total');
-  if (updTotal.error) {
-    alert('❌ Error cantidad_total: ' + updTotal.error.message);
-  } else if (!updTotal.data || !updTotal.data.length) {
-    alert('❌ ítem no encontrado (id="'+ itemId +'") — revisa si hay espacios extra.');
-  } else {
-    var realTotal = updTotal.data[0].cantidad_total;
-    if (realTotal !== newTotal) {
-      alert('⚠️ Trigger Supabase detectado: intenté poner Total=' + newTotal + ' pero la DB devolvió Total=' + realTotal + '. Revisa los triggers en el dashboard de Supabase.');
-    }
-  }
-  // 1b) Actualizar estado
+  // El trigger de Supabase incrementa disponible automáticamente al insertar
+  // cualquier movimiento. Corregimos en un solo update:
+  //   • total    = totalActual + 1   (nueva unidad entra al inventario)
+  //   • disponible = dispActual      (restaurar al valor previo, deshaciendo el trigger)
+  //   • estado   según disponibilidad
+  var newTotal  = totalActual + 1;
   var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
   await sb.from('inventario_items')
-    .update({ estado: newEstado })
+    .update({
+      cantidad_total:     newTotal,
+      cantidad_disponible: dispActual,  // deshace incremento automático del trigger
+      estado:             newEstado
+    })
     .eq('id', itemId);
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)

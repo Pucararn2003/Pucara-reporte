@@ -1174,7 +1174,7 @@ function renderAsignaciones() {
     const categ    = itVivo ? itVivo.categoria     : m.categoria;
     const itmInfo  = desc;
     const itmSub   = (corr ? 'Corr. ' + corr : '') + (corr && categ ? ' · ' : '') + (categ || '');
-    return '<tr onclick="mostrarDetalleMov(\'' + m.id + '\')" style="cursor:pointer">' +
+    return '<tr onclick="mostrarDetalleMov(\'' + m.id + '\')" ondblclick="cerrarDetalleMov();editarAsignacion(\'' + m.id + '\')" style="cursor:pointer" title="Doble clic para editar">' +
       '<td>' + ffdt(m.created_at || m.fecha) + '</td>' +
       '<td><strong>' + (m.nombre_trabajador || '—') + '</strong>' +
         (m.rut_trabajador ? '<br><small style="color:#888">' + m.rut_trabajador + '</small>' : '') + '</td>' +
@@ -1921,7 +1921,7 @@ function renderInventario() {
   }
   const tb = document.getElementById('tb-inv');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
-  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="verDetalle('${i.id}')">
+  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="verDetalle('${i.id}')" ondblclick="event.stopPropagation();editarItem('${i.id}')" title="Doble clic para editar">
     <td>${i.correlativo||'—'}</td>
     <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
@@ -1977,7 +1977,7 @@ function renderEntrega() {
   });
   const tb = document.getElementById('tb-epp');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" style="cursor:pointer">
+  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" ondblclick="cerrarDetalleMov();editarEntrega('${m.id}')" style="cursor:pointer" title="Doble clic para editar">
     <td>${ff(m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
     <td>${m.cargo_trabajador||'—'}</td>
@@ -2023,7 +2023,7 @@ function renderSalida() {
   });
   const tb = document.getElementById('tb-sal');
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" style="cursor:pointer">
+  tb.innerHTML = rows.map(m => `<tr onclick="mostrarDetalleMov('${m.id}')" ondblclick="cerrarDetalleMov();editarSalida('${m.id}')" style="cursor:pointer" title="Doble clic para editar">
     <td>${ff(m.fecha)}${ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':''}</td>
     <td>${m.turno||'—'}</td>
     <td>${m.descripcion||'—'}</td>

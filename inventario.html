@@ -1156,9 +1156,9 @@ async function guardarAsignacion() {
   var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
   await sb.from('inventario_items')
     .update({
-      cantidad_total:     newTotal,
-      cantidad_disponible: dispActual,  // deshace incremento automático del trigger
-      estado:             newEstado
+      cantidad_total:      newTotal,
+      cantidad_disponible: Math.max(0, dispActual - 1),  // resta 1 del pool (deshace +1 del trigger y descuenta stock)
+      estado:              newEstado
     })
     .eq('id', itemId);
 

@@ -1105,11 +1105,9 @@ async function guardarAsignacion() {
   if (!trab)   { alert('Ingresa el nombre del trabajador'); return; }
   if (!itemId) { alert('Selecciona un ítem del listado'); return; }
 
-  // Advertir si no hay stock disponible
-  var dispActual = itSel ? (itSel.cantidad_disponible || 0) : 0;
-  if (dispActual <= 0) {
-    if (!confirm('⚠️ Este ítem no tiene stock disponible (Disponible: ' + dispActual + ').\n¿Registrar la asignación de todas formas?')) return;
-  }
+  // Asignación = unidad nueva que entra directamente al trabajador → incrementa Total
+  var dispActual   = itSel ? (itSel.cantidad_disponible || 0) : 0;
+  var totalActual  = itSel ? (itSel.cantidad_total      || 0) : 0;
 
   var estadoFisico = document.getElementById('ma-estado-fisico').value;
   var serieSn      = document.getElementById('ma-serie').value.trim();
@@ -1134,7 +1132,7 @@ async function guardarAsignacion() {
     cargo_trabajador:  document.getElementById('ma-cargo').value.trim() || null,
     rut_trabajador:    document.getElementById('ma-rut').value.trim()   || null,
     cantidad:          1,
-    cantidad_restante: Math.max(0, dispActual - 1),
+    cantidad_restante: dispActual,   // disponible no cambia en asignación
     responsable:       document.getElementById('ma-resp').value  || null,
     observaciones:     document.getElementById('ma-obs').value.trim() || null,
     foto_url:          foto_url,
@@ -1149,10 +1147,12 @@ async function guardarAsignacion() {
     return;
   }
 
-  // 1) Descontar disponible — update simple y directo (sin historial para garantizar éxito)
-  var newDisp = Math.max(0, dispActual - 1);
+  // 1) Sumar al total — la unidad entra al inventario directamente asignada
+  var newTotal = totalActual + 1;
+  // Si no quedan unidades disponibles, marcar como En Uso
+  var newEstado = (dispActual <= 0) ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
   await sb.from('inventario_items')
-    .update({ cantidad_disponible: newDisp })
+    .update({ cantidad_total: newTotal, estado: newEstado })
     .eq('id', itemId);
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
@@ -1183,10 +1183,10 @@ async function liberarAsignacion(movId, itemId, desc) {
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
     const it = items.find(function(x){ return x.id === itemId; });
-    // 1) Restaurar disponible — update simple
+    // 1) Devolver al pool disponible (total no cambia, la unidad sigue existiendo)
     var restoredDisp = (it ? (it.cantidad_disponible || 0) : 0) + 1;
     await sb.from('inventario_items')
-      .update({ cantidad_disponible: restoredDisp })
+      .update({ cantidad_disponible: restoredDisp, estado: 'Disponible' })
       .eq('id', itemId);
     // 2) Historial — aparte
     var entradaLib = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: [{ campo: 'Devolución', antes: 'En Uso', despues: 'Disponible — ' + desc }] };
@@ -1362,7 +1362,8 @@ function seleccionarItemDD(el) {
     document.getElementById('me-talla').value = it.talla || '';
     mostrarAlertaStock('alerta-epp', it.cantidad_disponible || 0);
   } else if (prefix === 'ma') {
-    mostrarAlertaStock('alerta-asig', it.cantidad_disponible || 0);
+    // En asignación, la unidad se agrega al total — no se descuenta del stock
+    document.getElementById('alerta-asig').style.display = 'none';
     document.getElementById('ma-serie').value = it.serie_sn || '';
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);

@@ -2842,7 +2842,7 @@ function clicFila(tr, tipo, id) {
     _rowTimer = null;
     if (tipo === 'inv') verDetalle(id);
     else mostrarDetalleMov(id);
-  }, 2000);
+  }, 1000);
 }
 function dblFila(tr, tipo, id) {
   if (_rowTimer) { clearTimeout(_rowTimer); _rowTimer = null; }

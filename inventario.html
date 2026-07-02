@@ -722,6 +722,21 @@ th.sortable:hover{background:#163d6e}
             <input type="hidden" id="ma-item-val"/>
           </div>
         </div>
+        <div class="fg">
+          <label>N° de Serie / S·N</label>
+          <input type="text" id="ma-serie" readonly placeholder="Se auto-completa al seleccionar el ítem" style="background:#f8fafc;color:#555"/>
+        </div>
+        <div class="fg">
+          <label>Estado Físico *</label>
+          <select id="ma-estado-fisico">
+            <option value="">— Seleccionar —</option>
+            <option>Nuevo</option>
+            <option>Buen Estado</option>
+            <option>Regular</option>
+            <option>Mal Estado</option>
+            <option>Dañado</option>
+          </select>
+        </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ma-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Foto de asignación</label>
@@ -1074,6 +1089,8 @@ function abrirModalAsignacion() {
   document.getElementById('ma-foto-preview').src  = '';
   document.getElementById('ma-foto-preview').style.display = 'none';
   document.getElementById('alerta-asig').style.display    = 'none';
+  document.getElementById('ma-serie').value         = '';
+  document.getElementById('ma-estado-fisico').value = '';
   abrir('modal-asignacion');
 }
 
@@ -1093,6 +1110,9 @@ async function guardarAsignacion() {
   if (dispActual <= 0) {
     if (!confirm('⚠️ Este ítem no tiene stock disponible (Disponible: ' + dispActual + ').\n¿Registrar la asignación de todas formas?')) return;
   }
+
+  var estadoFisico = document.getElementById('ma-estado-fisico').value;
+  var serieSn      = document.getElementById('ma-serie').value.trim();
 
   var btn = document.getElementById('btn-guardar-asignacion');
   btn.disabled = true; btn.textContent = 'Guardando…';
@@ -1118,6 +1138,7 @@ async function guardarAsignacion() {
     responsable:       document.getElementById('ma-resp').value  || null,
     observaciones:     document.getElementById('ma-obs').value.trim() || null,
     foto_url:          foto_url,
+    estado_entregar:   estadoFisico || null,
     usuario_email:     currentUser ? (currentUser.email || null) : null,
   };
 
@@ -1128,11 +1149,21 @@ async function guardarAsignacion() {
     return;
   }
 
-  // Descontar disponible y marcar En Uso
+  // Descontar disponible, marcar En Uso y registrar en historial
   if (itSel) {
+    var cargo = document.getElementById('ma-cargo').value.trim();
+    var cambiosAsig = [
+      { campo: 'Asignado a', antes: null, despues: trab + (cargo ? ' (' + cargo + ')' : '') },
+      { campo: 'Fecha asignación', antes: null, despues: fecha },
+    ];
+    if (estadoFisico) cambiosAsig.push({ campo: 'Estado físico', antes: null, despues: estadoFisico });
+    if (serieSn)      cambiosAsig.push({ campo: 'N° Serie', antes: null, despues: serieSn });
+    var entradaAsig = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: cambiosAsig };
+    var histAsig = [entradaAsig].concat(itSel.historial || []).slice(0, 50);
     await sb.from('inventario_items').update({
       estado: 'En Uso',
-      cantidad_disponible: Math.max(0, dispActual - 1)
+      cantidad_disponible: Math.max(0, dispActual - 1),
+      historial: histAsig
     }).eq('id', itemId);
   }
 
@@ -1148,9 +1179,12 @@ async function liberarAsignacion(movId, itemId, desc) {
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
     const it = items.find(function(x){ return x.id === itemId; });
+    var entradaLib = { fecha: new Date().toISOString(), usuario: currentUser ? (currentUser.email || '?') : '?', cambios: [{ campo: 'Devolución', antes: 'En Uso', despues: 'Disponible — ' + desc }] };
+    var histLib = [entradaLib].concat(it ? (it.historial || []) : []).slice(0, 50);
     await sb.from('inventario_items').update({
       estado: 'Disponible',
-      cantidad_disponible: (it ? (it.cantidad_disponible || 0) : 0) + 1
+      cantidad_disponible: (it ? (it.cantidad_disponible || 0) : 0) + 1,
+      historial: histLib
     }).eq('id', itemId);
   }
   await Promise.all([cargarItems(), cargarMovs()]);
@@ -1321,6 +1355,7 @@ function seleccionarItemDD(el) {
     mostrarAlertaStock('alerta-epp', it.cantidad_disponible || 0);
   } else if (prefix === 'ma') {
     mostrarAlertaStock('alerta-asig', it.cantidad_disponible || 0);
+    document.getElementById('ma-serie').value = it.serie_sn || '';
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
   }

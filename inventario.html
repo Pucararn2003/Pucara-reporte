@@ -139,6 +139,11 @@ th.sortable:hover{background:#163d6e}
 .th-info-icon{display:inline-block;margin-left:5px;font-size:11px;opacity:.75;cursor:help;vertical-align:middle}
 .th-info-icon:hover{opacity:1}
 
+/* ── Drag-drop image slots ── */
+.img-drop-zone{border:2px dashed #cdd8e3;border-radius:8px;padding:8px;transition:border-color .15s,background .15s;cursor:default}
+.img-drop-zone.drag-over{border-color:#1E4F8C !important;background:#edf4ff}
+.img-drop-hint{text-align:center;font-size:10px;color:#bbb;margin-top:5px;pointer-events:none;user-select:none}
+
 /* ── Historial tooltip ── */
 #hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:none;line-height:1.55;display:none}
 .hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px}
@@ -516,29 +521,35 @@ th.sortable:hover{background:#163d6e}
         <div class="fg full">
           <label>Imágenes del Ítem (hasta 3 — la 1ª es la miniatura)</label>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px">
-            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+            <div class="img-drop-zone" id="mi-slot-1"
+                 ondragover="imgDragOver(event)" ondragenter="imgDragEnter(event,1)" ondragleave="imgDragLeave(event,1)" ondrop="imgDrop(event,1)">
               <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 1 (miniatura)</div>
               <img id="mi-img-prev-1" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 <input type="file" id="mi-img-file-1" accept="image/*" onchange="previewImgSlot(this,1)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(1)">✕</button>
               </div>
+              <div class="img-drop-hint">📎 o arrastra aquí</div>
             </div>
-            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+            <div class="img-drop-zone" id="mi-slot-2"
+                 ondragover="imgDragOver(event)" ondragenter="imgDragEnter(event,2)" ondragleave="imgDragLeave(event,2)" ondrop="imgDrop(event,2)">
               <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 2</div>
               <img id="mi-img-prev-2" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 <input type="file" id="mi-img-file-2" accept="image/*" onchange="previewImgSlot(this,2)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(2)">✕</button>
               </div>
+              <div class="img-drop-hint">📎 o arrastra aquí</div>
             </div>
-            <div style="border:1px solid #cdd8e3;border-radius:8px;padding:8px">
+            <div class="img-drop-zone" id="mi-slot-3"
+                 ondragover="imgDragOver(event)" ondragenter="imgDragEnter(event,3)" ondragleave="imgDragLeave(event,3)" ondrop="imgDrop(event,3)">
               <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Foto 3</div>
               <img id="mi-img-prev-3" src="" alt="" style="display:none;width:100%;max-height:110px;object-fit:contain;border-radius:6px;margin-bottom:6px;border:1px solid #eee"/>
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 <input type="file" id="mi-img-file-3" accept="image/*" onchange="previewImgSlot(this,3)" style="flex:1;min-width:0;font-size:11px;padding:4px;border:1px solid #cdd8e3;border-radius:5px"/>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="quitarImgSlot(3)">✕</button>
               </div>
+              <div class="img-drop-hint">📎 o arrastra aquí</div>
             </div>
           </div>
           <input type="hidden" id="mi-img-url"/>
@@ -1423,6 +1434,7 @@ function abrirModalItem(id) {
   document.getElementById('mi-area').value  = it?.area_responsable || 'GEOTÉCNIA';
   document.getElementById('mi-obs').value   = it?.observaciones || '';
   [1,2,3].forEach(n => { document.getElementById('mi-img-file-'+n).value = ''; });
+  window._imgDropped = {};
   document.getElementById('mi-img-url').value   = it?.imagen_url   || '';
   document.getElementById('mi-img-url-2').value = it?.imagen_url_2 || '';
   document.getElementById('mi-img-url-3').value = it?.imagen_url_3 || '';
@@ -1447,7 +1459,7 @@ async function guardarItem() {
   let imagen_url_2 = document.getElementById('mi-img-url-2').value || null;
   let imagen_url_3 = document.getElementById('mi-img-url-3').value || null;
   for (const [slot, key] of [[1,'imagen_url'],[2,'imagen_url_2'],[3,'imagen_url_3']]) {
-    const f = document.getElementById('mi-img-file-'+slot)?.files[0];
+    const f = document.getElementById('mi-img-file-'+slot)?.files[0] || (window._imgDropped && window._imgDropped[slot]) || null;
     if (f) {
       try {
         const u = await subirImagen(f, (editId||'new')+'_'+slot);
@@ -2308,6 +2320,55 @@ function generarPDF() {
   w.document.write(html);
   w.document.close();
   cerrar('modal-pdf');
+}
+
+// ── Drag-drop image slots ─────────────────────────────────────
+window._imgDropped = {};
+
+function imgDragOver(e) { e.preventDefault(); }
+
+function imgDragEnter(e, slot) {
+  e.preventDefault();
+  document.getElementById('mi-slot-' + slot).classList.add('drag-over');
+}
+
+function imgDragLeave(e, slot) {
+  var el = document.getElementById('mi-slot-' + slot);
+  if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over');
+}
+
+function imgDrop(e, slot) {
+  e.preventDefault();
+  document.getElementById('mi-slot-' + slot).classList.remove('drag-over');
+
+  // Caso 1: archivo de sistema / Explorer
+  var file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    try {
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      var inp = document.getElementById('mi-img-file-' + slot);
+      inp.files = dt.files;           // Chrome/Firefox/Edge
+      previewImgSlot(inp, slot);
+    } catch (_) {
+      // Safari no permite asignar files — guardamos la referencia
+      window._imgDropped[slot] = file;
+      var pr = document.getElementById('mi-img-prev-' + slot);
+      pr.src = URL.createObjectURL(file); pr.style.display = 'block';
+    }
+    return;
+  }
+
+  // Caso 2: imagen arrastrada desde otra ventana/pestaña del navegador
+  var html = e.dataTransfer.getData('text/html') || '';
+  var m    = html.match(/src=["'\s]([^"'>\s]+)["']/i);
+  var url  = m ? m[1] : (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('URL') || '').trim();
+  if (url && /^https?:\/\//i.test(url)) {
+    var urlIds = ['mi-img-url', 'mi-img-url-2', 'mi-img-url-3'];
+    document.getElementById(urlIds[slot - 1]).value = url;
+    var pr2 = document.getElementById('mi-img-prev-' + slot);
+    pr2.src = url; pr2.style.display = 'block';
+  }
 }
 
 // ── Image ─────────────────────────────────────────────────────

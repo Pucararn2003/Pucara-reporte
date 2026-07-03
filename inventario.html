@@ -488,7 +488,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <option>Completada</option>
         <option>Cancelada</option>
       </select>
-      <button class="btn btn-pdf" onclick="abrirModalInformeCompras()" style="white-space:nowrap">📄 Generar Informe</button>
+      <button class="btn" onclick="exportarExcelCompras()" style="white-space:nowrap;background:#2e7d32;color:#fff">📊 Excel</button>
       <button class="btn btn-pdf" onclick="generarPDFCompletoCompras()" style="white-space:nowrap;background:#5c3d8f">📋 PDF Completo</button>
     </div>
     <div class="table-wrap">
@@ -874,7 +874,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     <div class="mbody">
       <div id="alerta-epp" class="alert alert-warn" style="display:none"></div>
       <div class="fgrid">
-        <div class="fg"><label>Fecha de Entrega *</label><input type="date" id="me-fecha"/></div>
+        <div class="fg"><label>Fecha de Creación *</label><input type="date" id="me-fecha"/></div>
         <div class="fg">
           <label>Turno *</label>
           <select id="me-turno">
@@ -3976,6 +3976,28 @@ function generarPDFCompletoCompras() {
   });
   if (!selCompras.length) { alert('No hay solicitudes para generar el PDF.'); return; }
   _abrirVentanaPDFCompras(selCompras);
+}
+
+function exportarExcelCompras() {
+  var q    = norm(document.getElementById('fc-buscar') ? document.getElementById('fc-buscar').value : '');
+  var fEst = document.getElementById('fc-estado') ? document.getElementById('fc-estado').value : '';
+  var lista = _compras.filter(function(c) {
+    if (q && !norm(c.descripcion || '').includes(q) && !norm(c.responsable || '').includes(q) && !norm(c.observaciones || '').includes(q)) return false;
+    if (fEst && c.estado !== fEst) return false;
+    return true;
+  });
+  if (!lista.length) { alert('No hay solicitudes para exportar.'); return; }
+  var hdrs = ['Fecha Solicitud','Correlativo','Categoría','Descripción Ítem','Cantidad','Talla','Responsable','Fecha Límite','Estado','Descripción General','Observaciones','Trabajadores','Gestionados'];
+  var data = lista.map(function(c) {
+    var it  = c.item_id ? items.find(function(x){ return x.id === c.item_id; }) : null;
+    var cat = (it && it.categoria) ? it.categoria : '';
+    var trabNombres = (c.trabajadores || []).map(function(t){ return t.nombre || ''; }).join(', ');
+    var gestionados = (c.trabajadores || []).filter(function(t){ return t.gestionado; }).length + '/' + (c.trabajadores || []).length;
+    return [c.fecha||'', c.correlativo||'', cat, c.descripcion||'', c.cantidad||'', c.talla||'', c.responsable||'', c.fecha_limite||'', c.estado||'', c.descripcion_general||'', c.observaciones||'', trabNombres, gestionados];
+  });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs, data, [14,10,14,28,8,8,22,14,12,25,25,30,10]), 'Gestión de Compras');
+  XLSX.writeFile(wb, 'Compras_' + hoy() + '.xlsx');
 }
 
 // ── Drag-drop image slots ─────────────────────────────────────

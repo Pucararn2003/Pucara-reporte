@@ -203,6 +203,48 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 .dash-nodata{color:#bbb;font-size:13px;text-align:center;padding:20px 0;font-style:italic}
 @media(max-width:700px){.dash-kpis{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
 
+/* ── Responsive móvil (≤ 600px) ── */
+@media(max-width:600px){
+  /* Header */
+  header{padding:0 10px;gap:6px;height:50px}
+  header h1{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .hdr-btn{padding:5px 9px;font-size:13px}
+  .btn-lbl{display:none}
+
+  /* Tabs — scroll horizontal sin barra visible */
+  .tabs-nav{padding:0 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs-nav::-webkit-scrollbar{display:none}
+  .tab-btn{padding:10px 14px;font-size:12px;white-space:nowrap;flex-shrink:0}
+
+  /* Panels */
+  .tab-panel{padding:10px 8px}
+
+  /* Stats — 2×2 en móvil */
+  .stats-row{gap:8px}
+  .stats-row .stat-card{flex:0 0 calc(50% - 4px);max-width:calc(50% - 4px)}
+  .stat-card .val{font-size:22px}
+
+  /* Tables — ancho mínimo para activar scroll horizontal */
+  .table-wrap table{min-width:600px}
+
+  /* Modals */
+  .modal-bd{padding:6px}
+  .modal{border-radius:10px}
+  .mhdr{padding:13px 14px}
+  .mbody{padding:14px}
+  .mftr{padding:10px 14px;flex-wrap:wrap}
+  .fgrid{grid-template-columns:1fr !important}
+
+  /* Historial movimientos — apilado vertical */
+  .hmov-card{flex-direction:column;gap:6px}
+  .hmov-left{width:100%;display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left}
+  .hmov-ts{margin:0}
+
+  /* Dashboard */
+  .bar-lbl{width:90px}
+  .kpi-val{font-size:24px}
+}
+
 /* ── LOGO ── */
 .login-logo-wrap{text-align:center;margin-bottom:18px}
 #login-logo{width:96px;height:96px;object-fit:contain;border-radius:14px;background:#fff;padding:8px;border:2px solid #3A7BC8;box-shadow:0 3px 10px rgba(0,0,0,.13);display:inline-block}
@@ -261,9 +303,9 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   <header>
     <img id="nav-logo" alt="Pucará"/>
     <h1>Control de Inventario — RN-2003</h1>
-    <button class="hdr-btn" onclick="abrirPDF()">📄 Informe PDF</button>
-    <button class="hdr-btn" onclick="abrirExcel()" style="background:rgba(0,140,0,.3)">📊 Excel</button>
-    <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 Salir</button>
+    <button class="hdr-btn" onclick="abrirPDF()">📄 <span class="btn-lbl">Informe PDF</span></button>
+    <button class="hdr-btn" onclick="abrirExcel()" style="background:rgba(0,140,0,.3)">📊 <span class="btn-lbl">Excel</span></button>
+    <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 <span class="btn-lbl">Salir</span></button>
   </header>
 
   <nav class="tabs-nav">

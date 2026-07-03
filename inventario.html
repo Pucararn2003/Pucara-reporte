@@ -407,7 +407,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   <!-- ── TAB: Inventario General ── -->
   <div id="tab-inventario" class="tab-panel active">
     <div class="stats-row">
-      <div class="stat-card"><div class="val" id="st-items">0</div><div class="lbl">Ítems activos</div></div>
+      <div class="stat-card"><div class="val" id="st-items">0</div><div class="lbl">Total ítems</div></div>
       <div class="stat-card"><div class="val" id="st-disp">0</div><div class="lbl">Total disponible</div></div>
       <div class="stat-card"><div class="val" id="st-bajo" style="color:#e65100">0</div><div class="lbl">Stock bajo (≤ 1)</div></div>
       <div class="stat-card"><div class="val" id="st-baja" style="color:#c62828">0</div><div class="lbl">Dados de baja</div></div>
@@ -1276,7 +1276,7 @@ function actualizarStats() {
   const dispTotal = items.reduce((s, i) => s + (i.cantidad_disponible || 0), 0);
   const bajo  = activos.filter(i => (i.cantidad_disponible || 0) <= 1).length;
   const baja  = items.filter(i => i.estado === 'Dado de Baja' || i.estado === 'Pérdida').length;
-  document.getElementById('st-items').textContent = activos.length;
+  document.getElementById('st-items').textContent = items.length;
   document.getElementById('st-disp').textContent  = dispTotal;
   document.getElementById('st-bajo').textContent  = bajo;
   document.getElementById('st-baja').textContent  = baja;
@@ -4099,7 +4099,7 @@ function eliminarCompra(id) {
 </div>
 
 <!-- ── MODAL: Nueva / Editar Solicitud Compra ── -->
-<div class="modal-bd" id="modal-compra" style="display:none">
+<div class="modal-bd" id="modal-compra">
   <div class="modal" style="max-width:560px">
     <div class="mhdr">
       <h3 id="mc-titulo">🛒 Nueva Solicitud de Compra</h3>

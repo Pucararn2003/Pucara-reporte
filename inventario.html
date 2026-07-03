@@ -1715,15 +1715,14 @@ async function guardarAsignacion() {
     const _curDisp  = _cur ? (_cur.cantidad_disponible || 0) : (dispActual + 1); // post-trigger
 
     if (!noDescontar) {
-      // Asignación suma al total; cancela el +1 del trigger y descuenta cantAsig del disponible
-      var newTotal  = _curTotal + cantAsig;
+      // Solo descuenta del disponible (cancela +1 del trigger); total no cambia
       var newDisp   = Math.max(0, _curDisp - 1 - cantAsig);
       var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
       await sb.from('inventario_items')
-        .update({ cantidad_total: newTotal, cantidad_disponible: newDisp, estado: newEstado })
+        .update({ cantidad_disponible: newDisp, estado: newEstado })
         .eq('id', itemId);
     } else {
-      // 'No descontar': solo cancelar el +1 del trigger, no tocar el total
+      // 'No descontar': solo cancelar el +1 del trigger
       await sb.from('inventario_items')
         .update({ cantidad_disponible: _curDisp - 1 })
         .eq('id', itemId);
@@ -1773,6 +1772,7 @@ function abrirModalBaja() {
   btn.textContent = '🚫 Registrar Baja'; btn.className = 'btn btn-danger';
   document.getElementById('mb-fecha').value            = hoy();
   document.getElementById('mb-cantidad').value         = '1';
+  document.getElementById('mb-en-bodega').checked      = true;
   document.getElementById('mb-item-search').value      = '';
   document.getElementById('mb-item-list').style.display= 'none';
   document.getElementById('mb-item-val').value         = '';
@@ -1829,6 +1829,7 @@ async function guardarBaja() {
 
   var itSel    = items.find(function(x){ return x.id === itemId; });
   var cantBaja = parseInt(document.getElementById('mb-cantidad').value) || 1;
+  var enBodega = document.getElementById('mb-en-bodega') ? document.getElementById('mb-en-bodega').checked : true;
   var btn = document.getElementById('btn-guardar-baja');
   btn.disabled = true; btn.textContent = 'Guardando…';
 
@@ -1860,6 +1861,7 @@ async function guardarBaja() {
     usuario_email:     currentUser ? currentUser.email : null,
     rut_trabajador:    document.getElementById('mb-serie').value.trim()  || null,
     cargo_trabajador:  document.getElementById('mb-talla').value.trim()  || null,
+    no_descontar:      !enBodega,
   };
 
   if (editMovBajaId) {
@@ -1873,10 +1875,13 @@ async function guardarBaja() {
     if (res.error) { alert('Error: ' + res.error.message); btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; return; }
 
     if (itSel) {
-      var newTotal = Math.max(0, (itSel.cantidad_total || 0) - cantBaja);
+      var newTotal   = Math.max(0, (itSel.cantidad_total || 0) - cantBaja);
       var dispActual = itSel.cantidad_disponible || 0;
+      // enBodega=true  → disponible también baja cantBaja (item estaba en stock)
+      // enBodega=false → disponible no cambia (item ya estaba asignado a un trabajador)
+      var newDisp = enBodega ? Math.max(0, dispActual - cantBaja) : dispActual;
       await sb.from('inventario_items')
-        .update({ estado: 'Dado de Baja', cantidad_total: newTotal, cantidad_disponible: dispActual - 1 })
+        .update({ estado: 'Dado de Baja', cantidad_total: newTotal, cantidad_disponible: newDisp })
         .eq('id', itemId);
       var entrada = {
         fecha: new Date().toISOString(), usuario: currentUser ? currentUser.email : '?',
@@ -2034,9 +2039,11 @@ function eliminarBaja(id) {
     var cantBaja    = m.cantidad || 1;
     var totalActual = itSel ? (itSel.cantidad_total     || 0) : 0;
     var dispActual  = itSel ? (itSel.cantidad_disponible || 0) : 0;
-    var newTotal    = totalActual + cantBaja;   // devolver unidades al total
-    var newDisp     = dispActual  + 1;          // deshacer el -1 que aplicó guardarBaja
-    var newEstado   = newDisp > 0 ? 'Disponible' : 'En Uso';
+    var newTotal  = totalActual + cantBaja;   // devolver unidades al total
+    // Si no_descontar=false (estaba en bodega): restaurar cantBaja en disponible
+    // Si no_descontar=true  (ya estaba asignado): disponible no cambia
+    var newDisp   = m.no_descontar ? dispActual : dispActual + cantBaja;
+    var newEstado = newDisp > 0 ? 'Disponible' : 'En Uso';
     await sb.from('inventario_items')
       .update({ cantidad_total: newTotal, cantidad_disponible: newDisp, estado: newEstado })
       .eq('id', m.item_id);
@@ -2850,13 +2857,12 @@ async function guardarEntrega() {
     const _totalE = _curE ? (_curE.cantidad_total || 0) : (itSel?.cantidad_total || 0);
     const _dispE  = _curE ? (_curE.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
     if (!noDescontar) {
-      // Sumar cant al total y descontar del disponible (cancelando también el +1 del trigger)
+      // Solo descontar del disponible (cancelando el +1 del trigger); total no cambia
       await sb.from('inventario_items').update({
-        cantidad_total:      _totalE + cant,
         cantidad_disponible: Math.max(0, _dispE - 1 - cant)
       }).eq('id', itemId);
     } else {
-      // Solo cancelar el +1 automático del trigger sin modificar totales
+      // Solo cancelar el +1 automático del trigger sin modificar disponible ni total
       await sb.from('inventario_items').update({
         cantidad_disponible: Math.max(0, _dispE - 1)
       }).eq('id', itemId);
@@ -2941,12 +2947,10 @@ async function guardarSalida() {
     payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); return; }
-    // Leer valores reales post-trigger, sumar cant al total y descontar del disponible
-    const { data: _curS } = await sb.from('inventario_items').select('cantidad_total,cantidad_disponible').eq('id', itemId).single();
-    const _totalS = _curS ? (_curS.cantidad_total || 0) : (itSel?.cantidad_total || 0);
+    // Leer valores reales post-trigger, solo descontar del disponible; total no cambia
+    const { data: _curS } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', itemId).single();
     const _dispS  = _curS ? (_curS.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
     await sb.from('inventario_items').update({
-      cantidad_total:      _totalS + cant,
       cantidad_disponible: Math.max(0, _dispS - 1 - cant)
     }).eq('id', itemId);
   }
@@ -4704,6 +4708,15 @@ function eliminarCompra(id) {
           <img id="mb-foto2-prev" src="" style="display:none;max-width:100%;max-height:120px;margin-top:6px;border-radius:6px"/>
         </div>
         <div class="fg full"><label>Observaciones</label><textarea id="mb-obs" rows="2"></textarea></div>
+        <div class="fg full" style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+            <input type="checkbox" id="mb-en-bodega" style="width:16px;height:16px;accent-color:#e65100;cursor:pointer" checked/>
+            <span style="font-size:13px;color:#5d4037;font-weight:600">El ítem estaba en bodega (stock disponible)</span>
+          </label>
+          <p style="margin:4px 0 0 24px;font-size:11px;color:#8d6e63">
+            Desmarca si el ítem ya estaba asignado a un trabajador — en ese caso solo disminuye el Total.
+          </p>
+        </div>
       </div>
     </div>
     <div class="mftr">

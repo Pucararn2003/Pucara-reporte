@@ -365,6 +365,45 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       </div>
     </div>
   </div>
+
+  <!-- ── TAB: Gestión de Compras ── -->
+  <div id="tab-compras" class="tab-panel">
+    <div class="stats-row">
+      <div class="stat-card"><div class="val" id="st-cmp-total" style="color:#1E4F8C">0</div><div class="lbl">Total solicitudes</div></div>
+      <div class="stat-card"><div class="val" id="st-cmp-pend"  style="color:#e65100">0</div><div class="lbl">Pendientes</div></div>
+      <div class="stat-card"><div class="val" id="st-cmp-venc"  style="color:#c62828">0</div><div class="lbl">Vencidas</div></div>
+      <div class="stat-card"><div class="val" id="st-cmp-comp"  style="color:#2e7d32">0</div><div class="lbl">Completadas</div></div>
+    </div>
+    <div class="toolbar" style="gap:8px">
+      <button class="btn btn-primary" onclick="abrirModalCompra()">+ Nueva Solicitud</button>
+      <input type="text" id="fc-buscar" placeholder="🔍 Buscar ítem, responsable..." oninput="renderCompras()" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;outline:none"/>
+      <select id="fc-estado" onchange="renderCompras()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none">
+        <option value="">Todos los estados</option>
+        <option>Pendiente</option>
+        <option>En Gestión</option>
+        <option>Completada</option>
+        <option>Cancelada</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha Creación</th>
+            <th>Ítem del Inventario</th>
+            <th>Responsable</th>
+            <th>Fecha Límite</th>
+            <th style="text-align:center">Días Restantes</th>
+            <th>Estado</th>
+            <th>Observaciones</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tb-compras"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- ── TAB: Inventario General ── -->
   <div id="tab-inventario" class="tab-panel active">
     <div class="stats-row">
@@ -1870,10 +1909,8 @@ function editarBaja(movId) {
   abrir('modal-baja');
 }
 
-async function eliminarBaja(id) {
-  if (!confirm('¿Eliminar este registro de baja?')) return;
-
-  // Leer el registro antes de borrarlo para poder revertir el ítem
+function eliminarBaja(id) {
+  confirmar('¿Eliminar este registro de baja?', async function() {
   var m = movs.find(function(x){ return x.id === id; });
 
   await sb.from('inventario_movimientos').delete().eq('id', id);
@@ -1895,6 +1932,7 @@ async function eliminarBaja(id) {
   if (m && m.item_id) marcarItemReciente(m.item_id);
   await Promise.all([cargarItems(), cargarMovs()]);
   renderBajas();
+  }); // fin confirmar
 }
 
 function generarFichaBaja(movId) {
@@ -2025,10 +2063,8 @@ async function liberarAsignacion(movId, itemId, desc) {
 }
 
 // ── Eliminar asignación ──────────────────────────────────────────
-async function eliminarAsignacion(id) {
-  if (!confirm('¿Eliminar esta asignación?')) return;
-
-  // Leer el registro antes de borrarlo para revertir el ítem
+function eliminarAsignacion(id) {
+  confirmar('¿Eliminar esta asignación?', async function() {
   var m = movs.find(function(x){ return x.id === id; });
 
   await sb.from('inventario_movimientos').delete().eq('id', id);
@@ -2050,6 +2086,7 @@ async function eliminarAsignacion(id) {
   if (m && m.item_id) marcarItemReciente(m.item_id);
   await Promise.all([cargarItems(), cargarMovs()]);
   renderAsignaciones();
+  }); // fin confirmar
 }
 
 // ── Render Inventario ─────────────────────────────────────────
@@ -2127,7 +2164,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();toggleHistorial(event,'${i.id}')" title="${i.historial?.length?'Ver historial de modificaciones':'Sin historial'}">`:`<div class="img-placeholder" style="cursor:${i.historial?.length?'pointer':'default'}" onclick="event.stopPropagation();${i.historial?.length?`toggleHistorial(event,'${i.id}')`:''}" title="${i.historial?.length?'Ver historial de modificaciones':''}">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span></div></td>
+    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -2314,8 +2351,7 @@ document.addEventListener('click', e => {
     document.querySelectorAll('.tab-group-btn .grp-caret').forEach(function(c){ c.style.transform = ''; });
   }
   if (_histTip && _histTip.style.display !== 'none' &&
-      !e.target.closest('#hist-tip') && !e.target.closest('.btn-hist') &&
-      !e.target.closest('.img-thumb') && !e.target.closest('.img-placeholder')) {
+      !e.target.closest('#hist-tip') && !e.target.closest('.btn-hist')) {
     _histTip.style.display = 'none';
     _histActiveId = null;
   }
@@ -2374,6 +2410,31 @@ function cerrarHistorial() {
 
 function mostrarHistorial() {}
 function ocultarHistorial() {}
+
+// ── Confirmación de eliminación ───────────────────────────────────
+function confirmar(msg, callback) {
+  document.getElementById('conf-msg').textContent = msg;
+  var btn = document.getElementById('conf-ok');
+  var nuevo = btn.cloneNode(true);
+  btn.parentNode.replaceChild(nuevo, btn);
+  nuevo.onclick = function() { cerrar('modal-confirm'); callback(); };
+  abrir('modal-confirm');
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────
+function abrirLightbox(url) {
+  var lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = url;
+  lb.style.display = 'flex';
+}
+function cerrarLightbox() {
+  var lb = document.getElementById('lightbox');
+  lb.style.display = 'none';
+  document.getElementById('lightbox-img').src = '';
+}
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') cerrarLightbox();
+});
 
 // ── Column header tooltips ─────────────────────────────────────
 const TH_TIPS = {
@@ -2552,11 +2613,12 @@ async function guardarItem() {
   renderAsignaciones();
 }
 
-async function borrarItem(id, desc) {
-  if (!confirm(`¿Eliminar "${desc}"? Esta acción no se puede deshacer.`)) return;
-  const { error } = await sb.from('inventario_items').delete().eq('id', id);
-  if (error) { alert('Error: ' + error.message); return; }
-  await cargarItems();
+function borrarItem(id, desc) {
+  confirmar('¿Eliminar el ítem "' + desc + '"?', async function() {
+    const { error } = await sb.from('inventario_items').delete().eq('id', id);
+    if (error) { alert('Error: ' + error.message); return; }
+    await cargarItems();
+  });
 }
 
 // ── Modal Entrega EPP ──────────────────────────────────────────
@@ -2786,22 +2848,23 @@ async function editarEntrega(movId) {
   abrir('modal-entrega');
 }
 
-async function eliminarEntrega(movId) {
-  if (!confirm('Eliminar esta entrega? El stock del item sera restaurado.')) return;
-  const mov = movs.find(m => m.id === movId);
-  const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
-  if (error) { alert('Error: ' + error.message); return; }
-  if (mov && mov.item_id) {
-    const it = items.find(x => x.id === mov.item_id);
-    if (it) {
-      const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
-      const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
-      const historial = [entrada, ...(it.historial || [])].slice(0, 50);
-      await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+function eliminarEntrega(movId) {
+  confirmar('¿Eliminar esta entrega EPP? El stock del ítem será restaurado.', async function() {
+    const mov = movs.find(m => m.id === movId);
+    const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
+    if (error) { alert('Error: ' + error.message); return; }
+    if (mov && mov.item_id) {
+      const it = items.find(x => x.id === mov.item_id);
+      if (it) {
+        const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
+        const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
+        const historial = [entrada, ...(it.historial || [])].slice(0, 50);
+        await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+      }
     }
-  }
-  if (mov && mov.item_id) marcarItemReciente(mov.item_id);
-  await cargarDatos();
+    if (mov && mov.item_id) marcarItemReciente(mov.item_id);
+    await cargarDatos();
+  });
 }
 
 // -- Editar / Eliminar Salida --------------------------------------
@@ -2830,22 +2893,23 @@ async function editarSalida(movId) {
   abrir('modal-salida');
 }
 
-async function eliminarSalida(movId) {
-  if (!confirm('Eliminar esta salida? El stock del item sera restaurado.')) return;
-  const mov = movs.find(m => m.id === movId);
-  const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
-  if (error) { alert('Error: ' + error.message); return; }
-  if (mov && mov.item_id) {
-    const it = items.find(x => x.id === mov.item_id);
-    if (it) {
-      const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
-      const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
-      const historial = [entrada, ...(it.historial || [])].slice(0, 50);
-      await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+function eliminarSalida(movId) {
+  confirmar('¿Eliminar esta salida de insumos? El stock del ítem será restaurado.', async function() {
+    const mov = movs.find(m => m.id === movId);
+    const { error } = await sb.from('inventario_movimientos').delete().eq('id', movId);
+    if (error) { alert('Error: ' + error.message); return; }
+    if (mov && mov.item_id) {
+      const it = items.find(x => x.id === mov.item_id);
+      if (it) {
+        const newDisp = (it.cantidad_disponible || 0) + (mov.cantidad || 1);
+        const entrada = { fecha: new Date().toISOString(), usuario: currentUser?.email || '?', cambios: [{ campo: 'Cant. Disponible', antes: it.cantidad_disponible, despues: newDisp }] };
+        const historial = [entrada, ...(it.historial || [])].slice(0, 50);
+        await sb.from('inventario_items').update({ cantidad_disponible: newDisp, historial }).eq('id', mov.item_id);
+      }
     }
-  }
-  if (mov && mov.item_id) marcarItemReciente(mov.item_id);
-  await cargarDatos();
+    if (mov && mov.item_id) marcarItemReciente(mov.item_id);
+    await cargarDatos();
+  });
 }
 
 // -- Exportar Excel ------------------------------------------------
@@ -3949,10 +4013,11 @@ function guardarCompra() {
 function eliminarCompra(id) {
   var c = _compras.find(function(x){ return x.id === id; });
   if (!c) return;
-  if (!confirm('¿Eliminar la solicitud de "' + (c.descripcion || 'este ítem') + '"?')) return;
-  _compras = _compras.filter(function(x){ return x.id !== id; });
-  saveCompras();
-  renderCompras();
+  confirmar('¿Eliminar la solicitud de "' + (c.descripcion || 'este ítem') + '"?', function() {
+    _compras = _compras.filter(function(x){ return x.id !== id; });
+    saveCompras();
+    renderCompras();
+  });
 }
 </script>
 <!-- ══════════════════════════════════════
@@ -4033,44 +4098,6 @@ function eliminarCompra(id) {
   </div>
 </div>
 
-<!-- ── TAB: Gestión de Compras ── -->
-<div id="tab-compras" class="tab-panel">
-  <div class="stats-row">
-    <div class="stat-card"><div class="val" id="st-cmp-total" style="color:#1E4F8C">0</div><div class="lbl">Total solicitudes</div></div>
-    <div class="stat-card"><div class="val" id="st-cmp-pend"  style="color:#e65100">0</div><div class="lbl">Pendientes</div></div>
-    <div class="stat-card"><div class="val" id="st-cmp-venc"  style="color:#c62828">0</div><div class="lbl">Vencidas</div></div>
-    <div class="stat-card"><div class="val" id="st-cmp-comp"  style="color:#2e7d32">0</div><div class="lbl">Completadas</div></div>
-  </div>
-  <div class="toolbar" style="gap:8px">
-    <button class="btn btn-primary" onclick="abrirModalCompra()">+ Nueva Solicitud</button>
-    <input type="text" id="fc-buscar" placeholder="🔍 Buscar ítem, responsable..." oninput="renderCompras()" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;outline:none"/>
-    <select id="fc-estado" onchange="renderCompras()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none">
-      <option value="">Todos los estados</option>
-      <option>Pendiente</option>
-      <option>En Gestión</option>
-      <option>Completada</option>
-      <option>Cancelada</option>
-    </select>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha Creación</th>
-          <th>Ítem del Inventario</th>
-          <th>Responsable</th>
-          <th>Fecha Límite</th>
-          <th style="text-align:center">Días Restantes</th>
-          <th>Estado</th>
-          <th>Observaciones</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tb-compras"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
 <!-- ── MODAL: Nueva / Editar Solicitud Compra ── -->
 <div class="modal-bd" id="modal-compra" style="display:none">
   <div class="modal" style="max-width:560px">
@@ -4115,6 +4142,31 @@ function eliminarCompra(id) {
       <button id="btn-guardar-compra" class="btn btn-primary" onclick="guardarCompra()">💾 Guardar</button>
     </div>
   </div>
+</div>
+
+<!-- ── Modal confirmación eliminación ── -->
+<div class="modal-bd" id="modal-confirm" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="mhdr" style="background:#b71c1c">
+      <h3 style="color:#fff">⚠️ Confirmar eliminación</h3>
+      <button class="modal-close" style="color:#fff" onclick="cerrar('modal-confirm')">✕</button>
+    </div>
+    <div class="mbody" style="text-align:center;padding:28px 24px">
+      <div style="font-size:48px;margin-bottom:14px">🗑️</div>
+      <p id="conf-msg" style="font-size:15px;color:#222;font-weight:600;margin-bottom:8px"></p>
+      <p style="font-size:12px;color:#888">Esta acción <strong>no se puede deshacer</strong>.</p>
+    </div>
+    <div class="mftr" style="justify-content:center;gap:16px">
+      <button class="btn btn-secondary" style="min-width:120px" onclick="cerrar('modal-confirm')">Cancelar</button>
+      <button id="conf-ok" class="btn btn-danger" style="min-width:140px">🗑️ Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Lightbox ── -->
+<div id="lightbox" onclick="cerrarLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="lightbox-img" src="" style="max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);object-fit:contain"/>
+  <button onclick="cerrarLightbox()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1;opacity:.8">✕</button>
 </div>
 
 <div id="mdv-overlay" onclick="cerrarDetalleMov()"></div>

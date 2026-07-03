@@ -800,6 +800,10 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         </div>
         <div class="fg"><label>Talla *</label><input type="text" id="me-talla"/></div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="me-cant" min="1" value="1"/></div>
+        <div class="fg full" style="display:flex;align-items:center;gap:10px;padding:4px 0;margin:2px 0">
+          <input type="checkbox" id="me-no-descontar" style="width:17px;height:17px;cursor:pointer;accent-color:#1E4F8C;flex-shrink:0"/>
+          <label for="me-no-descontar" style="cursor:pointer;margin:0;font-size:13px;font-weight:700;color:#1a3a5c;user-select:none">NO DESCONTAR DEL INVENTARIO GENERAL</label>
+        </div>
         <div class="fg">
           <label>Estado al Entregar</label>
           <select id="me-estado">
@@ -2640,6 +2644,7 @@ function abrirModalEntrega() {
   document.getElementById('me-estado').value  = 'Nuevo';
   document.getElementById('me-resp').value    = '';
   document.getElementById('me-obs').value     = '';
+  document.getElementById('me-no-descontar').checked = false;
   document.getElementById('me-foto-file').value = '';
   const fPrev = document.getElementById('me-foto-preview');
   fPrev.src = ''; fPrev.style.display = 'none';
@@ -2663,9 +2668,10 @@ async function guardarEntrega() {
   const fecha  = document.getElementById('me-fecha').value;
   const trab   = document.getElementById('me-trab').value.trim();
   const itemId = document.getElementById('me-item-val').value;
-  const cant   = parseInt(document.getElementById('me-cant').value) || 1;
-  const turno  = document.getElementById('me-turno').value;
-  const talla  = document.getElementById('me-talla').value.trim();
+  const cant        = parseInt(document.getElementById('me-cant').value) || 1;
+  const turno       = document.getElementById('me-turno').value;
+  const talla       = document.getElementById('me-talla').value.trim();
+  const noDescontar = document.getElementById('me-no-descontar').checked;
   if (!fecha || !trab || !itemId || !turno || !talla) { alert('Completa los campos obligatorios (*)'); return; }
   const itSel = items.find(x => x.id === itemId);
   if (!editMovId) {
@@ -2696,11 +2702,13 @@ async function guardarEntrega() {
     observaciones:    document.getElementById('me-obs').value.trim()  || null,
     foto_url,
     cantidad_restante: null,
+    no_descontar:     noDescontar,
     usuario_email:    currentUser?.email || null,
   };
   if (editMovId) {
     const oldMov = movs.find(m => m.id === editMovId);
-    if (oldMov?.item_id) {
+    if (oldMov?.item_id && !oldMov.no_descontar) {
+      // Solo restaurar al inventario si el movimiento anterior sí había descontado
       const oldIt = items.find(x => x.id === oldMov.item_id);
       if (oldIt) {
         const restored = (oldIt.cantidad_disponible || 0) + (oldMov.cantidad || 0);
@@ -2710,21 +2718,31 @@ async function guardarEntrega() {
     }
     const { error } = await sb.from('inventario_movimientos').update(payload).eq('id', editMovId);
     if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } editMovId = null; return; }
-    const newIt = items.find(x => x.id === itemId);
-    if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    if (!noDescontar) {
+      const newIt = items.find(x => x.id === itemId);
+      if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
+    }
     editMovId = null;
   } else {
-    payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
+    payload.cantidad_restante = noDescontar ? (itSel?.cantidad_disponible || 0) : Math.max(0, (itSel?.cantidad_disponible||0) - cant);
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
-    // Leer valores reales post-trigger, sumar cant al total y descontar del disponible
+    // Leer valores reales post-trigger
     const { data: _curE } = await sb.from('inventario_items').select('cantidad_total,cantidad_disponible').eq('id', itemId).single();
     const _totalE = _curE ? (_curE.cantidad_total || 0) : (itSel?.cantidad_total || 0);
     const _dispE  = _curE ? (_curE.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
-    await sb.from('inventario_items').update({
-      cantidad_total:      _totalE + cant,
-      cantidad_disponible: Math.max(0, _dispE - 1 - cant)
-    }).eq('id', itemId);
+    if (!noDescontar) {
+      // Sumar cant al total y descontar del disponible (cancelando también el +1 del trigger)
+      await sb.from('inventario_items').update({
+        cantidad_total:      _totalE + cant,
+        cantidad_disponible: Math.max(0, _dispE - 1 - cant)
+      }).eq('id', itemId);
+    } else {
+      // Solo cancelar el +1 automático del trigger sin modificar totales
+      await sb.from('inventario_items').update({
+        cantidad_disponible: Math.max(0, _dispE - 1)
+      }).eq('id', itemId);
+    }
   }
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
@@ -2842,6 +2860,7 @@ async function editarEntrega(movId) {
   document.getElementById('me-estado').value  = mov.estado_entregar || 'Nuevo';
   document.getElementById('me-resp').value    = mov.responsable || '';
   document.getElementById('me-obs').value     = mov.observaciones || '';
+  document.getElementById('me-no-descontar').checked = !!mov.no_descontar;
   document.getElementById('me-foto-file').value = '';
   const fPrevE = document.getElementById('me-foto-preview');
   fPrevE.src = ''; fPrevE.style.display = 'none';

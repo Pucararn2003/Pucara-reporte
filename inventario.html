@@ -109,6 +109,9 @@ th.sortable:hover{background:#163d6e}
 .b-gray{background:#f0f0f0;color:#555}
 .b-purple{background:#f3e5f5;color:#6a1b9a}
 .b-teal{background:#e0f2f1;color:#00695c}
+/* cortina compras */
+#tb-compras tr.cmp-dimmed{opacity:.2;pointer-events:none;transition:opacity .2s}
+#tb-compras tr.cmp-active{box-shadow:0 -2px 0 #1E4F8C inset}
 .stock-low{color:#c62828;font-weight:700}
 .stock-ok{color:#2e7d32;font-weight:600}
 
@@ -3963,7 +3966,7 @@ function renderCompras() {
     var dias = diasRestantes(c.fecha_limite);
     var rowBg = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0) ? 'background:#fff5f5;' : '';
     var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
-    return '<tr style="' + rowBg + 'cursor:pointer" onclick="clicFilaCmp(\'' + c.id + '\')" ondblclick="dblFilaCmp(\'' + c.id + '\')" title="Clic: ver detalle · Doble clic: editar">' +
+    return '<tr id="row-' + c.id + '" style="' + rowBg + 'cursor:pointer" onclick="clicFilaCmp(\'' + c.id + '\')" ondblclick="dblFilaCmp(\'' + c.id + '\')" title="Clic: ver detalle · Doble clic: editar">' +
       '<td style="white-space:nowrap">' + fmtD(c.fecha) + '</td>' +
       '<td style="max-width:220px"><div style="display:flex;align-items:flex-start">' + imgHtml + '<div><span>' + itemNombre + '</span>' + trabBadge + '</div></div></td>' +
       '<td style="text-align:center;font-weight:600">' + (c.cantidad || '—') + '</td>' +
@@ -4076,12 +4079,43 @@ function dblFilaCmp(id) {
 }
 
 function toggleDetCompra(id) {
-  var row = document.getElementById('det-' + id);
-  var btn = document.getElementById('exp-' + id);
-  if (!row) return;
-  var open = row.style.display !== 'none';
-  row.style.display = open ? 'none' : 'table-row';
-  if (btn) { btn.innerHTML = open ? '▾ Detalle' : '▴ Cerrar'; btn.style.background = open ? '#eef4ff' : '#dce8f0'; }
+  var detRow  = document.getElementById('det-' + id);
+  var mainRow = document.getElementById('row-' + id);
+  var btn     = document.getElementById('exp-' + id);
+  if (!detRow) return;
+  var open = detRow.style.display !== 'none';
+
+  // Cerrar cualquier otro detalle abierto primero
+  document.querySelectorAll('#tb-compras tr[id^="det-"]').forEach(function(r) {
+    if (r.id !== 'det-' + id) {
+      r.style.display = 'none';
+      var oid = r.id.replace('det-', '');
+      var ob  = document.getElementById('exp-' + oid);
+      if (ob) { ob.innerHTML = '▾ Detalle'; ob.style.background = '#eef4ff'; }
+    }
+  });
+
+  if (open) {
+    detRow.style.display = 'none';
+    if (btn) { btn.innerHTML = '▾ Detalle'; btn.style.background = '#eef4ff'; }
+    // Quitar cortina de todas las filas
+    document.querySelectorAll('#tb-compras tr').forEach(function(r) {
+      r.classList.remove('cmp-dimmed', 'cmp-active');
+    });
+  } else {
+    detRow.style.display = 'table-row';
+    if (btn) { btn.innerHTML = '▴ Cerrar'; btn.style.background = '#dce8f0'; }
+    // Aplicar cortina: atenuar todas excepto la fila activa y su detalle
+    document.querySelectorAll('#tb-compras tr').forEach(function(r) {
+      if (r === mainRow || r === detRow) {
+        r.classList.remove('cmp-dimmed');
+        r.classList.add('cmp-active');
+      } else {
+        r.classList.remove('cmp-active');
+        r.classList.add('cmp-dimmed');
+      }
+    });
+  }
 }
 
 function toggleTrabGestionado(compraId, idx) {

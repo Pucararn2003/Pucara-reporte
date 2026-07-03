@@ -3942,15 +3942,15 @@ function renderCompras() {
     if (c.observaciones)       descCell += '<span style="display:block;color:#888;font-size:11px;margin-top:2px">' + c.observaciones + '</span>';
     if (!descCell)             descCell  = '—';
     var dias = diasRestantes(c.fecha_limite);
-    var rowStyle = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0)
-      ? ' style="background:#fff5f5"' : '';
-    return '<tr' + rowStyle + '>' +
-      '<td style="white-space:nowrap">' + (c.fecha || '—') + '</td>' +
+    var rowBg = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0) ? 'background:#fff5f5;' : '';
+    var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
+    return '<tr style="' + rowBg + 'cursor:pointer" ondblclick="editarCompra(\'' + c.id + '\')" title="Doble clic para editar">' +
+      '<td style="white-space:nowrap">' + fmtD(c.fecha) + '</td>' +
       '<td style="max-width:220px"><div style="display:flex;align-items:flex-start">' + imgHtml + '<div><span>' + itemNombre + '</span>' + trabBadge + '</div></div></td>' +
       '<td style="text-align:center;font-weight:600">' + (c.cantidad || '—') + '</td>' +
       '<td style="white-space:nowrap">' + (c.talla || '—') + '</td>' +
       '<td>' + (c.responsable || '—') + '</td>' +
-      '<td style="white-space:nowrap">' + (c.fecha_limite || '—') + '</td>' +
+      '<td style="white-space:nowrap">' + fmtD(c.fecha_limite) + '</td>' +
       '<td style="text-align:center">' + badgeDias(dias, c.estado) + '</td>' +
       '<td>' + badgeEstadoCompra(c.estado) + '</td>' +
       '<td style="max-width:200px">' + descCell + '</td>' +

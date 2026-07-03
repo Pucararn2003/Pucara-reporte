@@ -3055,11 +3055,12 @@ function clicFila(tr, tipo, id) {
   tr.classList.add('row-sel');
   _rowSel = tr;
   if (_rowTimer) clearTimeout(_rowTimer);
-  _rowTimer = setTimeout(function() {
-    _rowTimer = null;
-    if (tipo === 'inv') verDetalle(id);
-    else mostrarDetalleMov(id);
-  }, 1000);
+  if (tipo !== 'inv') {
+    _rowTimer = setTimeout(function() {
+      _rowTimer = null;
+      mostrarDetalleMov(id);
+    }, 1000);
+  }
 }
 function dblFila(tr, tipo, id) {
   if (_rowTimer) { clearTimeout(_rowTimer); _rowTimer = null; }

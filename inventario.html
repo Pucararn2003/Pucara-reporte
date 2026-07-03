@@ -31,10 +31,21 @@ header h1{font-size:17px;font-weight:700;flex:1}
 .hdr-btn-danger{background:rgba(220,50,50,.25)}
 
 /* ── Tabs ── */
-.tabs-nav{background:#fff;border-bottom:2px solid #dce8f0;display:flex;padding:0 20px;gap:0}
+.tabs-nav{background:#fff;border-bottom:2px solid #dce8f0;display:flex;padding:0 20px;gap:0;align-items:stretch}
 .tab-btn{padding:13px 20px;border:none;background:transparent;font-size:14px;font-weight:600;color:#666;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.15s}
 .tab-btn.active{color:#1E4F8C;border-bottom-color:#1E4F8C}
 .tab-btn:hover:not(.active){color:#1E4F8C;background:#f5f8ff}
+/* ── Tab group dropdown ── */
+.tab-group{position:relative;display:flex;align-items:stretch}
+.tab-group-btn{display:flex;align-items:center;gap:5px}
+.tab-group-btn .grp-caret{font-size:9px;transition:.2s;display:inline-block}
+.tab-group-btn.grp-active{color:#1E4F8C;border-bottom-color:#1E4F8C}
+.tab-grp-drop{position:absolute;top:calc(100% + 2px);left:0;background:#fff;border:1px solid #dce8f0;border-radius:0 0 8px 8px;box-shadow:0 6px 18px rgba(0,0,0,.13);z-index:300;min-width:190px;display:none}
+.tab-grp-drop.open{display:block}
+.tab-sub-btn{display:block;width:100%;padding:11px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:#555;cursor:pointer;text-align:left;white-space:nowrap;border-bottom:1px solid #f0f4f8;transition:.12s}
+.tab-sub-btn:last-child{border-bottom:none}
+.tab-sub-btn:hover{color:#1E4F8C;background:#f5f8ff}
+.tab-sub-btn.active{color:#1E4F8C;background:#eef4ff}
 
 /* ── Tab content ── */
 .tab-panel{display:none;padding:20px}
@@ -96,6 +107,8 @@ th.sortable:hover{background:#163d6e}
 .b-warn{background:#fff8e1;color:#e65100}
 .b-err{background:#ffebee;color:#c62828}
 .b-gray{background:#f0f0f0;color:#555}
+.b-purple{background:#f3e5f5;color:#6a1b9a}
+.b-teal{background:#e0f2f1;color:#00695c}
 .stock-low{color:#c62828;font-weight:700}
 .stock-ok{color:#2e7d32;font-weight:600}
 
@@ -313,12 +326,20 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 
   <nav class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('inventario',this)">📦 Inventario General</button>
-    <button class="tab-btn" onclick="switchTab('entrega',this)">🦺 Entrega EPP</button>
-    <button class="tab-btn" onclick="switchTab('salida',this)">🔧 Salida Insumos</button>
-    <button class="tab-btn" onclick="switchTab('asignacion',this)">📌 Asignaciones</button>
+    <div class="tab-group">
+      <button class="tab-btn tab-group-btn" id="grp-btn-salida" onclick="toggleGrp('grp-drop-salida',this)">
+        📤 Items de Salida <span class="grp-caret">▾</span>
+      </button>
+      <div class="tab-grp-drop" id="grp-drop-salida">
+        <button class="tab-sub-btn" onclick="switchSubTab('entrega',this,'grp-drop-salida','grp-btn-salida')">🦺 Entrega EPP</button>
+        <button class="tab-sub-btn" onclick="switchSubTab('salida',this,'grp-drop-salida','grp-btn-salida')">🔧 Insumos</button>
+        <button class="tab-sub-btn" onclick="switchSubTab('asignacion',this,'grp-drop-salida','grp-btn-salida')">📌 Asignaciones</button>
+      </div>
+    </div>
+    <button class="tab-btn" onclick="switchTab('bajas',this)">🚫 Dados de Baja</button>
+    <button class="tab-btn" onclick="switchTab('compras',this)">🛒 Gestión de Compras</button>
     <button class="tab-btn" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
     <button class="tab-btn" onclick="switchTab('historial-movs',this)">📋 Historial de Movimientos</button>
-    <button class="tab-btn" onclick="switchTab('bajas',this)">🚫 Dados de Baja</button>
   </nav>
 
   <!-- ── TAB: Dados de Baja ── -->
@@ -2273,11 +2294,12 @@ function seleccionarItemDD(el) {
     document.getElementById('mb-talla').value  = (it.talla || it.marca_modelo || '');
     document.getElementById('mb-fecha-ingreso').value = it.fecha_ingreso || '';
   } else if (prefix === 'ma') {
-    // En asignación, la unidad se agrega al total — no se descuenta del stock
     document.getElementById('alerta-asig').style.display = 'none';
     document.getElementById('ma-serie').value = it.serie_sn || '';
     document.getElementById('ma-color').value = it.color    || '';
     document.getElementById('ma-talla').value = it.talla    || '';
+  } else if (prefix === 'mc') {
+    // Compras: solo rellenar búsqueda, sin alertas de stock
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
   }
@@ -2286,6 +2308,10 @@ function seleccionarItemDD(el) {
 document.addEventListener('click', e => {
   if (!e.target.closest('.item-search-wrap')) {
     document.querySelectorAll('.item-dropdown').forEach(d => d.style.display = 'none');
+  }
+  if (!e.target.closest('.tab-group')) {
+    document.querySelectorAll('.tab-grp-drop').forEach(function(d){ d.classList.remove('open'); });
+    document.querySelectorAll('.tab-group-btn .grp-caret').forEach(function(c){ c.style.transform = ''; });
   }
   if (_histTip && _histTip.style.display !== 'none' &&
       !e.target.closest('#hist-tip') && !e.target.closest('.btn-hist') &&
@@ -3039,10 +3065,35 @@ function limpiarFHM() {
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-sub-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-group-btn').forEach(el => el.classList.remove('grp-active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'historial-movs') renderHistorialMovimientos();
   if (name === 'dashboard') renderDashboard();
+  if (name === 'asignacion') renderAsignaciones();
+  if (name === 'compras') renderCompras();
+}
+
+function toggleGrp(dropId, btn) {
+  var drop = document.getElementById(dropId);
+  var isOpen = drop.classList.contains('open');
+  document.querySelectorAll('.tab-grp-drop').forEach(function(d){ d.classList.remove('open'); });
+  if (isOpen) { btn.querySelector('.grp-caret').style.transform = ''; return; }
+  drop.classList.add('open');
+  btn.querySelector('.grp-caret').style.transform = 'rotate(180deg)';
+}
+
+function switchSubTab(name, subBtn, dropId, grpBtnId) {
+  document.querySelectorAll('.tab-panel').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); el.classList.remove('grp-active'); });
+  document.querySelectorAll('.tab-sub-btn').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  subBtn.classList.add('active');
+  var grpBtn = document.getElementById(grpBtnId);
+  grpBtn.classList.add('grp-active');
+  grpBtn.querySelector('.grp-caret').style.transform = '';
+  document.getElementById(dropId).classList.remove('open');
   if (name === 'asignacion') renderAsignaciones();
 }
 
@@ -3733,6 +3784,176 @@ function ffdt(dt)   {
 function esc(s)     { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 init();
+
+// ── Gestión de Compras (recordatorio con días restantes) ─────────
+var _compras = JSON.parse(localStorage.getItem('inv_compras') || '[]');
+var _editCompraId = null;
+
+function saveCompras() { localStorage.setItem('inv_compras', JSON.stringify(_compras)); }
+
+function diasRestantes(fechaLimite) {
+  if (!fechaLimite) return null;
+  var hoy    = new Date(); hoy.setHours(0,0,0,0);
+  var limite = new Date(fechaLimite + 'T00:00:00');
+  return Math.round((limite - hoy) / 86400000);
+}
+
+function badgeDias(dias, estado) {
+  if (estado === 'Completada' || estado === 'Cancelada') return '<span class="badge b-gray">—</span>';
+  if (dias === null) return '<span class="badge b-gray">Sin fecha</span>';
+  if (dias < 0)  return '<span class="badge b-err">Vencida (' + Math.abs(dias) + 'd)</span>';
+  if (dias === 0) return '<span class="badge b-err">Vence hoy</span>';
+  if (dias <= 3) return '<span class="badge b-warn">' + dias + ' día' + (dias===1?'':'s') + '</span>';
+  return '<span class="badge b-ok">' + dias + ' días</span>';
+}
+
+function badgeEstadoCompra(estado) {
+  var m = { 'Pendiente':'b-warn', 'En Gestión':'b-info', 'Completada':'b-ok', 'Cancelada':'b-err' };
+  return '<span class="badge ' + (m[estado] || 'b-gray') + '">' + (estado || '—') + '</span>';
+}
+
+function _optsResp() {
+  var sup = TRABAJADORES.filter(function(t){
+    return t.cargo.toLowerCase().includes('jefe de terreno') || t.cargo.toLowerCase().includes('asesor en prevención');
+  });
+  return '<option value="">Seleccionar…</option>' +
+    sup.map(function(t){ return '<option value="' + t.nombre + '">' + t.nombre + ' — ' + t.cargo + '</option>'; }).join('');
+}
+
+function renderCompras() {
+  var q    = norm(document.getElementById('fc-buscar') ? document.getElementById('fc-buscar').value : '');
+  var fEst = document.getElementById('fc-estado') ? document.getElementById('fc-estado').value : '';
+
+  var rows = _compras.filter(function(c) {
+    if (q && !norm(c.descripcion || '').includes(q) && !norm(c.responsable || '').includes(q) && !norm(c.observaciones || '').includes(q)) return false;
+    if (fEst && c.estado !== fEst) return false;
+    return true;
+  });
+
+  // Ordenar: primero las pendientes/en gestión por días restantes (urgentes primero), luego completadas/canceladas
+  rows.sort(function(a, b) {
+    var aActiva = a.estado !== 'Completada' && a.estado !== 'Cancelada';
+    var bActiva = b.estado !== 'Completada' && b.estado !== 'Cancelada';
+    if (aActiva && !bActiva) return -1;
+    if (!aActiva && bActiva) return 1;
+    var dA = diasRestantes(a.fecha_limite);
+    var dB = diasRestantes(b.fecha_limite);
+    if (dA === null) return 1;
+    if (dB === null) return -1;
+    return dA - dB;
+  });
+
+  // Stats
+  document.getElementById('st-cmp-total').textContent = _compras.length;
+  document.getElementById('st-cmp-pend').textContent  = _compras.filter(function(c){ return c.estado === 'Pendiente' || c.estado === 'En Gestión'; }).length;
+  document.getElementById('st-cmp-venc').textContent  = _compras.filter(function(c){
+    if (c.estado === 'Completada' || c.estado === 'Cancelada') return false;
+    var d = diasRestantes(c.fecha_limite); return d !== null && d < 0;
+  }).length;
+  document.getElementById('st-cmp-comp').textContent  = _compras.filter(function(c){ return c.estado === 'Completada'; }).length;
+
+  var tb = document.getElementById('tb-compras');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(function(c) {
+    var it = c.item_id ? items.find(function(x){ return x.id === c.item_id; }) : null;
+    var desc = it
+      ? ((it.correlativo ? '<span style="color:#888;font-size:11px;margin-right:4px">' + it.correlativo + '</span>' : '') + it.descripcion)
+      : (c.descripcion || '—');
+    var dias = diasRestantes(c.fecha_limite);
+    var rowStyle = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0)
+      ? ' style="background:#fff5f5"' : '';
+    return '<tr' + rowStyle + '>' +
+      '<td style="white-space:nowrap">' + (c.fecha || '—') + '</td>' +
+      '<td style="max-width:240px">' + desc + '</td>' +
+      '<td>' + (c.responsable || '—') + '</td>' +
+      '<td style="white-space:nowrap">' + (c.fecha_limite || '—') + '</td>' +
+      '<td style="text-align:center">' + badgeDias(dias, c.estado) + '</td>' +
+      '<td>' + badgeEstadoCompra(c.estado) + '</td>' +
+      '<td style="max-width:200px;color:#666;font-size:12px;white-space:pre-wrap">' + (c.observaciones || '—') + '</td>' +
+      '<td style="white-space:nowrap" onclick="event.stopPropagation()">' +
+        '<button class="btn btn-secondary btn-sm" style="margin-right:4px" onclick="editarCompra(\'' + c.id + '\')">✏️</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="eliminarCompra(\'' + c.id + '\')">🗑️</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function abrirModalCompra() {
+  _editCompraId = null;
+  document.getElementById('mc-titulo').textContent = '🛒 Nueva Solicitud de Compra';
+  document.getElementById('btn-guardar-compra').textContent = '💾 Guardar';
+  document.getElementById('mc-fecha').value        = new Date().toISOString().substring(0,10);
+  document.getElementById('mc-fecha-limite').value = '';
+  document.getElementById('mc-item-search').value  = '';
+  document.getElementById('mc-item-val').value     = '';
+  document.getElementById('mc-estado').value       = 'Pendiente';
+  document.getElementById('mc-obs').value          = '';
+  document.getElementById('mc-resp').innerHTML = _optsResp();
+  document.getElementById('mc-resp').value = '';
+  abrir('modal-compra');
+}
+
+function editarCompra(id) {
+  var c = _compras.find(function(x){ return x.id === id; });
+  if (!c) return;
+  _editCompraId = id;
+  document.getElementById('mc-titulo').textContent = '✏️ Editar Solicitud';
+  document.getElementById('btn-guardar-compra').textContent = '💾 Guardar Cambios';
+  document.getElementById('mc-fecha').value        = c.fecha        || '';
+  document.getElementById('mc-fecha-limite').value = c.fecha_limite || '';
+  document.getElementById('mc-item-val').value     = c.item_id      || '';
+  document.getElementById('mc-item-search').value  = c.descripcion  || '';
+  document.getElementById('mc-estado').value       = c.estado       || 'Pendiente';
+  document.getElementById('mc-obs').value          = c.observaciones || '';
+  document.getElementById('mc-resp').innerHTML = _optsResp();
+  document.getElementById('mc-resp').value = c.responsable || '';
+  abrir('modal-compra');
+}
+
+function guardarCompra() {
+  var fecha       = document.getElementById('mc-fecha').value;
+  var fechaLimite = document.getElementById('mc-fecha-limite').value;
+  var estado      = document.getElementById('mc-estado').value;
+  var itemSearch  = document.getElementById('mc-item-search').value.trim();
+  var resp        = document.getElementById('mc-resp').value;
+  if (!fecha || !fechaLimite || !estado || !itemSearch || !resp) {
+    alert('Completa los campos obligatorios (*)'); return;
+  }
+  var itemId = document.getElementById('mc-item-val').value;
+  var it     = itemId ? items.find(function(x){ return x.id === itemId; }) : null;
+  var payload = {
+    fecha:         fecha,
+    fecha_limite:  fechaLimite,
+    estado:        estado,
+    item_id:       itemId || null,
+    descripcion:   it ? it.descripcion : itemSearch,
+    correlativo:   it ? (it.correlativo || '') : '',
+    responsable:   resp,
+    observaciones: document.getElementById('mc-obs').value.trim()
+  };
+  if (_editCompraId) {
+    var idx = _compras.findIndex(function(x){ return x.id === _editCompraId; });
+    if (idx >= 0) { payload.id = _editCompraId; _compras[idx] = payload; }
+  } else {
+    payload.id = Date.now().toString();
+    _compras.unshift(payload);
+  }
+  saveCompras();
+  cerrar('modal-compra');
+  renderCompras();
+}
+
+function eliminarCompra(id) {
+  var c = _compras.find(function(x){ return x.id === id; });
+  if (!c) return;
+  if (!confirm('¿Eliminar la solicitud de "' + (c.descripcion || 'este ítem') + '"?')) return;
+  _compras = _compras.filter(function(x){ return x.id !== id; });
+  saveCompras();
+  renderCompras();
+}
 </script>
 <!-- ══════════════════════════════════════
      MODAL: Registrar Baja
@@ -3808,6 +4029,90 @@ init();
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-baja')">Cancelar</button>
       <button id="btn-guardar-baja" class="btn btn-danger" onclick="guardarBaja()">🚫 Registrar Baja</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB: Gestión de Compras ── -->
+<div id="tab-compras" class="tab-panel">
+  <div class="stats-row">
+    <div class="stat-card"><div class="val" id="st-cmp-total" style="color:#1E4F8C">0</div><div class="lbl">Total solicitudes</div></div>
+    <div class="stat-card"><div class="val" id="st-cmp-pend"  style="color:#e65100">0</div><div class="lbl">Pendientes</div></div>
+    <div class="stat-card"><div class="val" id="st-cmp-venc"  style="color:#c62828">0</div><div class="lbl">Vencidas</div></div>
+    <div class="stat-card"><div class="val" id="st-cmp-comp"  style="color:#2e7d32">0</div><div class="lbl">Completadas</div></div>
+  </div>
+  <div class="toolbar" style="gap:8px">
+    <button class="btn btn-primary" onclick="abrirModalCompra()">+ Nueva Solicitud</button>
+    <input type="text" id="fc-buscar" placeholder="🔍 Buscar ítem, responsable..." oninput="renderCompras()" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;outline:none"/>
+    <select id="fc-estado" onchange="renderCompras()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none">
+      <option value="">Todos los estados</option>
+      <option>Pendiente</option>
+      <option>En Gestión</option>
+      <option>Completada</option>
+      <option>Cancelada</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha Creación</th>
+          <th>Ítem del Inventario</th>
+          <th>Responsable</th>
+          <th>Fecha Límite</th>
+          <th style="text-align:center">Días Restantes</th>
+          <th>Estado</th>
+          <th>Observaciones</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tb-compras"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── MODAL: Nueva / Editar Solicitud Compra ── -->
+<div class="modal-bd" id="modal-compra" style="display:none">
+  <div class="modal" style="max-width:560px">
+    <div class="mhdr">
+      <h3 id="mc-titulo">🛒 Nueva Solicitud de Compra</h3>
+      <button class="modal-close" onclick="cerrar('modal-compra')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid" style="grid-template-columns:1fr 1fr">
+        <div class="fg"><label>Fecha de Creación *</label><input type="date" id="mc-fecha"/></div>
+        <div class="fg"><label>Fecha Límite de Gestión *</label><input type="date" id="mc-fecha-limite"/></div>
+        <div class="fg full">
+          <label>Ítem del Inventario *</label>
+          <div class="item-search-wrap">
+            <input type="text" id="mc-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                   oninput="filtrarItems('mc')" onfocus="filtrarItems('mc')" autocomplete="off"
+                   onkeydown="ddNav(event,'mc-item-list')"
+                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="mc-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="mc-item-val"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Responsable *</label>
+          <select id="mc-resp"><option value="">Seleccionar…</option></select>
+        </div>
+        <div class="fg">
+          <label>Estado *</label>
+          <select id="mc-estado">
+            <option value="">Seleccionar…</option>
+            <option>Pendiente</option>
+            <option>En Gestión</option>
+            <option>Completada</option>
+            <option>Cancelada</option>
+          </select>
+        </div>
+        <div class="fg full"><label>Observaciones</label><textarea id="mc-obs" rows="3" placeholder="Descripción de lo que se necesita gestionar…"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-compra')">Cancelar</button>
+      <button id="btn-guardar-compra" class="btn btn-primary" onclick="guardarCompra()">💾 Guardar</button>
     </div>
   </div>
 </div>

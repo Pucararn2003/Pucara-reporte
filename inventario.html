@@ -340,6 +340,12 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   /* Prevenir zoom de iOS en inputs (font-size >= 16px) */
   .fg input,.fg select,.fg textarea{font-size:16px}
 
+  /* === Ocultar inputs de fecha vacíos que aparecen como recuadros en blanco === */
+  /* Dados de Baja */
+  #fb-desde,#fb-hasta,#tab-bajas .toolbar>span{display:none!important}
+  /* Historial de Movimientos */
+  #fhm-desde,#fhm-hasta{display:none!important}
+
   /* === Historial movimientos — apilado === */
   .hmov-card{flex-direction:column;gap:6px}
   .hmov-left{width:100%;display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left}

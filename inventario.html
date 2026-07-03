@@ -2456,6 +2456,17 @@ function seleccionarItemDD(el) {
   }
 }
 
+// Ctrl+Enter: activa el botón primario (último en .mftr) del modal abierto
+document.addEventListener('keydown', function(e) {
+  if (!(e.ctrlKey && e.key === 'Enter')) return;
+  var openBd = document.querySelector('.modal-bd.open');
+  if (!openBd) return;
+  var mftr = openBd.querySelector('.mftr');
+  if (!mftr) return;
+  var btns = mftr.querySelectorAll('button');
+  if (btns.length) btns[btns.length - 1].click();
+});
+
 document.addEventListener('click', e => {
   if (!e.target.closest('.item-search-wrap')) {
     document.querySelectorAll('.item-dropdown').forEach(d => d.style.display = 'none');

@@ -3963,7 +3963,7 @@ function renderCompras() {
     var dias = diasRestantes(c.fecha_limite);
     var rowBg = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0) ? 'background:#fff5f5;' : '';
     var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
-    return '<tr style="' + rowBg + 'cursor:pointer" ondblclick="editarCompra(\'' + c.id + '\')" title="Doble clic para editar">' +
+    return '<tr style="' + rowBg + 'cursor:pointer" onclick="clicFilaCmp(\'' + c.id + '\')" ondblclick="dblFilaCmp(\'' + c.id + '\')" title="Clic: ver detalle · Doble clic: editar">' +
       '<td style="white-space:nowrap">' + fmtD(c.fecha) + '</td>' +
       '<td style="max-width:220px"><div style="display:flex;align-items:flex-start">' + imgHtml + '<div><span>' + itemNombre + '</span>' + trabBadge + '</div></div></td>' +
       '<td style="text-align:center;font-weight:600">' + (c.cantidad || '—') + '</td>' +
@@ -4063,6 +4063,16 @@ function renderDetalleCompra(c) {
   }
 
   return '<div style="background:#f5f8ff;padding:16px 20px 18px">' + infoGrid + extras + imgSection + trabSection + '</div>';
+}
+
+var _cmpClickTimer = null;
+function clicFilaCmp(id) {
+  if (_cmpClickTimer) { clearTimeout(_cmpClickTimer); _cmpClickTimer = null; return; }
+  _cmpClickTimer = setTimeout(function() { _cmpClickTimer = null; toggleDetCompra(id); }, 220);
+}
+function dblFilaCmp(id) {
+  if (_cmpClickTimer) { clearTimeout(_cmpClickTimer); _cmpClickTimer = null; }
+  editarCompra(id);
 }
 
 function toggleDetCompra(id) {

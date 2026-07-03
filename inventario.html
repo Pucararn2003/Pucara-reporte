@@ -391,15 +391,17 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <tr>
             <th>Fecha Creación</th>
             <th>Ítem del Inventario</th>
+            <th style="text-align:center">Cant.</th>
+            <th>Talla</th>
             <th>Responsable</th>
             <th>Fecha Límite</th>
             <th style="text-align:center">Días Restantes</th>
             <th>Estado</th>
-            <th>Observaciones</th>
+            <th>Descripción / Obs.</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="tb-compras"><tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
+        <tbody id="tb-compras"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -3918,31 +3920,112 @@ function renderCompras() {
 
   var tb = document.getElementById('tb-compras');
   if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr>';
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(function(c) {
     var it = c.item_id ? items.find(function(x){ return x.id === c.item_id; }) : null;
-    var desc = it
+    var itemNombre = it
       ? ((it.correlativo ? '<span style="color:#888;font-size:11px;margin-right:4px">' + it.correlativo + '</span>' : '') + it.descripcion)
       : (c.descripcion || '—');
+    var imgHtml = c.imagen
+      ? '<img src="' + c.imagen + '" onclick="event.stopPropagation();abrirLightbox(\'' + c.imagen + '\')" style="width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid #dce8f0;cursor:zoom-in;margin-right:6px;vertical-align:middle;flex-shrink:0" title="Ver imagen"/>'
+      : '';
+    var trabArr = c.trabajadores || [];
+    var trabBadge = trabArr.length
+      ? '<div style="margin-top:4px"><span style="font-size:11px;background:#eef4ff;color:#1E4F8C;border-radius:4px;padding:2px 7px;font-weight:700">👷 ' + trabArr.length + ' asignado' + (trabArr.length > 1 ? 's' : '') + '</span></div>'
+      : '';
+    var descCell = '';
+    if (c.descripcion_general) descCell += '<span style="display:block;color:#333;font-size:12px">' + c.descripcion_general + '</span>';
+    if (c.observaciones)       descCell += '<span style="display:block;color:#888;font-size:11px;margin-top:2px">' + c.observaciones + '</span>';
+    if (!descCell)             descCell  = '—';
     var dias = diasRestantes(c.fecha_limite);
     var rowStyle = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0)
       ? ' style="background:#fff5f5"' : '';
     return '<tr' + rowStyle + '>' +
       '<td style="white-space:nowrap">' + (c.fecha || '—') + '</td>' +
-      '<td style="max-width:240px">' + desc + '</td>' +
+      '<td style="max-width:220px"><div style="display:flex;align-items:flex-start">' + imgHtml + '<div><span>' + itemNombre + '</span>' + trabBadge + '</div></div></td>' +
+      '<td style="text-align:center;font-weight:600">' + (c.cantidad || '—') + '</td>' +
+      '<td style="white-space:nowrap">' + (c.talla || '—') + '</td>' +
       '<td>' + (c.responsable || '—') + '</td>' +
       '<td style="white-space:nowrap">' + (c.fecha_limite || '—') + '</td>' +
       '<td style="text-align:center">' + badgeDias(dias, c.estado) + '</td>' +
       '<td>' + badgeEstadoCompra(c.estado) + '</td>' +
-      '<td style="max-width:200px;color:#666;font-size:12px;white-space:pre-wrap">' + (c.observaciones || '—') + '</td>' +
+      '<td style="max-width:200px">' + descCell + '</td>' +
       '<td style="white-space:nowrap" onclick="event.stopPropagation()">' +
         '<button class="btn btn-secondary btn-sm" style="margin-right:4px" onclick="editarCompra(\'' + c.id + '\')">✏️</button>' +
         '<button class="btn btn-danger btn-sm" onclick="eliminarCompra(\'' + c.id + '\')">🗑️</button>' +
       '</td>' +
     '</tr>';
   }).join('');
+}
+
+function _trabEmptyMsg() {
+  var cont = document.getElementById('mc-trab-rows');
+  var empty = document.getElementById('mc-trab-empty');
+  var hasRows = cont.querySelectorAll('.mc-trab-row').length > 0;
+  if (empty) empty.style.display = hasRows ? 'none' : '';
+}
+function agregarFilaTrab(data) {
+  var cont = document.getElementById('mc-trab-rows');
+  var empty = document.getElementById('mc-trab-empty');
+  if (empty) empty.style.display = 'none';
+  var div = document.createElement('div');
+  div.className = 'mc-trab-row';
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 78px 88px 88px 1fr 32px;gap:5px;align-items:center;background:#f5f8ff;padding:7px 8px;border-radius:7px;border:1px solid #dce8f0';
+  var inp = 'padding:6px 8px;border:1px solid #cdd8e3;border-radius:6px;font-size:13px;width:100%;box-sizing:border-box;outline:none';
+  var trabOpts = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.map(function(t){ return '<option value="'+t.nombre+'">'+t.nombre+'</option>'; }).join('');
+  div.innerHTML =
+    '<select class="trab-sel" onchange="autoTurnoTrab(this)" style="'+inp+'">'+trabOpts+'</select>' +
+    '<input type="text" class="trab-turno" placeholder="—" readonly style="'+inp+';background:#eef4ff;color:#1E4F8C;font-weight:700;text-align:center;cursor:default"/>' +
+    '<input type="text" class="trab-talla" placeholder="Talla" style="'+inp+'"/>' +
+    '<input type="text" class="trab-color" placeholder="Color" style="'+inp+'"/>' +
+    '<input type="text" class="trab-obs"   placeholder="Observación" style="'+inp+'"/>' +
+    '<button type="button" onclick="this.closest(\'.mc-trab-row\').remove();_trabEmptyMsg()" style="background:#fee2e2;border:none;border-radius:6px;color:#c62828;cursor:pointer;font-size:14px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">✕</button>';
+  if (data) {
+    div.querySelector('.trab-sel').value   = data.nombre || '';
+    div.querySelector('.trab-turno').value = data.turno  || '';
+    div.querySelector('.trab-talla').value = data.talla  || '';
+    div.querySelector('.trab-color').value = data.color  || '';
+    div.querySelector('.trab-obs').value   = data.obs    || '';
+  }
+  cont.appendChild(div);
+}
+function autoTurnoTrab(sel) {
+  var t = TRABAJADORES.find(function(x){ return x.nombre === sel.value; });
+  sel.closest('.mc-trab-row').querySelector('.trab-turno').value = t ? 'Turno ' + t.turno : '';
+}
+function getTrabajadoresModal() {
+  return Array.from(document.querySelectorAll('#mc-trab-rows .mc-trab-row')).map(function(row) {
+    return {
+      nombre: row.querySelector('.trab-sel').value,
+      turno:  row.querySelector('.trab-turno').value,
+      talla:  row.querySelector('.trab-talla').value.trim(),
+      color:  row.querySelector('.trab-color').value.trim(),
+      obs:    row.querySelector('.trab-obs').value.trim()
+    };
+  }).filter(function(t){ return t.nombre; });
+}
+
+function _limpiarImgCompra() {
+  document.getElementById('mc-imagen-file').value = '';
+  document.getElementById('mc-imagen-b64').value  = '';
+  document.getElementById('mc-imagen-thumb').src  = '';
+  document.getElementById('mc-imagen-preview').style.display = 'none';
+  document.getElementById('btn-limpiar-img').style.display   = 'none';
+}
+function previewImgCompra(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var b64 = e.target.result;
+    document.getElementById('mc-imagen-b64').value          = b64;
+    document.getElementById('mc-imagen-thumb').src          = b64;
+    document.getElementById('mc-imagen-preview').style.display = 'block';
+    document.getElementById('btn-limpiar-img').style.display   = '';
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 function abrirModalCompra() {
@@ -3955,8 +4038,17 @@ function abrirModalCompra() {
   document.getElementById('mc-item-val').value     = '';
   document.getElementById('mc-estado').value       = 'Pendiente';
   document.getElementById('mc-obs').value          = '';
+  document.getElementById('mc-desc').value         = '';
+  document.getElementById('mc-cantidad').value     = '';
+  document.getElementById('mc-talla').value        = '';
+  _limpiarImgCompra();
   document.getElementById('mc-resp').innerHTML = _optsResp();
   document.getElementById('mc-resp').value = '';
+  // limpiar trabajadores
+  var trabCont = document.getElementById('mc-trab-rows');
+  trabCont.querySelectorAll('.mc-trab-row').forEach(function(r){ r.remove(); });
+  var emptyMsg = document.getElementById('mc-trab-empty');
+  if (emptyMsg) emptyMsg.style.display = '';
   abrir('modal-compra');
 }
 
@@ -3972,8 +4064,24 @@ function editarCompra(id) {
   document.getElementById('mc-item-search').value  = c.descripcion  || '';
   document.getElementById('mc-estado').value       = c.estado       || 'Pendiente';
   document.getElementById('mc-obs').value          = c.observaciones || '';
+  document.getElementById('mc-desc').value         = c.descripcion_general || '';
+  document.getElementById('mc-cantidad').value     = c.cantidad || '';
+  document.getElementById('mc-talla').value        = c.talla || '';
   document.getElementById('mc-resp').innerHTML = _optsResp();
   document.getElementById('mc-resp').value = c.responsable || '';
+  _limpiarImgCompra();
+  if (c.imagen) {
+    document.getElementById('mc-imagen-b64').value             = c.imagen;
+    document.getElementById('mc-imagen-thumb').src             = c.imagen;
+    document.getElementById('mc-imagen-preview').style.display = 'block';
+    document.getElementById('btn-limpiar-img').style.display   = '';
+  }
+  // cargar trabajadores
+  var trabCont = document.getElementById('mc-trab-rows');
+  trabCont.querySelectorAll('.mc-trab-row').forEach(function(r){ r.remove(); });
+  var emptyMsg = document.getElementById('mc-trab-empty');
+  (c.trabajadores || []).forEach(function(t){ agregarFilaTrab(t); });
+  if (emptyMsg) emptyMsg.style.display = (c.trabajadores && c.trabajadores.length) ? 'none' : '';
   abrir('modal-compra');
 }
 
@@ -3983,20 +4091,26 @@ function guardarCompra() {
   var estado      = document.getElementById('mc-estado').value;
   var itemSearch  = document.getElementById('mc-item-search').value.trim();
   var resp        = document.getElementById('mc-resp').value;
-  if (!fecha || !fechaLimite || !estado || !itemSearch || !resp) {
+  var cantidad    = document.getElementById('mc-cantidad').value.trim();
+  if (!fecha || !fechaLimite || !estado || !itemSearch || !resp || !cantidad) {
     alert('Completa los campos obligatorios (*)'); return;
   }
   var itemId = document.getElementById('mc-item-val').value;
   var it     = itemId ? items.find(function(x){ return x.id === itemId; }) : null;
   var payload = {
-    fecha:         fecha,
-    fecha_limite:  fechaLimite,
-    estado:        estado,
-    item_id:       itemId || null,
-    descripcion:   it ? it.descripcion : itemSearch,
-    correlativo:   it ? (it.correlativo || '') : '',
-    responsable:   resp,
-    observaciones: document.getElementById('mc-obs').value.trim()
+    fecha:               fecha,
+    fecha_limite:        fechaLimite,
+    estado:              estado,
+    item_id:             itemId || null,
+    descripcion:         it ? it.descripcion : itemSearch,
+    correlativo:         it ? (it.correlativo || '') : '',
+    responsable:         resp,
+    observaciones:       document.getElementById('mc-obs').value.trim(),
+    descripcion_general: document.getElementById('mc-desc').value.trim(),
+    cantidad:            cantidad,
+    talla:               document.getElementById('mc-talla').value.trim(),
+    imagen:              document.getElementById('mc-imagen-b64').value || null,
+    trabajadores:        getTrabajadoresModal()
   };
   if (_editCompraId) {
     var idx = _compras.findIndex(function(x){ return x.id === _editCompraId; });
@@ -4100,7 +4214,7 @@ function eliminarCompra(id) {
 
 <!-- ── MODAL: Nueva / Editar Solicitud Compra ── -->
 <div class="modal-bd" id="modal-compra">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:680px">
     <div class="mhdr">
       <h3 id="mc-titulo">🛒 Nueva Solicitud de Compra</h3>
       <button class="modal-close" onclick="cerrar('modal-compra')">✕</button>
@@ -4121,6 +4235,14 @@ function eliminarCompra(id) {
           </div>
         </div>
         <div class="fg">
+          <label>Cantidad a Solicitar *</label>
+          <input type="number" id="mc-cantidad" min="1" placeholder="Ej: 10"/>
+        </div>
+        <div class="fg">
+          <label>Tallas / Medidas</label>
+          <input type="text" id="mc-talla" placeholder="Ej: S, M, L, XL  ó  42, 43"/>
+        </div>
+        <div class="fg">
           <label>Responsable *</label>
           <select id="mc-resp"><option value="">Seleccionar…</option></select>
         </div>
@@ -4134,7 +4256,46 @@ function eliminarCompra(id) {
             <option>Cancelada</option>
           </select>
         </div>
-        <div class="fg full"><label>Observaciones</label><textarea id="mc-obs" rows="3" placeholder="Descripción de lo que se necesita gestionar…"></textarea></div>
+        <div class="fg full">
+          <label>Descripción General</label>
+          <textarea id="mc-desc" rows="3" placeholder="Especificaciones, características, marca de referencia…"></textarea>
+        </div>
+        <div class="fg full">
+          <label>Observaciones</label>
+          <textarea id="mc-obs" rows="2" placeholder="Notas adicionales, urgencia, proveedor sugerido…"></textarea>
+        </div>
+        <div class="fg full">
+          <label>Imagen de Referencia</label>
+          <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:4px">
+            <div>
+              <input type="file" id="mc-imagen-file" accept="image/*" onchange="previewImgCompra(this)" style="display:block;margin-bottom:6px;font-size:13px"/>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-limpiar-img" style="display:none" onclick="_limpiarImgCompra()">🗑️ Quitar imagen</button>
+            </div>
+            <div id="mc-imagen-preview" style="display:none">
+              <img id="mc-imagen-thumb" src="" style="max-width:180px;max-height:130px;border-radius:8px;border:1px solid #dce8f0;object-fit:contain;box-shadow:0 2px 8px rgba(0,0,0,.1)"/>
+            </div>
+          </div>
+          <input type="hidden" id="mc-imagen-b64"/>
+        </div>
+
+        <!-- ── Sección trabajadores ── -->
+        <div class="fg full" style="border-top:2px solid #e0eaf2;padding-top:14px;margin-top:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <label style="margin-bottom:0;color:#1E4F8C;font-weight:700;font-size:13px">👷 Asignación a Trabajadores</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarFilaTrab()">+ Agregar trabajador</button>
+          </div>
+          <div id="mc-trab-header" style="display:grid;grid-template-columns:2fr 78px 88px 88px 1fr 32px;gap:5px;padding:0 6px;margin-bottom:4px">
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Trabajador</span>
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Turno</span>
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Talla</span>
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Color</span>
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Observación</span>
+            <span></span>
+          </div>
+          <div id="mc-trab-rows" style="display:flex;flex-direction:column;gap:5px;max-height:270px;overflow-y:auto;padding-right:2px">
+            <div id="mc-trab-empty" style="text-align:center;color:#bbb;font-size:12px;padding:14px 0">Sin trabajadores asignados — usa "+ Agregar trabajador"</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="mftr">

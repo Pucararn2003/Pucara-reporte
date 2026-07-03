@@ -1579,7 +1579,13 @@ async function guardarAsignacion() {
 // MÓDULO: DADOS DE BAJA
 // ══════════════════════════════════════════════════════════════
 
+let editMovBajaId = null;
+
 function abrirModalBaja() {
+  editMovBajaId = null;
+  document.querySelector('#modal-baja .mhdr h3').textContent = '🚫 Registrar Ítem Dado de Baja';
+  var btn = document.getElementById('btn-guardar-baja');
+  btn.textContent = '🚫 Registrar Baja'; btn.className = 'btn btn-danger';
   document.getElementById('mb-fecha').value            = hoy();
   document.getElementById('mb-cantidad').value         = '1';
   document.getElementById('mb-item-search').value      = '';
@@ -1671,29 +1677,33 @@ async function guardarBaja() {
     cargo_trabajador:  document.getElementById('mb-talla').value.trim()  || null,
   };
 
-  var res = await sb.from('inventario_movimientos').insert(payload);
-  if (res.error) { alert('Error: ' + res.error.message); btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; return; }
+  if (editMovBajaId) {
+    // Modo edición — solo actualizar el movimiento, sin tocar el stock
+    var resE = await sb.from('inventario_movimientos').update(payload).eq('id', editMovBajaId);
+    if (resE.error) { alert('Error: ' + resE.error.message); btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; return; }
+    editMovBajaId = null;
+  } else {
+    // Modo nuevo — INSERT y actualizar stock
+    var res = await sb.from('inventario_movimientos').insert(payload);
+    if (res.error) { alert('Error: ' + res.error.message); btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; return; }
 
-  // Actualizar estado del ítem a 'Dado de Baja' y descontar disponible
-  if (itSel) {
-    var newTotal = Math.max(0, (itSel.cantidad_total || 0) - cantBaja);
-    var dispActual = itSel.cantidad_disponible || 0;
-    // Descuenta del total; el disponible queda igual (trigger +1 se neutraliza con -1)
-    await sb.from('inventario_items')
-      .update({ estado: 'Dado de Baja', cantidad_total: newTotal, cantidad_disponible: dispActual - 1 })
-      .eq('id', itemId);
-    // Historial
-    var entrada = {
-      fecha: new Date().toISOString(), usuario: currentUser ? currentUser.email : '?',
-      cambios: [{ campo: 'Baja', antes: itSel.estado,
-        despues: 'Dado de Baja — ' + motivos.substring(0, 60) }]
-    };
-    var hist = [entrada].concat(itSel.historial || []).slice(0, 50);
-    await sb.from('inventario_items').update({ historial: hist }).eq('id', itemId);
+    if (itSel) {
+      var newTotal = Math.max(0, (itSel.cantidad_total || 0) - cantBaja);
+      var dispActual = itSel.cantidad_disponible || 0;
+      await sb.from('inventario_items')
+        .update({ estado: 'Dado de Baja', cantidad_total: newTotal, cantidad_disponible: dispActual - 1 })
+        .eq('id', itemId);
+      var entrada = {
+        fecha: new Date().toISOString(), usuario: currentUser ? currentUser.email : '?',
+        cambios: [{ campo: 'Baja', antes: itSel.estado, despues: 'Dado de Baja — ' + motivos.substring(0, 60) }]
+      };
+      var hist = [entrada].concat(itSel.historial || []).slice(0, 50);
+      await sb.from('inventario_items').update({ historial: hist }).eq('id', itemId);
+    }
   }
 
   cerrar('modal-baja');
-  btn.disabled = false; btn.textContent = '🚫 Registrar Baja';
+  btn.disabled = false; btn.textContent = '🚫 Registrar Baja'; btn.className = 'btn btn-danger';
   marcarItemReciente(itemId);
   await Promise.all([cargarItems(), cargarMovs()]);
   renderBajas(); renderInventario();
@@ -1762,9 +1772,69 @@ function renderBajas() {
       '<td style="white-space:nowrap">' +
         '<button class="btn btn-sm" style="background:#1a3a5c;color:#fff;margin-right:4px" ' +
           'onclick="generarFichaBaja(\'' + m.id + '\')" title="Generar Ficha PDF">📄 Ficha</button>' +
+        '<button class="btn btn-secondary btn-sm" style="margin-right:4px" onclick="editarBaja(\'' + m.id + '\')" title="Editar">✏️</button>' +
         '<button class="btn btn-danger btn-sm" onclick="eliminarBaja(\'' + m.id + '\')" title="Eliminar">🗑️</button>' +
       '</td></tr>';
   }).join('');
+}
+
+function editarBaja(movId) {
+  var m = movs.find(function(x){ return x.id === movId; });
+  if (!m) return;
+  editMovBajaId = movId;
+
+  // Poblar selects igual que en abrirModalBaja
+  var optsAll = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.map(function(t){ return '<option value="' + t.nombre + '">' + t.nombre + ' — ' + t.cargo + '</option>'; }).join('');
+  var optsJefes = '<option value="">Seleccionar…</option>' +
+    TRABAJADORES.filter(function(t){ return t.cargo.toLowerCase().includes('jefe de terreno'); })
+    .map(function(t){ return '<option value="' + t.nombre + '">' + t.nombre + ' — ' + t.cargo + '</option>'; }).join('');
+  document.getElementById('mb-quien-reviso').innerHTML = optsAll;
+  document.getElementById('mb-supervisor').innerHTML   = optsJefes;
+
+  // Campos básicos
+  document.getElementById('mb-fecha').value            = (m.fecha || '').substring(0, 10);
+  document.getElementById('mb-cantidad').value         = m.cantidad || 1;
+  document.getElementById('mb-serie').value            = m.rut_trabajador  || '';
+  document.getElementById('mb-talla').value            = m.cargo_trabajador || '';
+  document.getElementById('mb-fecha-ingreso').value    = '';
+  document.getElementById('mb-fecha-primer-uso').value = m.turno || '';
+  document.getElementById('mb-quien-reviso').value     = m.nombre_trabajador || '';
+  document.getElementById('mb-supervisor').value       = m.responsable || '';
+
+  // Ítem — mostrar descripción, bloquear cambio
+  var itV = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+  document.getElementById('mb-item-search').value       = itV ? itV.descripcion : (m.descripcion || '');
+  document.getElementById('mb-item-val').value          = m.item_id || '';
+  document.getElementById('mb-item-list').style.display = 'none';
+
+  // Separar motivos / observaciones
+  var obsRaw  = m.observaciones || '';
+  var splitI  = obsRaw.indexOf('\n\nObservaciones: ');
+  if (splitI >= 0) {
+    document.getElementById('mb-motivos').value = obsRaw.substring(0, splitI);
+    document.getElementById('mb-obs').value     = obsRaw.substring(splitI + '\n\nObservaciones: '.length);
+  } else {
+    document.getElementById('mb-motivos').value = obsRaw;
+    document.getElementById('mb-obs').value     = '';
+  }
+
+  // Fotos existentes como preview
+  var f1prev = document.getElementById('mb-foto1-prev');
+  var f2prev = document.getElementById('mb-foto2-prev');
+  document.getElementById('mb-foto1-file').value = '';
+  document.getElementById('mb-foto2-file').value = '';
+  if (m.foto_url)        { f1prev.src = m.foto_url;        f1prev.style.display = 'block'; }
+  else                   { f1prev.src = ''; f1prev.style.display = 'none'; }
+  if (m.estado_entregar) { f2prev.src = m.estado_entregar; f2prev.style.display = 'block'; }
+  else                   { f2prev.src = ''; f2prev.style.display = 'none'; }
+
+  // Header y botón en modo edición
+  document.querySelector('#modal-baja .mhdr h3').textContent = '✏️ Editar Registro de Baja';
+  var btn = document.getElementById('btn-guardar-baja');
+  btn.textContent = '💾 Guardar Cambios'; btn.className = 'btn btn-primary';
+
+  abrir('modal-baja');
 }
 
 async function eliminarBaja(id) {

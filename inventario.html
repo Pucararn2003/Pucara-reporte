@@ -258,12 +258,13 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   .toolbar input[type=text],.toolbar input[type=date],.toolbar select{width:100%;font-size:14px;padding:10px 12px}
   .toolbar>label{display:none}
 
-  /* === Tablas — sin fila de filtros, scroll horizontal, font compacto === */
+  /* === Tablas — sin fila de filtros, scroll horizontal, filas uniformes === */
   .table-wrap{border-radius:8px}
   .table-wrap table{font-size:12px}
   th{padding:8px 7px;font-size:11px}
-  td{padding:5px 7px}
-  .btn-sm{min-height:32px;padding:5px 8px;font-size:12px}
+  td{padding:0 7px;height:46px;max-height:46px;overflow:hidden;vertical-align:middle}
+  .table-wrap tbody tr{height:46px}
+  .btn-sm{min-height:30px;padding:4px 8px;font-size:12px}
   .th-filter{display:none}
 
   /* Inventario General — ocultar Corr(1) Categoría(3) Total(5) Ubicación(8) */
@@ -2446,7 +2447,7 @@ document.addEventListener('click', e => {
     document.querySelectorAll('.item-dropdown').forEach(d => d.style.display = 'none');
   }
   if (!e.target.closest('.tab-group')) {
-    document.querySelectorAll('.tab-grp-drop').forEach(function(d){ d.classList.remove('open'); });
+    _cerrarDropsGrp();
     document.querySelectorAll('.tab-group-btn .grp-caret').forEach(function(c){ c.style.transform = ''; });
   }
   if (_histTip && _histTip.style.display !== 'none' &&
@@ -3253,13 +3254,24 @@ function switchTab(name, btn) {
   if (name === 'compras') renderCompras();
 }
 
+function _cerrarDropsGrp() {
+  document.querySelectorAll('.tab-grp-drop').forEach(function(d){
+    d.classList.remove('open');
+    d.style.cssText = '';
+  });
+}
 function toggleGrp(dropId, btn) {
   var drop = document.getElementById(dropId);
   var isOpen = drop.classList.contains('open');
-  document.querySelectorAll('.tab-grp-drop').forEach(function(d){ d.classList.remove('open'); });
+  _cerrarDropsGrp();
   if (isOpen) { btn.querySelector('.grp-caret').style.transform = ''; return; }
   drop.classList.add('open');
   btn.querySelector('.grp-caret').style.transform = 'rotate(180deg)';
+  // En móvil: position:fixed para escapar del overflow-x:auto del tabs-nav (iOS Safari)
+  if (window.innerWidth <= 600) {
+    var rect = btn.getBoundingClientRect();
+    drop.style.cssText = 'display:block;position:fixed;top:' + Math.round(rect.bottom) + 'px;left:' + Math.round(rect.left) + 'px;right:auto;z-index:9999;min-width:190px;border-radius:0 0 10px 10px;box-shadow:0 8px 24px rgba(0,0,0,.18)';
+  }
 }
 
 function switchSubTab(name, subBtn, dropId, grpBtnId) {
@@ -3271,7 +3283,9 @@ function switchSubTab(name, subBtn, dropId, grpBtnId) {
   var grpBtn = document.getElementById(grpBtnId);
   grpBtn.classList.add('grp-active');
   grpBtn.querySelector('.grp-caret').style.transform = '';
-  document.getElementById(dropId).classList.remove('open');
+  var _d = document.getElementById(dropId);
+  _d.classList.remove('open');
+  _d.style.cssText = '';
   if (name === 'asignacion') renderAsignaciones();
 }
 

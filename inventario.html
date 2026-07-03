@@ -911,7 +911,12 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <input type="checkbox" id="me-no-descontar" style="width:17px;height:17px;cursor:pointer;accent-color:#1E4F8C;flex-shrink:0"/>
           <label for="me-no-descontar" style="cursor:pointer;margin:0;font-size:13px;font-weight:700;color:#1a3a5c;user-select:none">NO DESCONTAR DEL INVENTARIO GENERAL</label>
         </div>
-        <div class="fg full"><label>Fecha de Entrega</label><input type="date" id="me-fecha-entrega"/></div>
+        <div class="fg full">
+          <label style="display:flex;align-items:center;gap:8px">Fecha de Entrega
+            <button type="button" onclick="document.getElementById('me-fecha-entrega').value=hoy()" style="font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #1E4F8C;background:#e8f0fb;color:#1E4F8C;cursor:pointer;font-weight:600;line-height:1.6">● Hoy</button>
+          </label>
+          <input type="date" id="me-fecha-entrega"/>
+        </div>
         <div class="fg">
           <label>Estado al Entregar</label>
           <select id="me-estado">

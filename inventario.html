@@ -150,8 +150,9 @@ th.sortable:hover{background:#163d6e}
 .img-drop-hint{text-align:center;font-size:10px;color:#bbb;margin-top:5px;pointer-events:none;user-select:none}
 
 /* ── Historial tooltip ── */
-#hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:none;line-height:1.55;display:none}
-.hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px}
+#hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:auto;line-height:1.55;display:none;max-height:440px;overflow-y:auto}
+.hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hist-close{background:none;border:none;color:#7ec8ff;cursor:pointer;font-size:16px;line-height:1;padding:0;opacity:.75;flex-shrink:0}.hist-close:hover{opacity:1}
 .hist-entry{border-top:1px solid rgba(255,255,255,.12);padding-top:6px;margin-top:6px}
 .hist-meta{color:#a9ccee;font-size:11px;margin-bottom:3px}
 .hist-cambio{padding-left:10px;margin-top:2px}
@@ -2100,7 +2101,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
     <td>${i.correlativo||'—'}</td>
-    <td onmouseenter="mostrarHistorial(event,'${i.id}')" onmouseleave="ocultarHistorial()"><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span>${i.historial?.length?'<span class="hist-icon" title="Ver historial de cambios">🕐</span>':''}</div></td>
+    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();toggleHistorial(event,'${i.id}')" title="${i.historial?.length?'Ver historial de modificaciones':'Sin historial'}">`:`<div class="img-placeholder" style="cursor:${i.historial?.length?'pointer':'default'}" onclick="event.stopPropagation();${i.historial?.length?`toggleHistorial(event,'${i.id}')`:''}" title="${i.historial?.length?'Ver historial de modificaciones':''}">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -2108,6 +2109,7 @@ function renderInventario() {
     <td>${badgeEstado(i.estado)}</td>
     <td>${i.ubicacion||'—'}</td>
     <td onclick="event.stopPropagation()">
+      ${i.historial?.length?`<button class="btn btn-secondary btn-sm btn-hist" style="margin-right:4px" onclick="toggleHistorial(event,'${i.id}')" title="Ver historial de modificaciones">🕐</button>`:''}
       <button class="btn btn-secondary btn-sm" onclick="editarItem('${i.id}')">✏️</button>
       <button class="btn btn-danger btn-sm" onclick="borrarItem('${i.id}','${esc(i.descripcion)}')">🗑️</button>
     </td>
@@ -2280,15 +2282,27 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.item-search-wrap')) {
     document.querySelectorAll('.item-dropdown').forEach(d => d.style.display = 'none');
   }
+  if (_histTip && _histTip.style.display !== 'none' &&
+      !e.target.closest('#hist-tip') && !e.target.closest('.btn-hist') &&
+      !e.target.closest('.img-thumb') && !e.target.closest('.img-placeholder')) {
+    _histTip.style.display = 'none';
+    _histActiveId = null;
+  }
 });
 
 function poblarSelectItems() { /* reemplazado por búsqueda dinámica */ }
 
-// ── Historial tooltip ────────────────────────────────────────────
-let _histTip = null, _histTimer = null;
+// ── Historial panel (click-toggle) ───────────────────────────────
+let _histTip = null, _histActiveId = null;
 
-function mostrarHistorial(e, itemId) {
-  clearTimeout(_histTimer);
+function toggleHistorial(e, itemId) {
+  e.stopPropagation();
+  if (_histTip && _histTip.style.display !== 'none' && _histActiveId === itemId) {
+    _histTip.style.display = 'none';
+    _histActiveId = null;
+    return;
+  }
+  _histActiveId = itemId;
   const it = items.find(x => x.id === itemId);
   if (!it?.historial?.length) return;
   if (!_histTip) {
@@ -2301,8 +2315,8 @@ function mostrarHistorial(e, itemId) {
     hour:'2-digit', minute:'2-digit'
   });
   _histTip.innerHTML =
-    `<div class="hist-hdr">🕐 Historial de modificaciones (${it.historial.length})</div>` +
-    it.historial.slice(0, 20).map(h =>
+    `<div class="hist-hdr"><span>🕐 Historial de modificaciones (${it.historial.length})</span><button class="hist-close" onclick="cerrarHistorial()">✕</button></div>` +
+    it.historial.slice(0, 30).map(h =>
       `<div class="hist-entry">
         <div class="hist-meta">📅 ${fmt(h.fecha)} &nbsp;·&nbsp; 👤 ${h.usuario}</div>
         ${h.cambios.map(c =>
@@ -2314,14 +2328,21 @@ function mostrarHistorial(e, itemId) {
   const tipW = 390;
   let x = r.left;
   if (x + tipW > window.innerWidth - 12) x = window.innerWidth - tipW - 12;
+  if (x < 8) x = 8;
+  let top = r.bottom + 6;
+  if (top + 440 > window.innerHeight - 10) top = Math.max(10, r.top - 440 - 6);
   _histTip.style.left    = x + 'px';
-  _histTip.style.top     = (r.bottom + 6) + 'px';
+  _histTip.style.top     = top + 'px';
   _histTip.style.display = 'block';
 }
 
-function ocultarHistorial() {
-  _histTimer = setTimeout(() => { if (_histTip) _histTip.style.display = 'none'; }, 120);
+function cerrarHistorial() {
+  if (_histTip) _histTip.style.display = 'none';
+  _histActiveId = null;
 }
+
+function mostrarHistorial() {}
+function ocultarHistorial() {}
 
 // ── Column header tooltips ─────────────────────────────────────
 const TH_TIPS = {

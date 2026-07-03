@@ -489,6 +489,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <option>Cancelada</option>
       </select>
       <button class="btn btn-pdf" onclick="abrirModalInformeCompras()" style="white-space:nowrap">📄 Generar Informe</button>
+      <button class="btn btn-pdf" onclick="generarPDFCompletoCompras()" style="white-space:nowrap;background:#5c3d8f">📋 PDF Completo</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -3817,17 +3818,10 @@ function toggleTodosInformeCompras(checked) {
   document.querySelectorAll('#ic-lista .ic-chk').forEach(function(chk){ chk.checked = checked; });
 }
 
-function generarInformeCompras() {
-  var selIds = Array.from(document.querySelectorAll('#ic-lista .ic-chk:checked')).map(function(c){ return c.value; });
-  if (!selIds.length) { alert('Selecciona al menos una solicitud.'); return; }
-
-  var selCompras = _compras.filter(function(c){ return selIds.indexOf(c.id) !== -1; });
-
-  // Agrupar por categoría del ítem
+function _abrirVentanaPDFCompras(selCompras) {
   var CATS = ['EPP', 'Ropa de Trabajo', 'Insumos', 'Equipos y herramientas', 'Otro'];
   var grupos = {};
   CATS.forEach(function(cat){ grupos[cat] = []; });
-
   selCompras.forEach(function(c) {
     var item = items.find(function(x){ return x.id === c.item_id; });
     var cat = item ? (item.categoria || 'Otro') : 'Otro';
@@ -3836,32 +3830,26 @@ function generarInformeCompras() {
   });
 
   var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
-
   var ESTADO_COLOR = { Pendiente:'#e65100', Completada:'#2e7d32', 'En Gestión':'#1565c0', Cancelada:'#c62828' };
   var ESTADO_BG    = { Pendiente:'#fff3e0', Completada:'#e8f5e9', 'En Gestión':'#e3f2fd', Cancelada:'#fce4ec' };
   var CAT_COLOR    = { EPP:'#1E4F8C', 'Ropa de Trabajo':'#6a1b9a', Insumos:'#00695c', 'Equipos y herramientas':'#e65100', Otro:'#555' };
 
   var body = '';
-
   CATS.forEach(function(cat) {
     var grupo = grupos[cat];
     if (!grupo || !grupo.length) return;
-
     var catColor = CAT_COLOR[cat] || '#1E4F8C';
     body += '<div style="page-break-inside:avoid;break-inside:avoid">' +
       '<h3 style="margin:22px 0 12px;color:' + catColor + ';font-size:13pt;border-left:5px solid ' + catColor + ';padding:6px 0 6px 12px;background:' + catColor + '18;border-radius:0 6px 6px 0">' +
-        cat +
-        ' <span style="font-size:10pt;font-weight:400;color:#888">(' + grupo.length + ' solicitud' + (grupo.length > 1 ? 'es' : '') + ')</span>' +
-      '</h3>' +
-    '</div>';
+        cat + ' <span style="font-size:10pt;font-weight:400;color:#888">(' + grupo.length + ' solicitud' + (grupo.length > 1 ? 'es' : '') + ')</span>' +
+      '</h3></div>';
 
-    grupo.forEach(function(g, idx) {
+    grupo.forEach(function(g) {
       var c = g.compra;
       var item = g.item;
       var estadoBg = ESTADO_BG[c.estado] || '#f5f5f5';
       var estadoC  = ESTADO_COLOR[c.estado] || '#555';
 
-      // días restantes
       var diasHtml = '';
       if (c.fecha_limite) {
         var hoyMs = new Date().setHours(0,0,0,0);
@@ -3872,7 +3860,6 @@ function generarInformeCompras() {
           : '<span style="color:' + (dias<=3?'#e65100':'#2e7d32') + ';font-weight:600">' + dias + ' día' + (dias>1?'s':'') + ' restante' + (dias>1?'s':'') + '</span>';
       }
 
-      // Tabla de trabajadores
       var trabHtml = '';
       if (c.trabajadores && c.trabajadores.length) {
         var trabFilas = c.trabajadores.map(function(t) {
@@ -3891,34 +3878,24 @@ function generarInformeCompras() {
           '<div style="font-size:11pt;font-weight:700;color:#444;margin-bottom:6px">👷 Asignación a Trabajadores &nbsp;<span style="font-size:10pt;font-weight:400;color:#888">' + gestCnt + '/' + c.trabajadores.length + ' gestionado' + (c.trabajadores.length>1?'s':'') + '</span></div>' +
           '<table style="width:100%;border-collapse:collapse;font-size:9pt">' +
             '<thead><tr style="background:#344d6b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
-              '<th style="padding:5px 8px;text-align:left">Trabajador</th>' +
-              '<th style="padding:5px 8px;text-align:center">Turno</th>' +
-              '<th style="padding:5px 8px;text-align:center">Talla</th>' +
-              '<th style="padding:5px 8px;text-align:center">Color</th>' +
-              '<th style="padding:5px 8px;text-align:left">Observación</th>' +
-              '<th style="padding:5px 8px;text-align:center">Estado</th>' +
-            '</tr></thead>' +
-            '<tbody>' + trabFilas + '</tbody>' +
-          '</table>' +
-        '</div>';
+              '<th style="padding:5px 8px;text-align:left">Trabajador</th><th style="padding:5px 8px;text-align:center">Turno</th>' +
+              '<th style="padding:5px 8px;text-align:center">Talla</th><th style="padding:5px 8px;text-align:center">Color</th>' +
+              '<th style="padding:5px 8px;text-align:left">Observación</th><th style="padding:5px 8px;text-align:center">Estado</th>' +
+            '</tr></thead><tbody>' + trabFilas + '</tbody></table></div>';
       }
 
-      // Imagen de referencia
-      var imgHtml = '';
-      if (c.imagen) {
-        imgHtml = '<div style="margin-top:10px">' +
-          '<div style="font-size:10pt;font-weight:700;color:#444;margin-bottom:4px">Imagen de Referencia</div>' +
-          '<img src="' + c.imagen + '" style="max-width:180px;max-height:140px;border-radius:6px;border:1px solid #ddd;object-fit:contain;display:block"/>' +
-        '</div>';
-      }
+      // Imagen: prefiere imagen del ítem del inventario, luego imagen propia del compra
+      var imgSrc = (item && item.imagen_url) ? item.imagen_url : (c.imagen || null);
+      var imgHtml = imgSrc
+        ? '<div style="margin-top:10px"><div style="font-size:10pt;font-weight:700;color:#444;margin-bottom:4px">Imagen de Referencia</div>' +
+          '<img src="' + imgSrc + '" style="max-width:180px;max-height:140px;border-radius:6px;border:1px solid #ddd;object-fit:contain;display:block"/></div>'
+        : '';
 
       body += '<div style="margin-bottom:18px;border:1px solid #d0dcea;border-radius:10px;overflow:hidden;page-break-inside:avoid;break-inside:avoid">' +
-        // Header de la solicitud
         '<div style="background:#f0f4fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #d0dcea">' +
           '<div style="font-size:12pt;font-weight:700;color:#1a3a5c">' + (item ? item.descripcion : (c.descripcion||'Sin ítem')) + '</div>' +
           '<span style="background:' + estadoBg + ';color:' + estadoC + ';border-radius:4px;padding:2px 10px;font-weight:700;font-size:10pt">' + (c.estado||'—') + '</span>' +
         '</div>' +
-        // Datos principales en grilla
         '<div style="padding:12px 14px">' +
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-size:9.5pt;margin-bottom:10px">' +
             '<div><span style="color:#888;display:block;font-size:8.5pt">Correlativo</span><strong>' + (item ? (item.correlativo||'—') : '—') + '</strong></div>' +
@@ -3930,10 +3907,8 @@ function generarInformeCompras() {
           '</div>' +
           (c.descripcion_general ? '<div style="font-size:9.5pt;margin-bottom:6px"><span style="color:#888;font-size:8.5pt;display:block">Descripción General</span>' + c.descripcion_general + '</div>' : '') +
           (c.observaciones ? '<div style="font-size:9.5pt;margin-bottom:6px"><span style="color:#888;font-size:8.5pt;display:block">Observaciones</span>' + c.observaciones + '</div>' : '') +
-          (c.imagen ? imgHtml : '') +
-          trabHtml +
-        '</div>' +
-      '</div>';
+          imgHtml + trabHtml +
+        '</div></div>';
     });
   });
 
@@ -3944,36 +3919,45 @@ function generarInformeCompras() {
 
   var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>' +
     '<title>Informe Gestión de Compras</title>' +
-    '<style>' +
-      'body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
-      '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.5cm 2cm;box-sizing:border-box}' +
-      '@media print{body{margin:0}.page{padding:1cm 1.5cm}}' +
-    '</style>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+    '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.5cm 2cm;box-sizing:border-box}' +
+    '@media print{body{margin:0}.page{padding:1cm 1.5cm}}</style>' +
     '</head><body><div class="page">' +
-    // Encabezado con logo
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">' +
-      '<tr>' +
-        '<td style="border:none;width:70px;vertical-align:middle">' +
-          '<img src="' + LOGO_URL + '" style="width:60px;height:60px;object-fit:contain;border-radius:8px" alt="Pucará"/>' +
-        '</td>' +
-        '<td style="border:none;vertical-align:middle;text-align:center">' +
-          '<div style="font-size:17pt;font-weight:700;color:#1E4F8C">Informe — Gestión de Compras</div>' +
-          '<div style="font-size:9.5pt;color:#888;margin-top:4px">Generado el ' + ff(hoy()) + ' &nbsp;|&nbsp; Generado por ' + _pdfNombre + '</div>' +
-          '<div style="font-size:9pt;color:#aaa;margin-top:2px">' + selCompras.length + ' solicitud' + (selCompras.length > 1 ? 'es' : '') + ' incluida' + (selCompras.length > 1 ? 's' : '') + '</div>' +
-        '</td>' +
-        '<td style="border:none;width:70px"></td>' +
-      '</tr>' +
-    '</table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>' +
+      '<td style="border:none;width:70px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:60px;height:60px;object-fit:contain;border-radius:8px" alt="Pucará"/></td>' +
+      '<td style="border:none;vertical-align:middle;text-align:center">' +
+        '<div style="font-size:17pt;font-weight:700;color:#1E4F8C">Informe — Gestión de Compras</div>' +
+        '<div style="font-size:9.5pt;color:#888;margin-top:4px">Generado el ' + ff(hoy()) + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+        '<div style="font-size:9pt;color:#aaa;margin-top:2px">' + selCompras.length + ' solicitud' + (selCompras.length > 1 ? 'es' : '') + ' incluida' + (selCompras.length > 1 ? 's' : '') + '</div>' +
+      '</td><td style="border:none;width:70px"></td>' +
+    '</tr></table>' +
     '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 10px"/>' +
     body +
-    '</div>' +
-    '<script>window.onload=function(){ window.print(); };<\/script>' +
-    '</body></html>';
+    '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
 
   var w = window.open('', '_blank');
   w.document.write(html);
   w.document.close();
+}
+
+function generarInformeCompras() {
+  var selIds = Array.from(document.querySelectorAll('#ic-lista .ic-chk:checked')).map(function(c){ return c.value; });
+  if (!selIds.length) { alert('Selecciona al menos una solicitud.'); return; }
+  var selCompras = _compras.filter(function(c){ return selIds.indexOf(c.id) !== -1; });
+  _abrirVentanaPDFCompras(selCompras);
   cerrar('modal-informe-compras');
+}
+
+function generarPDFCompletoCompras() {
+  var q    = norm(document.getElementById('fc-buscar') ? document.getElementById('fc-buscar').value : '');
+  var fEst = document.getElementById('fc-estado') ? document.getElementById('fc-estado').value : '';
+  var selCompras = _compras.filter(function(c) {
+    if (q && !norm(c.descripcion || '').includes(q) && !norm(c.responsable || '').includes(q) && !norm(c.observaciones || '').includes(q)) return false;
+    if (fEst && c.estado !== fEst) return false;
+    return true;
+  });
+  if (!selCompras.length) { alert('No hay solicitudes para generar el PDF.'); return; }
+  _abrirVentanaPDFCompras(selCompras);
 }
 
 // ── Drag-drop image slots ─────────────────────────────────────

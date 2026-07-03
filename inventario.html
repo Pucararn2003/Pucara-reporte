@@ -800,6 +800,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg"><label>Talla</label><input type="text" id="mi-talla" placeholder="L / 42…"/></div>
         <div class="fg"><label>Marca / Modelo</label><input type="text" id="mi-marca"/></div>
         <div class="fg"><label>Serie / S·N</label><input type="text" id="mi-serie"/></div>
+        <div class="fg"><label>N° de Lote</label><input type="text" id="mi-lote" placeholder="Ej: LOT-2025-001"/></div>
         <div class="fg"><label>Norma</label><input type="text" id="mi-norma"/></div>
         <div class="fg"><label>Cantidad Total</label><input type="number" id="mi-total" min="0" value="0"/></div>
         <div class="fg"><label>Cantidad Disponible</label><input type="number" id="mi-disp" min="0" value="0" oninput="(function(){var v=parseInt(this.value)||0;var sel=document.getElementById('mi-estado');if(v===0&&sel.value==='Disponible')sel.value='No disponible (sin stock)';else if(v>0&&sel.value==='No disponible (sin stock)')sel.value='Disponible';}).call(this)"/></div>
@@ -2285,7 +2286,7 @@ function renderInventario() {
   if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
   tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}</span></div></td>
+    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}${i.lote?`<span style="color:#fff;background:#5c7aa0;font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle">Lote: ${i.lote}</span>`:''}</span></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -2633,12 +2634,13 @@ function abrirModalItem(id) {
   document.getElementById('mi-talla').value = it?.talla       || '';
   document.getElementById('mi-marca').value = it?.marca_modelo|| '';
   document.getElementById('mi-serie').value = it?.serie_sn    || '';
+  document.getElementById('mi-lote').value  = it?.lote        || '';
   document.getElementById('mi-norma').value = it?.norma       || '';
   document.getElementById('mi-total').value = it?.cantidad_total    ?? 0;
   document.getElementById('mi-disp').value  = it?.cantidad_disponible ?? 0;
   document.getElementById('mi-ubic').value  = it?.ubicacion   || '';
   document.getElementById('mi-estado').value= it?.estado      || 'Disponible';
-  document.getElementById('mi-fecha').value = it?.fecha_ingreso|| '';
+  document.getElementById('mi-fecha').value = id ? (it?.fecha_ingreso || '') : new Date().toISOString().split('T')[0];
   document.getElementById('mi-area').value  = it?.area_responsable || 'PUCARÁ';
   document.getElementById('mi-obs').value   = it?.observaciones || '';
   [1,2,3].forEach(n => { document.getElementById('mi-img-file-'+n).value = ''; });
@@ -2695,6 +2697,7 @@ async function guardarItem() {
     talla:              document.getElementById('mi-talla').value.trim()  || null,
     marca_modelo:       document.getElementById('mi-marca').value.trim()  || null,
     serie_sn:           document.getElementById('mi-serie').value.trim()  || null,
+    lote:               document.getElementById('mi-lote').value.trim()   || null,
     norma:              document.getElementById('mi-norma').value.trim()  || null,
     cantidad_total:     parseInt(document.getElementById('mi-total').value) || 0,
     cantidad_disponible:parseInt(document.getElementById('mi-disp').value)  || 0,

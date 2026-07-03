@@ -269,7 +269,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <input type="checkbox" id="xl-inv" checked/> Inventario General (estado actual)
       </label>
       <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
-        <input type="checkbox" id="xl-epp" checked/> Entregas EPP / Ropa
+        <input type="checkbox" id="xl-epp" checked/> Entregas EPP
       </label>
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14px">
         <input type="checkbox" id="xl-sal" checked/> Salida de Insumos
@@ -310,7 +310,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 
   <nav class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('inventario',this)">📦 Inventario General</button>
-    <button class="tab-btn" onclick="switchTab('entrega',this)">🦺 Entrega EPP / Ropa</button>
+    <button class="tab-btn" onclick="switchTab('entrega',this)">🦺 Entrega EPP</button>
     <button class="tab-btn" onclick="switchTab('salida',this)">🔧 Salida Insumos</button>
     <button class="tab-btn" onclick="switchTab('asignacion',this)">📌 Asignaciones</button>
     <button class="tab-btn" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
@@ -696,7 +696,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 <div class="modal-bd" id="modal-entrega">
   <div class="modal">
     <div class="mhdr">
-      <h3>Registrar Entrega EPP / Ropa</h3>
+      <h3>Registrar Entrega EPP</h3>
       <button class="mclose" onclick="cerrar('modal-entrega')">✕</button>
     </div>
     <div class="mbody">
@@ -937,7 +937,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <input type="checkbox" id="pdf-inv" checked/> Inventario General (estado actual)
       </label>
       <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
-        <input type="checkbox" id="pdf-epp" checked/> Entregas EPP / Ropa
+        <input type="checkbox" id="pdf-epp" checked/> Entregas EPP
       </label>
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14px">
         <input type="checkbox" id="pdf-sal" checked/> Salida de Insumos
@@ -2224,6 +2224,8 @@ function filtrarItems(prefix) {
       const cat = (i.categoria || '').toLowerCase();
       return cat.includes('insumo') || cat.includes('equipo') || cat.includes('herramienta');
     });
+  } else if (prefix === 'me') {
+    pool = items.filter(i => (i.categoria || '').toLowerCase().includes('epp'));
   }
   const fil  = pool.filter(i =>
     norm(i.descripcion).includes(q) ||
@@ -2603,7 +2605,7 @@ async function guardarEntrega() {
   }
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
-  if (mhdrE) mhdrE.textContent = 'Registrar Entrega EPP / Ropa';
+  if (mhdrE) mhdrE.textContent = 'Registrar Entrega EPP';
   marcarItemReciente(itemId);
   cerrar('modal-entrega');
   await cargarDatos();
@@ -2721,7 +2723,7 @@ async function editarEntrega(movId) {
   const fPrevE = document.getElementById('me-foto-preview');
   fPrevE.src = ''; fPrevE.style.display = 'none';
   document.getElementById('alerta-epp').style.display = 'none';
-  document.querySelector('#modal-entrega .mhdr h3').textContent = 'Editar Entrega EPP / Ropa';
+  document.querySelector('#modal-entrega .mhdr h3').textContent = 'Editar Entrega EPP';
   document.getElementById('btn-guardar-entrega').textContent = 'Actualizar Entrega';
   abrir('modal-entrega');
 }
@@ -3051,7 +3053,7 @@ function mostrarDetalleMov(id) {
   var corr  = itVivo ? itVivo.correlativo  : m.correlativo;
   var TIPOS = {
     'asignacion':    { label:'📌 Asignación',          color:'#1a3a5c' },
-    'entrega_epp':   { label:'🦺 Entrega EPP / Ropa',  color:'#2e7d32' },
+    'entrega_epp':   { label:'🦺 Entrega EPP',  color:'#2e7d32' },
     'salida_insumo': { label:'🔧 Salida de Insumo',    color:'#e65100' }
   };
   var ti = TIPOS[m.tipo] || { label: m.tipo, color:'#555' };
@@ -3407,7 +3409,7 @@ function generarPDF() {
         <td style="padding:5px 8px">${m.responsable||'—'}</td>
       </tr>`;
     }).join('');
-    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px;page-break-after:avoid;break-after:avoid">Entrega EPP / Ropa de Trabajo</h3>
+    body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:1px solid #ddd;padding-bottom:4px;page-break-after:avoid;break-after:avoid">Entrega EPP de Trabajo</h3>
     <p style="font-size:10pt;color:#666;margin-bottom:6px">Período: ${ff(desde)||'—'} — ${ff(hasta)||'—'}</p>
     <table style="width:100%;border-collapse:collapse;font-size:8.5pt">
       <thead><tr style="background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">

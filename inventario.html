@@ -237,10 +237,14 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   #hdr-welcome{display:none}
 
   /* === Tabs — scroll horizontal compacto === */
-  .tabs-nav{padding:0 4px;overflow-x:auto;overflow-y:clip;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0}
+  .tabs-nav{padding:0 4px;overflow-x:auto;overflow-y:clip;scrollbar-width:none;gap:0}
   .tabs-nav::-webkit-scrollbar{display:none}
   .tab-btn{padding:10px 11px;font-size:11px;white-space:nowrap;flex-shrink:0}
-  .tab-grp-drop{min-width:170px;left:0;right:auto}
+  /* En móvil: Items de Salida se muestra como tabs directos, sin dropdown */
+  .tab-group-btn{display:none}
+  .tab-grp-drop{display:flex!important;position:static!important;flex-direction:row;background:transparent;border:none;box-shadow:none;min-width:0;border-radius:0}
+  .tab-sub-btn{display:flex;align-items:center;padding:10px 11px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;width:auto;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;color:#666;cursor:pointer}
+  .tab-sub-btn.active{color:#1E4F8C;border-bottom-color:#1E4F8C}
 
   /* === Panels === */
   .tab-panel{padding:10px 8px}
@@ -262,7 +266,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   .table-wrap{border-radius:8px}
   .table-wrap table{font-size:12px}
   th{padding:8px 7px;font-size:11px}
-  td{padding:0 7px;height:46px;max-height:46px;overflow:hidden;vertical-align:middle}
+  td{padding:0 7px;height:46px;max-height:46px;overflow:hidden;vertical-align:middle;white-space:nowrap;text-overflow:ellipsis}
   .table-wrap tbody tr{height:46px}
   .btn-sm{min-height:30px;padding:4px 8px;font-size:12px}
   .th-filter{display:none}

@@ -2042,8 +2042,8 @@ function generarFichaBaja(movId) {
   w.document.close();
 }
 
-async function liberarAsignacion(movId, itemId, desc) {
-  if (!confirm('¿Devolver "' + desc + '" y marcarlo como Disponible?')) return;
+function liberarAsignacion(movId, itemId, desc) {
+  confirmar('¿Devolver "' + desc + '" y marcarlo como Disponible?', async function() {
   marcarItemReciente(itemId);
   await sb.from('inventario_movimientos').update({ tipo: 'asignacion_devuelta' }).eq('id', movId);
   if (itemId) {
@@ -2062,6 +2062,7 @@ async function liberarAsignacion(movId, itemId, desc) {
   }
   await Promise.all([cargarItems(), cargarMovs()]);
   renderEntrega(); renderSalida(); renderAsignaciones(); renderHistorialMovimientos();
+  }); // fin confirmar
 }
 
 // ── Eliminar asignación ──────────────────────────────────────────
@@ -3833,7 +3834,7 @@ function verDetalle(itemId) {
 }
 
 // ── Utils ──────────────────────────────────────────────────────
-function abrir(id)  { document.getElementById(id).classList.add('open'); }
+function abrir(id)  { var el=document.getElementById(id); el.style.display=''; el.classList.add('open'); }
 function cerrar(id) { document.getElementById(id).classList.remove('open'); }
 function hoy()      { return new Date().toISOString().split('T')[0]; }
 function ff(d)      { if(!d) return '—'; const s=d.substring(0,10); const [y,m,dia]=s.split('-'); return `${dia}/${m}/${y}`; }

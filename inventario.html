@@ -911,6 +911,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <input type="checkbox" id="me-no-descontar" style="width:17px;height:17px;cursor:pointer;accent-color:#1E4F8C;flex-shrink:0"/>
           <label for="me-no-descontar" style="cursor:pointer;margin:0;font-size:13px;font-weight:700;color:#1a3a5c;user-select:none">NO DESCONTAR DEL INVENTARIO GENERAL</label>
         </div>
+        <div class="fg full"><label>Fecha de Entrega</label><input type="date" id="me-fecha-entrega"/></div>
         <div class="fg">
           <label>Estado al Entregar</label>
           <select id="me-estado">
@@ -1012,7 +1013,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <div id="alerta-asig" class="alert alert-warn" style="display:none"></div>
       <input type="hidden" id="ma-edit-id" value=""/>
       <div class="fgrid">
-        <div class="fg"><label>Fecha *</label><input type="date" id="ma-fecha"/></div>
+        <div class="fg"><label>Fecha de Creación *</label><input type="date" id="ma-fecha"/></div>
         <div class="fg">
           <label>Responsable</label>
           <select id="ma-resp"><option value="">Seleccionar…</option></select>
@@ -1073,7 +1074,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <option>Dañado</option>
           </select>
         </div>
-        <div class="fg"><label>Fecha de Ingreso</label><input type="date" id="ma-fecha-ingreso"/></div>
+        <div class="fg"><label>Fecha de Entrega</label><input type="date" id="ma-fecha-ingreso"/></div>
         <div class="fg full"><label>Observaciones</label><textarea id="ma-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Foto de asignación</label>
@@ -2771,6 +2772,7 @@ function abrirModalEntrega() {
   document.getElementById('me-cant').value    = '1';
   document.getElementById('me-estado').value  = 'Nuevo';
   document.getElementById('me-resp').value    = '';
+  document.getElementById('me-fecha-entrega').value = '';
   document.getElementById('me-obs').value     = '';
   document.getElementById('me-no-descontar').checked = false;
   document.getElementById('me-foto-file').value = '';
@@ -2827,6 +2829,7 @@ async function guardarEntrega() {
     cargo_trabajador: document.getElementById('me-cargo').value.trim()|| null,
     estado_entregar:  document.getElementById('me-estado').value,
     responsable:      document.getElementById('me-resp').value.trim() || null,
+    fecha_entrega:    document.getElementById('me-fecha-entrega').value || null,
     observaciones:    document.getElementById('me-obs').value.trim()  || null,
     foto_url,
     cantidad_restante: null,
@@ -2982,6 +2985,7 @@ async function editarEntrega(movId) {
   document.getElementById('me-item-list').style.display = 'none';
   document.getElementById('me-talla').value   = mov.talla || '';
   document.getElementById('me-cant').value    = mov.cantidad || 1;
+  document.getElementById('me-fecha-entrega').value = mov.fecha_entrega || '';
   document.getElementById('me-estado').value  = mov.estado_entregar || 'Nuevo';
   document.getElementById('me-resp').value    = mov.responsable || '';
   document.getElementById('me-obs').value     = mov.observaciones || '';
@@ -3987,16 +3991,32 @@ function exportarExcelCompras() {
     return true;
   });
   if (!lista.length) { alert('No hay solicitudes para exportar.'); return; }
-  var hdrs = ['Fecha Solicitud','Correlativo','Categoría','Descripción Ítem','Cantidad','Talla','Responsable','Fecha Límite','Estado','Descripción General','Observaciones','Trabajadores','Gestionados'];
-  var data = lista.map(function(c) {
+
+  // Hoja 1: resumen de solicitudes
+  var hdrs1 = ['Fecha Solicitud','Correlativo','Categoría','Descripción Ítem','Cantidad','Talla','Responsable','Fecha Límite','Estado','Descripción General','Observaciones'];
+  var data1 = lista.map(function(c) {
     var it  = c.item_id ? items.find(function(x){ return x.id === c.item_id; }) : null;
     var cat = (it && it.categoria) ? it.categoria : '';
-    var trabNombres = (c.trabajadores || []).map(function(t){ return t.nombre || ''; }).join(', ');
-    var gestionados = (c.trabajadores || []).filter(function(t){ return t.gestionado; }).length + '/' + (c.trabajadores || []).length;
-    return [c.fecha||'', c.correlativo||'', cat, c.descripcion||'', c.cantidad||'', c.talla||'', c.responsable||'', c.fecha_limite||'', c.estado||'', c.descripcion_general||'', c.observaciones||'', trabNombres, gestionados];
+    return [c.fecha||'', c.correlativo||'', cat, c.descripcion||'', c.cantidad||'', c.talla||'', c.responsable||'', c.fecha_limite||'', c.estado||'', c.descripcion_general||'', c.observaciones||''];
   });
+
+  // Hoja 2: detalle por trabajador (una fila por trabajador)
+  var hdrs2 = ['Fecha Solicitud','Correlativo','Descripción Ítem','Talla','Trabajador','Gestionado'];
+  var data2 = [];
+  lista.forEach(function(c) {
+    var trabs = c.trabajadores || [];
+    if (trabs.length) {
+      trabs.forEach(function(t) {
+        data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', c.talla||'', t.nombre||'', t.gestionado ? 'Sí' : 'No']);
+      });
+    } else {
+      data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', c.talla||'', '—', '—']);
+    }
+  });
+
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs, data, [14,10,14,28,8,8,22,14,12,25,25,30,10]), 'Gestión de Compras');
+  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs1, data1, [14,10,14,28,8,8,22,14,12,25,25]), 'Solicitudes');
+  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs2, data2, [14,10,28,8,28,10]), 'Detalle Trabajadores');
   XLSX.writeFile(wb, 'Compras_' + hoy() + '.xlsx');
 }
 

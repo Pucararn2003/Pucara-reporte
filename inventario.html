@@ -1352,12 +1352,13 @@ async function logout() {
 
 // ── Data ──────────────────────────────────────────────────────
 async function cargarDatos() {
-  await Promise.all([cargarItems(), cargarMovs()]);
+  await Promise.all([cargarItems(), cargarMovs(), cargarCompras()]);
   renderEntrega();
   renderSalida();
   renderAsignaciones();
   renderHistorialMovimientos();
   renderBajas();
+  renderCompras();
 }
 
 async function cargarItems() {
@@ -4179,10 +4180,25 @@ function esc(s)     { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 init();
 
 // ── Gestión de Compras (recordatorio con días restantes) ─────────
-var _compras = JSON.parse(localStorage.getItem('inv_compras') || '[]');
+var _compras = [];
 var _editCompraId = null;
 
-function saveCompras() { localStorage.setItem('inv_compras', JSON.stringify(_compras)); }
+async function cargarCompras() {
+  // Migrar datos de localStorage a Supabase si existen
+  var local = JSON.parse(localStorage.getItem('inv_compras') || '[]');
+  if (local.length > 0) {
+    var { data: existing } = await sb.from('inventario_compras').select('id');
+    var existingIds = new Set((existing || []).map(function(r){ return r.id; }));
+    var toMigrate = local.filter(function(c){ return !existingIds.has(c.id); });
+    if (toMigrate.length > 0) {
+      await sb.from('inventario_compras').insert(toMigrate);
+    }
+    localStorage.removeItem('inv_compras');
+  }
+  var { data, error } = await sb.from('inventario_compras').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  _compras = data || [];
+}
 
 function diasRestantes(fechaLimite) {
   if (!fechaLimite) return null;
@@ -4422,11 +4438,11 @@ function toggleDetCompra(id) {
   }
 }
 
-function toggleTrabGestionado(compraId, idx) {
+async function toggleTrabGestionado(compraId, idx) {
   var c = _compras.find(function(x){ return x.id === compraId; });
   if (!c || !c.trabajadores || c.trabajadores[idx] === undefined) return;
   c.trabajadores[idx].gestionado = !c.trabajadores[idx].gestionado;
-  saveCompras();
+  await sb.from('inventario_compras').update({ trabajadores: c.trabajadores }).eq('id', compraId);
   // Actualizar panel de detalle sin cerrar la fila
   var detCell = document.querySelector('#det-' + compraId + ' td');
   if (detCell) detCell.innerHTML = renderDetalleCompra(c);
@@ -4563,7 +4579,7 @@ function editarCompra(id) {
   abrir('modal-compra');
 }
 
-function guardarCompra() {
+async function guardarCompra() {
   var fecha       = document.getElementById('mc-fecha').value;
   var fechaLimite = document.getElementById('mc-fecha-limite').value;
   var estado      = document.getElementById('mc-estado').value;
@@ -4591,13 +4607,17 @@ function guardarCompra() {
     trabajadores:        getTrabajadoresModal()
   };
   if (_editCompraId) {
+    payload.id = _editCompraId;
+    var { error } = await sb.from('inventario_compras').update(payload).eq('id', _editCompraId);
+    if (error) { console.error(error); alert('Error al guardar'); return; }
     var idx = _compras.findIndex(function(x){ return x.id === _editCompraId; });
-    if (idx >= 0) { payload.id = _editCompraId; _compras[idx] = payload; }
+    if (idx >= 0) _compras[idx] = { ..._compras[idx], ...payload };
   } else {
     payload.id = Date.now().toString();
+    var { error } = await sb.from('inventario_compras').insert(payload);
+    if (error) { console.error(error); alert('Error al guardar'); return; }
     _compras.unshift(payload);
   }
-  saveCompras();
   cerrar('modal-compra');
   renderCompras();
 }
@@ -4605,9 +4625,10 @@ function guardarCompra() {
 function eliminarCompra(id) {
   var c = _compras.find(function(x){ return x.id === id; });
   if (!c) return;
-  confirmar('¿Eliminar la solicitud de "' + (c.descripcion || 'este ítem') + '"?', function() {
+  confirmar('¿Eliminar la solicitud de "' + (c.descripcion || 'este ítem') + '"?', async function() {
+    var { error } = await sb.from('inventario_compras').delete().eq('id', id);
+    if (error) { console.error(error); alert('Error al eliminar'); return; }
     _compras = _compras.filter(function(x){ return x.id !== id; });
-    saveCompras();
     renderCompras();
   });
 }

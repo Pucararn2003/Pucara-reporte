@@ -387,6 +387,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <option>Completada</option>
         <option>Cancelada</option>
       </select>
+      <button class="btn btn-pdf" onclick="abrirModalInformeCompras()" style="white-space:nowrap">📄 Generar Informe</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -3665,6 +3666,201 @@ function generarPDF() {
   cerrar('modal-pdf');
 }
 
+// ── Informe Gestión de Compras ────────────────────────────────
+function abrirModalInformeCompras() {
+  var lista = document.getElementById('ic-lista');
+  if (!_compras.length) {
+    lista.innerHTML = '<div style="text-align:center;color:#bbb;padding:20px;font-size:13px">No hay solicitudes registradas</div>';
+    document.getElementById('ic-todos').checked = false;
+  } else {
+    var html = _compras.map(function(c) {
+      var item = items.find(function(x){ return x.id === c.item_id; });
+      var itemNombre = item ? item.descripcion : (c.descripcion || 'Sin ítem');
+      var cat = item ? (item.categoria || 'Sin categoría') : 'Sin categoría';
+      var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
+      var estadoBg = {Pendiente:'#fff3e0',Completada:'#e8f5e9','En Gestión':'#e3f2fd',Cancelada:'#fce4ec'}[c.estado] || '#f5f5f5';
+      var estadoC  = {Pendiente:'#e65100',Completada:'#2e7d32','En Gestión':'#1565c0',Cancelada:'#c62828'}[c.estado] || '#555';
+      return '<label style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:#fff;border:1px solid #e0eaf2;border-radius:8px;cursor:pointer;font-size:12px">' +
+        '<input type="checkbox" class="ic-chk" value="' + c.id + '" style="width:16px;height:16px;accent-color:#1E4F8C;cursor:pointer;margin-top:1px;flex-shrink:0"/>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-weight:700;color:#1a3a5c;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + itemNombre + '</div>' +
+          '<div style="color:#888;font-size:11px;margin-top:2px">' +
+            '<span style="background:' + estadoBg + ';color:' + estadoC + ';border-radius:4px;padding:1px 7px;font-weight:600;font-size:10.5px">' + (c.estado||'—') + '</span>' +
+            ' &nbsp;·&nbsp; ' + cat + ' &nbsp;·&nbsp; Creado: ' + fmtD(c.fecha) +
+            (c.trabajadores && c.trabajadores.length ? ' &nbsp;·&nbsp; 👷 ' + c.trabajadores.length + ' trabajador' + (c.trabajadores.length > 1 ? 'es' : '') : '') +
+          '</div>' +
+        '</div>' +
+      '</label>';
+    }).join('');
+    lista.innerHTML = html;
+    document.getElementById('ic-todos').checked = false;
+  }
+  abrir('modal-informe-compras');
+}
+
+function toggleTodosInformeCompras(checked) {
+  document.querySelectorAll('#ic-lista .ic-chk').forEach(function(chk){ chk.checked = checked; });
+}
+
+function generarInformeCompras() {
+  var selIds = Array.from(document.querySelectorAll('#ic-lista .ic-chk:checked')).map(function(c){ return c.value; });
+  if (!selIds.length) { alert('Selecciona al menos una solicitud.'); return; }
+
+  var selCompras = _compras.filter(function(c){ return selIds.indexOf(c.id) !== -1; });
+
+  // Agrupar por categoría del ítem
+  var CATS = ['EPP', 'Ropa de Trabajo', 'Insumos', 'Equipos y herramientas', 'Otro'];
+  var grupos = {};
+  CATS.forEach(function(cat){ grupos[cat] = []; });
+
+  selCompras.forEach(function(c) {
+    var item = items.find(function(x){ return x.id === c.item_id; });
+    var cat = item ? (item.categoria || 'Otro') : 'Otro';
+    if (!grupos[cat]) grupos[cat] = [];
+    grupos[cat].push({ compra: c, item: item });
+  });
+
+  var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
+
+  var ESTADO_COLOR = { Pendiente:'#e65100', Completada:'#2e7d32', 'En Gestión':'#1565c0', Cancelada:'#c62828' };
+  var ESTADO_BG    = { Pendiente:'#fff3e0', Completada:'#e8f5e9', 'En Gestión':'#e3f2fd', Cancelada:'#fce4ec' };
+  var CAT_COLOR    = { EPP:'#1E4F8C', 'Ropa de Trabajo':'#6a1b9a', Insumos:'#00695c', 'Equipos y herramientas':'#e65100', Otro:'#555' };
+
+  var body = '';
+
+  CATS.forEach(function(cat) {
+    var grupo = grupos[cat];
+    if (!grupo || !grupo.length) return;
+
+    var catColor = CAT_COLOR[cat] || '#1E4F8C';
+    body += '<div style="page-break-inside:avoid;break-inside:avoid">' +
+      '<h3 style="margin:22px 0 12px;color:' + catColor + ';font-size:13pt;border-left:5px solid ' + catColor + ';padding:6px 0 6px 12px;background:' + catColor + '18;border-radius:0 6px 6px 0">' +
+        cat +
+        ' <span style="font-size:10pt;font-weight:400;color:#888">(' + grupo.length + ' solicitud' + (grupo.length > 1 ? 'es' : '') + ')</span>' +
+      '</h3>' +
+    '</div>';
+
+    grupo.forEach(function(g, idx) {
+      var c = g.compra;
+      var item = g.item;
+      var estadoBg = ESTADO_BG[c.estado] || '#f5f5f5';
+      var estadoC  = ESTADO_COLOR[c.estado] || '#555';
+
+      // días restantes
+      var diasHtml = '';
+      if (c.fecha_limite) {
+        var hoyMs = new Date().setHours(0,0,0,0);
+        var limMs = new Date(c.fecha_limite).setHours(0,0,0,0);
+        var dias  = Math.round((limMs - hoyMs) / 86400000);
+        diasHtml  = dias < 0
+          ? '<span style="color:#c62828;font-weight:700">⚠ Vencida hace ' + Math.abs(dias) + ' día' + (Math.abs(dias)>1?'s':'') + '</span>'
+          : '<span style="color:' + (dias<=3?'#e65100':'#2e7d32') + ';font-weight:600">' + dias + ' día' + (dias>1?'s':'') + ' restante' + (dias>1?'s':'') + '</span>';
+      }
+
+      // Tabla de trabajadores
+      var trabHtml = '';
+      if (c.trabajadores && c.trabajadores.length) {
+        var trabFilas = c.trabajadores.map(function(t) {
+          var gestIcon = t.gestionado ? '✅' : '⬜';
+          return '<tr style="border-bottom:1px solid #e8eef4">' +
+            '<td style="padding:5px 8px">' + gestIcon + ' ' + (t.nombre||'—') + '</td>' +
+            '<td style="padding:5px 8px;text-align:center">' + (t.turno||'—') + '</td>' +
+            '<td style="padding:5px 8px;text-align:center">' + (t.talla||'—') + '</td>' +
+            '<td style="padding:5px 8px;text-align:center">' + (t.color||'—') + '</td>' +
+            '<td style="padding:5px 8px">' + (t.obs||'—') + '</td>' +
+            '<td style="padding:5px 8px;text-align:center;color:' + (t.gestionado?'#2e7d32':'#e65100') + ';font-weight:700">' + (t.gestionado?'Gestionado':'Pendiente') + '</td>' +
+          '</tr>';
+        }).join('');
+        var gestCnt = c.trabajadores.filter(function(t){ return t.gestionado; }).length;
+        trabHtml = '<div style="margin-top:10px">' +
+          '<div style="font-size:11pt;font-weight:700;color:#444;margin-bottom:6px">👷 Asignación a Trabajadores &nbsp;<span style="font-size:10pt;font-weight:400;color:#888">' + gestCnt + '/' + c.trabajadores.length + ' gestionado' + (c.trabajadores.length>1?'s':'') + '</span></div>' +
+          '<table style="width:100%;border-collapse:collapse;font-size:9pt">' +
+            '<thead><tr style="background:#344d6b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
+              '<th style="padding:5px 8px;text-align:left">Trabajador</th>' +
+              '<th style="padding:5px 8px;text-align:center">Turno</th>' +
+              '<th style="padding:5px 8px;text-align:center">Talla</th>' +
+              '<th style="padding:5px 8px;text-align:center">Color</th>' +
+              '<th style="padding:5px 8px;text-align:left">Observación</th>' +
+              '<th style="padding:5px 8px;text-align:center">Estado</th>' +
+            '</tr></thead>' +
+            '<tbody>' + trabFilas + '</tbody>' +
+          '</table>' +
+        '</div>';
+      }
+
+      // Imagen de referencia
+      var imgHtml = '';
+      if (c.imagen) {
+        imgHtml = '<div style="margin-top:10px">' +
+          '<div style="font-size:10pt;font-weight:700;color:#444;margin-bottom:4px">Imagen de Referencia</div>' +
+          '<img src="' + c.imagen + '" style="max-width:180px;max-height:140px;border-radius:6px;border:1px solid #ddd;object-fit:contain;display:block"/>' +
+        '</div>';
+      }
+
+      body += '<div style="margin-bottom:18px;border:1px solid #d0dcea;border-radius:10px;overflow:hidden;page-break-inside:avoid;break-inside:avoid">' +
+        // Header de la solicitud
+        '<div style="background:#f0f4fa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #d0dcea">' +
+          '<div style="font-size:12pt;font-weight:700;color:#1a3a5c">' + (item ? item.descripcion : (c.descripcion||'Sin ítem')) + '</div>' +
+          '<span style="background:' + estadoBg + ';color:' + estadoC + ';border-radius:4px;padding:2px 10px;font-weight:700;font-size:10pt">' + (c.estado||'—') + '</span>' +
+        '</div>' +
+        // Datos principales en grilla
+        '<div style="padding:12px 14px">' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-size:9.5pt;margin-bottom:10px">' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Correlativo</span><strong>' + (item ? (item.correlativo||'—') : '—') + '</strong></div>' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Cantidad Solicitada</span><strong>' + (c.cantidad||'—') + '</strong></div>' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Talla / Medida</span><strong>' + (c.talla||'—') + '</strong></div>' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Responsable</span><strong>' + (c.responsable||'—') + '</strong></div>' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Fecha de Creación</span><strong>' + fmtD(c.fecha) + '</strong></div>' +
+            '<div><span style="color:#888;display:block;font-size:8.5pt">Fecha Límite</span><strong>' + fmtD(c.fecha_limite) + (diasHtml ? '<br/>' + diasHtml : '') + '</strong></div>' +
+          '</div>' +
+          (c.descripcion_general ? '<div style="font-size:9.5pt;margin-bottom:6px"><span style="color:#888;font-size:8.5pt;display:block">Descripción General</span>' + c.descripcion_general + '</div>' : '') +
+          (c.observaciones ? '<div style="font-size:9.5pt;margin-bottom:6px"><span style="color:#888;font-size:8.5pt;display:block">Observaciones</span>' + c.observaciones + '</div>' : '') +
+          (c.imagen ? imgHtml : '') +
+          trabHtml +
+        '</div>' +
+      '</div>';
+    });
+  });
+
+  if (!body) { alert('No se encontraron datos para generar el informe.'); return; }
+
+  var _pdfUser   = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  var _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser ? currentUser.email : '');
+
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>' +
+    '<title>Informe Gestión de Compras</title>' +
+    '<style>' +
+      'body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+      '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.5cm 2cm;box-sizing:border-box}' +
+      '@media print{body{margin:0}.page{padding:1cm 1.5cm}}' +
+    '</style>' +
+    '</head><body><div class="page">' +
+    // Encabezado con logo
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">' +
+      '<tr>' +
+        '<td style="border:none;width:70px;vertical-align:middle">' +
+          '<img src="' + LOGO_URL + '" style="width:60px;height:60px;object-fit:contain;border-radius:8px" alt="Pucará"/>' +
+        '</td>' +
+        '<td style="border:none;vertical-align:middle;text-align:center">' +
+          '<div style="font-size:17pt;font-weight:700;color:#1E4F8C">Informe — Gestión de Compras</div>' +
+          '<div style="font-size:9.5pt;color:#888;margin-top:4px">Generado el ' + ff(hoy()) + ' &nbsp;|&nbsp; Generado por ' + _pdfNombre + '</div>' +
+          '<div style="font-size:9pt;color:#aaa;margin-top:2px">' + selCompras.length + ' solicitud' + (selCompras.length > 1 ? 'es' : '') + ' incluida' + (selCompras.length > 1 ? 's' : '') + '</div>' +
+        '</td>' +
+        '<td style="border:none;width:70px"></td>' +
+      '</tr>' +
+    '</table>' +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 10px"/>' +
+    body +
+    '</div>' +
+    '<script>window.onload=function(){ window.print(); };<\/script>' +
+    '</body></html>';
+
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  cerrar('modal-informe-compras');
+}
+
 // ── Drag-drop image slots ─────────────────────────────────────
 window._imgDropped = {};
 window._recentMods = (function(){ try{ return JSON.parse(localStorage.getItem('inv_recentMods')||'{}'); }catch(e){ return {}; } })();
@@ -4098,15 +4294,15 @@ function toggleDetCompra(id) {
   if (open) {
     detRow.style.display = 'none';
     if (btn) { btn.innerHTML = '▾ Detalle'; btn.style.background = '#eef4ff'; }
-    // Quitar cortina de todas las filas
-    document.querySelectorAll('#tb-compras tr').forEach(function(r) {
+    // Quitar cortina — solo filas directas del tbody (no tablas anidadas)
+    document.querySelectorAll('#tb-compras > tr').forEach(function(r) {
       r.classList.remove('cmp-dimmed', 'cmp-active');
     });
   } else {
     detRow.style.display = 'table-row';
     if (btn) { btn.innerHTML = '▴ Cerrar'; btn.style.background = '#dce8f0'; }
-    // Aplicar cortina: atenuar todas excepto la fila activa y su detalle
-    document.querySelectorAll('#tb-compras tr').forEach(function(r) {
+    // Aplicar cortina — solo filas directas del tbody (no tablas anidadas)
+    document.querySelectorAll('#tb-compras > tr').forEach(function(r) {
       if (r === mainRow || r === detRow) {
         r.classList.remove('cmp-dimmed');
         r.classList.add('cmp-active');
@@ -4494,6 +4690,30 @@ function eliminarCompra(id) {
     <div class="mftr" style="justify-content:center;gap:16px">
       <button class="btn btn-secondary" style="min-width:120px" onclick="cerrar('modal-confirm')">Cancelar</button>
       <button id="conf-ok" class="btn btn-danger" style="min-width:140px">🗑️ Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Informe Gestión de Compras ── -->
+<div class="modal-bd" id="modal-informe-compras" style="display:none">
+  <div class="modal" style="max-width:560px">
+    <div class="mhdr">
+      <h3>📄 Generar Informe de Compras</h3>
+      <button class="mclose" onclick="cerrar('modal-informe-compras')">✕</button>
+    </div>
+    <div class="mbody" style="padding:20px 24px">
+      <p style="font-size:13px;color:#555;margin:0 0 14px">Selecciona las solicitudes que deseas incluir en el informe. Se agruparán por categoría.</p>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0f4fa;border-radius:8px;margin-bottom:12px;border:1px solid #cdd8e3">
+        <input type="checkbox" id="ic-todos" style="width:16px;height:16px;accent-color:#1E4F8C;cursor:pointer" onchange="toggleTodosInformeCompras(this.checked)"/>
+        <label for="ic-todos" style="font-size:13px;font-weight:700;color:#1a3a5c;cursor:pointer;margin:0;user-select:none">Seleccionar todas las solicitudes</label>
+      </div>
+      <div id="ic-lista" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+        <div style="text-align:center;color:#bbb;padding:20px;font-size:13px">No hay solicitudes registradas</div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-informe-compras')">Cancelar</button>
+      <button class="btn btn-pdf" onclick="generarInformeCompras()">📄 Generar PDF</button>
     </div>
   </div>
 </div>

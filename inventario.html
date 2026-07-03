@@ -803,7 +803,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
         <div class="fg">
           <label>Responsable de Retiro</label>
-          <select id="ms-resp"><option value="">Seleccionar…</option></select>
+          <select id="ms-resp" onchange="autoTurnoSal(this.value)"><option value="">Seleccionar…</option></select>
         </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
         <div class="fg full">
@@ -1110,8 +1110,13 @@ function seleccionarTrab(nombre) {
   document.getElementById('me-trab').value  = nombre;
   document.getElementById('me-rut').value   = t?.rut   || '';
   document.getElementById('me-cargo').value = t?.cargo || '';
-  if (t?.turno) document.getElementById('me-turno').value = t.turno;
+  if (t?.turno) document.getElementById('me-turno').value = 'Turno ' + t.turno;
   document.getElementById('me-trab-list').style.display = 'none';
+}
+
+function autoTurnoSal(nombre) {
+  var t = TRABAJADORES.find(function(x){ return x.nombre === nombre; });
+  if (t?.turno) document.getElementById('ms-turno').value = 'Turno ' + t.turno;
 }
 
 // Populate responsables (Jefes de Terreno + APR)

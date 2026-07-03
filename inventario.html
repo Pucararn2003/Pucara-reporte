@@ -4277,8 +4277,9 @@ function renderCompras() {
     var itemNombre = it
       ? ((it.correlativo ? '<span style="color:#888;font-size:11px;margin-right:4px">' + it.correlativo + '</span>' : '') + it.descripcion)
       : (c.descripcion || '—');
-    var imgHtml = c.imagen
-      ? '<img src="' + c.imagen + '" onclick="event.stopPropagation();abrirLightbox(\'' + c.imagen + '\')" style="width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid #dce8f0;cursor:zoom-in;margin-right:6px;vertical-align:middle;flex-shrink:0" title="Ver imagen"/>'
+    var imgSrc = (it && it.imagen_url) ? it.imagen_url : (c.imagen || null);
+    var imgHtml = imgSrc
+      ? '<img src="' + imgSrc + '" onclick="event.stopPropagation();abrirLightbox(\'' + imgSrc + '\')" style="width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid #dce8f0;cursor:zoom-in;margin-right:6px;vertical-align:middle;flex-shrink:0" title="Ver imagen"/>'
       : '';
     var trabArr = c.trabajadores || [];
     var gestCnt = trabArr.filter(function(t){ return t.gestionado; }).length;

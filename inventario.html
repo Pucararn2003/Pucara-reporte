@@ -4074,7 +4074,12 @@ function _actualizarOverlayOrientacion() {
 function cerrarFirmaOverlay() {
   document.getElementById('firma-landscape-overlay').style.display = 'none';
   window.removeEventListener('resize', _firmaOverlayResizeHandler);
-  if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+  // Volver a portrait al cerrar
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(function() {
+      if (screen.orientation.unlock) screen.orientation.unlock();
+    });
+  }
 }
 
 function limpiarFirmaOverlay() {

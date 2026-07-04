@@ -6587,10 +6587,13 @@ function eliminarCompra(id) {
     <div class="mbody" style="text-align:center;padding:10px 24px 24px">
       <div style="font-size:42px;margin-bottom:10px">✅</div>
       <p style="font-size:16px;font-weight:700;color:#1a3a5c;margin:0 0 6px">Registro guardado</p>
-      <p style="font-size:13px;color:#666;margin:0 0 22px">¿Desea generar un comprobante de esta entrega?</p>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="cerrar('modal-comprobante-salida')" style="flex:1">No, gracias</button>
-        <button class="btn" style="flex:1;background:#1a3a5c;color:#fff;border:none" onclick="compartirComprobanteSalida()">📤 Compartir</button>
+      <p style="font-size:13px;color:#666;margin:0 0 18px">¿Desea generar un comprobante de esta entrega?</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="flex:1;background:#1a3a5c;color:#fff;border:none" onclick="generarComprobanteSalida()">📄 Ver / PDF</button>
+          <button class="btn" style="flex:1;background:#0277bd;color:#fff;border:none" onclick="compartirComprobanteSalida()">📤 Compartir</button>
+        </div>
+        <button class="btn btn-secondary" onclick="cerrar('modal-comprobante-salida')" style="width:100%">No, gracias</button>
       </div>
     </div>
   </div>

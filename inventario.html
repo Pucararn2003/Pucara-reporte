@@ -1174,7 +1174,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         </div>
         <div class="fg full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label style="margin:0">Responsable de Retiro</label>
+            <label style="margin:0">Responsable de la Entrega</label>
             <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
               <button id="ms-btn-int" class="btn-tipo active" onclick="setSalidaRespMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
               <button id="ms-btn-ext" class="btn-tipo" onclick="setSalidaRespMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
@@ -1227,7 +1227,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     </div>
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-salida')">Cancelar</button>
-      <button class="btn btn-warn" onclick="guardarSalida()">Registrar Salida</button>
+      <button class="btn btn-warn" id="btn-guardar-salida" onclick="guardarSalida()">Registrar Salida</button>
     </div>
   </div>
 </div>
@@ -1363,7 +1363,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     </div>
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-recepcion')">Cancelar</button>
-      <button class="btn" style="background:#0277bd;color:#fff;border:none" onclick="guardarRecepcion()">📥 Registrar Recepción</button>
+      <button class="btn" id="btn-guardar-recepcion" style="background:#0277bd;color:#fff;border:none" onclick="guardarRecepcion()">📥 Registrar Recepción</button>
     </div>
   </div>
 </div>
@@ -3564,9 +3564,12 @@ function abrirModalSalida() {
   document.getElementById('ms-item-ext-categ').value  = '';
   document.getElementById('ms-cant').value  = '1';
   document.getElementById('ms-no-descontar').checked = false;
-  document.getElementById('ms-resp').value  = '';
+  // Pre-seleccionar responsable según usuario de sesión
+  var _trabSesion = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  document.getElementById('ms-resp').value  = _trabSesion ? _trabSesion.nombre : '';
   document.getElementById('ms-resp-ext').value = '';
   setSalidaRespMode('interno');
+  if (_trabSesion && _trabSesion.turno) document.getElementById('ms-turno').value = _trabSesion.turno;
   document.getElementById('ms-persona-retira').value = '';
   document.getElementById('ms-firma-data').value = '';
   document.getElementById('ms-firma-wrap').style.display = 'none';
@@ -3582,7 +3585,21 @@ function abrirModalSalida() {
 
 let editMovSalId = null;
 
+var _guardandoSalida = false;
 async function guardarSalida() {
+  if (_guardandoSalida) return;
+  _guardandoSalida = true;
+  var _btnSal = document.getElementById('btn-guardar-salida');
+  if (_btnSal) { _btnSal.disabled = true; _btnSal.textContent = 'Guardando…'; }
+  try {
+    await _guardarSalidaImpl();
+  } finally {
+    _guardandoSalida = false;
+    if (_btnSal) { _btnSal.disabled = false; _btnSal.textContent = editMovSalId ? 'Actualizar Salida' : 'Registrar Salida'; }
+  }
+}
+async function _guardarSalidaImpl() {
+  const _isNuevoReg = !editMovSalId;
   const fecha  = document.getElementById('ms-fecha').value;
   const hora   = document.getElementById('ms-hora').value;
   const itemMode = document.getElementById('ms-item-mode').value;
@@ -3655,8 +3672,24 @@ async function guardarSalida() {
   const mhdrS = document.querySelector('#modal-salida .mhdr h3');
   if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
   if (!isItemExt && itemId) marcarItemReciente(itemId);
+  // Guardar datos para comprobante (solo en registro nuevo, no en edición)
+  if (_isNuevoReg) {
+    window._lastComprobante = {
+      fecha:        payload.fecha,
+      turno:        payload.turno,
+      descripcion:  payload.descripcion,
+      categoria:    payload.categoria,
+      cantidad:     payload.cantidad,
+      responsable:  payload.responsable,
+      personaRetira:document.getElementById('ms-persona-retira').value.trim(),
+      observaciones:payload.observaciones,
+      firmaData:    document.getElementById('ms-firma-data').value,
+    };
+  }
   cerrar('modal-salida');
   await cargarDatos();
+  // Ofrecer comprobante solo en nuevos registros
+  if (_isNuevoReg && window._lastComprobante) abrir('modal-comprobante-salida');
 }
 
 // -- Editar / Eliminar EPP -----------------------------------------
@@ -3742,6 +3775,47 @@ async function editarSalida(movId) {
   document.getElementById('alerta-sal').style.display = 'none';
   document.querySelector('#modal-salida .mhdr h3').textContent = 'Editar Salida Insumo';
   abrir('modal-salida');
+}
+
+function generarComprobanteSalida() {
+  cerrar('modal-comprobante-salida');
+  var d = window._lastComprobante;
+  if (!d) return;
+  var fechaStr = d.fecha ? (d.fecha.substring(0,10).split('-').reverse().join('/') + (d.fecha.length > 10 ? '  ' + d.fecha.substring(11,16) + ' h' : '')) : '—';
+  var firmaHtml = d.firmaData && d.firmaData.startsWith('data:image')
+    ? '<tr><td colspan="2" style="padding:12px 10px 4px;font-weight:700;color:#555;font-size:12px">FIRMA DE QUIEN RETIRA</td></tr>' +
+      '<tr><td colspan="2" style="padding:4px 10px 14px;text-align:center"><img src="' + d.firmaData + '" style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px"/></td></tr>'
+    : '';
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Comprobante de Entrega</title>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#333;padding:24px;max-width:480px;margin:auto}' +
+    '.logo{text-align:center;margin-bottom:16px}.logo img{height:56px;object-fit:contain}' +
+    'h1{font-size:15px;text-align:center;color:#1a3a5c;margin:10px 0 2px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}' +
+    '.sub{text-align:center;font-size:11px;color:#888;margin-bottom:18px}' +
+    'table{width:100%;border-collapse:collapse;font-size:13px}' +
+    'td{padding:8px 10px;border-bottom:1px solid #eef2f7;vertical-align:top}' +
+    'td:first-child{font-weight:700;color:#555;width:44%;font-size:11px;text-transform:uppercase;letter-spacing:.3px}' +
+    '.footer{margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:12px}' +
+    '.btn-print{display:block;margin:20px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}' +
+    '@media print{.btn-print{display:none}}</style></head><body>' +
+    '<div class="logo"><img src="' + PDF_LOGO_URL + '" alt="Pucará"/></div>' +
+    '<h1>Comprobante de Entrega de Insumos</h1>' +
+    '<div class="sub">RN-2003 — Control de Inventario Pucará</div>' +
+    '<table>' +
+    '<tr><td>Fecha y hora</td><td>' + fechaStr + '</td></tr>' +
+    '<tr><td>Turno</td><td>' + (d.turno || '—') + '</td></tr>' +
+    '<tr><td>Ítem entregado</td><td><strong>' + (d.descripcion || '—') + '</strong></td></tr>' +
+    (d.categoria ? '<tr><td>Categoría</td><td>' + d.categoria + '</td></tr>' : '') +
+    '<tr><td>Cantidad</td><td>' + (d.cantidad || 1) + '</td></tr>' +
+    '<tr><td>Responsable entrega</td><td>' + (d.responsable || '—') + '</td></tr>' +
+    (d.personaRetira ? '<tr><td>Persona que retira</td><td>' + d.personaRetira + '</td></tr>' : '') +
+    (d.observaciones ? '<tr><td>Observaciones</td><td>' + d.observaciones + '</td></tr>' : '') +
+    firmaHtml +
+    '</table>' +
+    '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-CL') + ' — Sistema de Control de Inventario Pucará</div>' +
+    '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>' +
+    '</body></html>';
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
 }
 
 function eliminarSalida(movId) {
@@ -4064,7 +4138,20 @@ function previewFotoRecepcion(input) {
   } else { prev.src = ''; prev.style.display = 'none'; if (btnQ) btnQ.style.display = 'none'; }
 }
 
+var _guardandoRecepcion = false;
 async function guardarRecepcion() {
+  if (_guardandoRecepcion) return;
+  _guardandoRecepcion = true;
+  var _btnRec = document.getElementById('btn-guardar-recepcion');
+  if (_btnRec) { _btnRec.disabled = true; _btnRec.textContent = 'Guardando…'; }
+  try {
+    await _guardarRecepcionImpl();
+  } finally {
+    _guardandoRecepcion = false;
+    if (_btnRec) { _btnRec.disabled = false; _btnRec.textContent = '📥 Registrar Recepción'; }
+  }
+}
+async function _guardarRecepcionImpl() {
   var fecha = document.getElementById('mr-fecha').value;
   var hora  = document.getElementById('mr-hora').value;
   var turno = document.getElementById('mr-turno').value;
@@ -4247,6 +4334,11 @@ function _abrirVentanaPDFInsumos(lista) {
       : '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
     var rowBg = esRec ? '#f8fff9' : '#fff';
     var restStr = m.cantidad_restante != null ? String(m.cantidad_restante) : '—';
+    var personaLabel = esRec
+      ? ((m.nombre_trabajador ? m.nombre_trabajador : '') + (areaCell !== '—' ? (m.nombre_trabajador ? '<br><small style="color:#888">' + areaCell + '</small>' : areaCell) : '')) || '—'
+      : (m.nombre_trabajador || '—');
+    var hasMedia = m.foto_url ? true : false;
+    var refIcon = hasMedia ? ' <span style="color:#1E4F8C;font-size:8pt">📎</span>' : '';
     return '<tr style="background:'+rowBg+';border-bottom:1px solid #e4ebf3">' +
       '<td style="padding:5px 8px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
       '<td style="padding:5px 8px">' + tipoBadge + '</td>' +
@@ -4257,7 +4349,7 @@ function _abrirVentanaPDFInsumos(lista) {
       '<td style="padding:5px 8px;text-align:center;font-weight:700;color:'+cantColor+'">' + cantArrow + ' ' + m.cantidad + '</td>' +
       '<td style="padding:5px 8px;text-align:center;font-weight:600;font-size:9pt">' + restStr + '</td>' +
       '<td style="padding:5px 8px;font-size:9pt">' + (m.responsable||'—') + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + areaCell + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + personaLabel + refIcon + '</td>' +
       '<td style="padding:5px 8px;font-size:9pt">' + obsCell + '</td>' +
     '</tr>';
   }).join('');
@@ -4302,11 +4394,44 @@ function _abrirVentanaPDFInsumos(lista) {
         '<th style="width:50px;text-align:center">Cant.</th>' +
         '<th style="width:55px;text-align:center">Restante</th>' +
         '<th style="width:110px">Responsable</th>' +
-        '<th style="width:110px">Área / Entregante</th>' +
+        '<th style="width:110px">Persona que Retira/Recepciona</th>' +
         '<th>Estado / Obs.</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>' +
+    (function(){
+      var conMedia = lista.filter(function(m){ return m.foto_url; });
+      if (!conMedia.length) return '';
+      var seccion = '<div style="page-break-before:always">' +
+        '<div style="font-size:13pt;font-weight:700;color:#1E4F8C;margin:18px 0 12px;border-left:5px solid #1E4F8C;padding-left:10px">Imágenes y Firmas</div>';
+      conMedia.forEach(function(m, i) {
+        var esRec = m.tipo === 'recepcion_insumo';
+        var allUrls = parseFotoUrls(m.foto_url);
+        var fotos   = allUrls.filter(function(u){ return u.indexOf('/firmas/') === -1; });
+        var firmas  = allUrls.filter(function(u){ return u.indexOf('/firmas/') !== -1; });
+        var persona = m.nombre_trabajador || null;
+        if (!allUrls.length) return;
+        seccion += '<div style="margin-bottom:20px;border:1px solid #d0dcea;border-radius:8px;overflow:hidden;page-break-inside:avoid">' +
+          '<div style="background:#f0f4fa;padding:8px 14px;border-bottom:1px solid #d0dcea;display:flex;align-items:center;gap:12px">' +
+            '<span style="font-size:9pt;color:#888">' + (i+1) + '</span>' +
+            '<span style="font-size:10pt;font-weight:700;color:#1a3a5c">' + (m.descripcion||'—') + '</span>' +
+            '<span style="font-size:9pt;color:#555">' + ff(m.fecha) + (ffh(m.fecha) ? ' ' + ffh(m.fecha) : '') + '</span>' +
+            (persona ? '<span style="font-size:9pt;color:#2e7d32;font-weight:600">· ' + (esRec ? 'Recepciona' : 'Retira') + ': ' + persona + '</span>' : '') +
+          '</div>' +
+          '<div style="padding:12px 14px">' +
+          (fotos.length ? '<div style="margin-bottom:10px"><div style="font-size:9pt;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">Fotografías</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+            fotos.map(function(url){ return '<img src="' + url + '" style="max-width:180px;max-height:140px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+            '</div></div>' : '') +
+          (firmas.length ? '<div><div style="font-size:9pt;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">Firma' + (persona ? ' — ' + persona : '') + '</div>' +
+            '<div style="display:flex;gap:8px">' +
+            firmas.map(function(url){ return '<img src="' + url + '" style="max-width:220px;max-height:110px;border-radius:6px;border:2px solid #1a3a5c;object-fit:contain;background:#f8f9fb"/>'; }).join('') +
+            '</div></div>' : '') +
+          '</div></div>';
+      });
+      seccion += '</div>';
+      return seccion;
+    })() +
     '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
 
   var w = window.open('', '_blank');
@@ -5946,11 +6071,12 @@ async function guardarCompra() {
     trabajadores:        getTrabajadoresModal()
   };
   if (_editCompraId) {
-    payload.id = _editCompraId;
-    var { error } = await sb.from('inventario_compras').update(payload).eq('id', _editCompraId);
+    var _updPayload = Object.assign({}, payload);
+    delete _updPayload.id;
+    var { error } = await sb.from('inventario_compras').update(_updPayload).eq('id', _editCompraId);
     if (error) { console.error(error); alert('Error al guardar'); return; }
     var idx = _compras.findIndex(function(x){ return x.id === _editCompraId; });
-    if (idx >= 0) _compras[idx] = { ..._compras[idx], ...payload };
+    if (idx >= 0) _compras[idx] = Object.assign({}, _compras[idx], _updPayload);
   } else {
     payload.id = Date.now().toString();
     var { error } = await sb.from('inventario_compras').insert(payload);
@@ -6233,5 +6359,23 @@ function eliminarCompra(id) {
 <div id="mdv-overlay" onclick="cerrarDetalleMov()"></div>
 <div id="mdv-modal"></div>
 <div id="dk-epp-tooltip"></div>
+
+<!-- Modal: ¿Generar comprobante? -->
+<div id="modal-comprobante-salida" class="modal-bd">
+  <div class="modal modal-sm">
+    <div class="mhdr" style="border-bottom:none;padding-bottom:0">
+      <button class="mclose" onclick="cerrar('modal-comprobante-salida')">✕</button>
+    </div>
+    <div class="mbody" style="text-align:center;padding:10px 24px 24px">
+      <div style="font-size:42px;margin-bottom:10px">✅</div>
+      <p style="font-size:16px;font-weight:700;color:#1a3a5c;margin:0 0 6px">Registro guardado</p>
+      <p style="font-size:13px;color:#666;margin:0 0 22px">¿Desea generar un comprobante de esta entrega?</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="cerrar('modal-comprobante-salida')" style="flex:1">No, gracias</button>
+        <button class="btn" style="flex:1;background:#1a3a5c;color:#fff;border:none" onclick="generarComprobanteSalida()">📄 Generar</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -369,8 +369,18 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   .fg{margin-bottom:6px}
   .fg label{font-size:10px}
   .fg input,.fg select,.fg textarea{font-size:16px;padding:6px 10px}
-  /* Compactar mbody de salida y recepción */
-  #modal-salida .mbody,#modal-recepcion .mbody{padding:6px 12px 4px}
+  /* Salida y Recepción — modal full-width, header compacto */
+  #modal-salida.modal-bd,#modal-recepcion.modal-bd{padding-left:0;padding-right:0}
+  #modal-salida .mhdr,#modal-recepcion .mhdr{padding:8px 14px}
+  #modal-salida .mbody,#modal-recepcion .mbody{padding:4px 14px}
+  /* Labels más finos: menos peso visual, menos spacing */
+  #modal-salida .fg label,#modal-recepcion .fg label{font-size:9px;font-weight:600;letter-spacing:.15px}
+  /* fg más compacto */
+  #modal-salida .fg,#modal-recepcion .fg{gap:1px;margin-bottom:4px}
+  /* Textarea observaciones menos alta */
+  #ms-obs,#mr-obs{min-height:44px!important}
+  /* Foto slots menos altos (de 4:3 a 16:9) */
+  #modal-salida .foto-slot,#modal-recepcion .foto-slot{aspect-ratio:16/9}
 
   /* === Ocultar inputs de fecha vacíos que aparecen como recuadros en blanco === */
   /* Dados de Baja */
@@ -395,7 +405,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 
   /* === Firma pad — altura cómoda para firmar con dedo === */
   .firma-canvas{height:160px}
-  #ms-firma-toggle-btn{padding:8px 12px!important;font-size:13px!important;font-weight:600}
+  #ms-firma-toggle-btn{padding:6px 10px!important;font-size:12px!important;font-weight:600}
 
   /* === Touch targets — mín. 38px para toggles en modales compactos === */
   .btn-tipo{min-height:38px!important;font-size:12px;display:inline-flex;align-items:center;justify-content:center}

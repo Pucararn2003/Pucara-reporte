@@ -3932,33 +3932,50 @@ function initFirmaCanvas(canvasId, dataId) {
   canvas.height = h * dpr;
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.strokeStyle = '#1a3a5c';
   canvas._ctx = ctx;
   var drawing = false;
+  var lastX = 0, lastY = 0, pendingX = 0, pendingY = 0, rafId = null;
   function getXY(e) {
     var rect = canvas.getBoundingClientRect();
     var src  = e.touches ? e.touches[0] : e;
     return [src.clientX - rect.left, src.clientY - rect.top];
   }
   function start(e) {
-    e.preventDefault(); drawing = true;
+    e.preventDefault();
+    drawing = true;
     var p = getXY(e);
-    canvas._ctx.beginPath(); canvas._ctx.moveTo(p[0], p[1]);
+    lastX = p[0]; lastY = p[1];
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
   }
   function move(e) {
     if (!drawing) return;
     e.preventDefault();
     var p = getXY(e);
-    canvas._ctx.lineWidth = 2.5;
-    canvas._ctx.lineCap   = 'round';
-    canvas._ctx.lineJoin  = 'round';
-    canvas._ctx.strokeStyle = '#1a3a5c';
-    canvas._ctx.lineTo(p[0], p[1]);
-    canvas._ctx.stroke();
-    canvas._ctx.moveTo(p[0], p[1]);
-    canvas.classList.add('signed');
+    pendingX = p[0]; pendingY = p[1];
+    if (rafId) return;
+    rafId = requestAnimationFrame(function() {
+      rafId = null;
+      var mx = (lastX + pendingX) / 2;
+      var my = (lastY + pendingY) / 2;
+      ctx.quadraticCurveTo(lastX, lastY, mx, my);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(mx, my);
+      lastX = pendingX; lastY = pendingY;
+      canvas.classList.add('signed');
+    });
+  }
+  function stop() {
+    if (!drawing) return;
+    drawing = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     document.getElementById(dataId).value = canvas.toDataURL('image/png');
   }
-  function stop() { drawing = false; }
   canvas.addEventListener('mousedown',  start);
   canvas.addEventListener('mousemove',  move);
   canvas.addEventListener('mouseup',    stop);

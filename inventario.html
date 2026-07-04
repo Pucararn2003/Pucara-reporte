@@ -379,6 +379,9 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   #modal-salida .fg,#modal-recepcion .fg{gap:1px;margin-bottom:4px}
   /* Textarea observaciones menos alta */
   #ms-obs,#mr-obs{min-height:44px!important}
+  /* Turno y Cantidad de salida — full width (columna derecha vacía en desktop queda rara en móvil) */
+  #modal-salida .fgrid>.fg:has(#ms-turno),
+  #modal-salida .fgrid>.fg:has(#ms-cant){grid-column:1/-1}
   /* Foto slots menos altos (de 4:3 a 16:9) */
   #modal-salida .foto-slot,#modal-recepcion .foto-slot{aspect-ratio:16/9}
 

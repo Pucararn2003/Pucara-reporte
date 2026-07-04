@@ -165,6 +165,29 @@ th.sortable:hover{background:#163d6e}
 .img-drop-zone.drag-over{border-color:#1E4F8C !important;background:#edf4ff}
 .img-drop-hint{text-align:center;font-size:10px;color:#bbb;margin-top:5px;pointer-events:none;user-select:none}
 
+/* ── No-descontar floating tooltip ── */
+.nd-wrap{position:relative;display:inline-flex;align-items:center;cursor:help;margin-left:2px;vertical-align:middle}
+.nd-icon{width:15px;height:15px;border-radius:50%;background:#7a9cc0;color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;user-select:none}
+.nd-tip{opacity:0;visibility:hidden;transition:opacity .18s,transform .18s;position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(3px);background:#1a3a5c;color:#fff;font-size:12px;font-weight:400;padding:10px 14px;border-radius:8px;width:280px;line-height:1.5;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.28);pointer-events:none;white-space:normal;text-align:left}
+.nd-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#1a3a5c}
+.nd-wrap:hover .nd-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.foto-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.foto-slot{border:2px dashed #cdd8e3;border-radius:10px;overflow:hidden;position:relative;aspect-ratio:4/3;cursor:pointer;background:#f8fafc;transition:border-color .15s,box-shadow .15s}
+.foto-slot:hover{border-color:#1E4F8C;box-shadow:0 0 0 3px rgba(30,79,140,.08)}
+.foto-slot-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;color:#aaa;font-size:12px;user-select:none;pointer-events:none}
+.foto-slot-ph span{font-size:26px}
+.foto-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.foto-slot-rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:2}
+.firma-canvas{display:block;width:100%;height:170px;background:#f8f9fb;border:2px dashed #cdd8e3;border-radius:10px;cursor:crosshair;touch-action:none;box-sizing:border-box}
+.firma-canvas.signed{border-color:#1a3a5c;border-style:solid}
+
+/* ── Insumos: tipo filter buttons & badges ── */
+.btn-tipo{padding:7px 12px;border:none;background:#f0f4f8;color:#555;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;line-height:1}
+.btn-tipo:not(:last-child){border-right:1px solid #cdd8e3}
+.btn-tipo.active{background:#1E4F8C;color:#fff}
+.badge-sal{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge-rec{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+
 /* ── Historial tooltip ── */
 #hist-tip{position:fixed;background:#172338;color:#e8f0f8;border-radius:10px;padding:14px 16px;font-size:12px;max-width:390px;min-width:260px;z-index:950;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:auto;line-height:1.55;display:none;max-height:440px;overflow-y:auto}
 .hist-hdr{font-weight:700;color:#7ec8ff;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -362,6 +385,45 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   .dash-grid{grid-template-columns:1fr}
   .bar-lbl{width:90px}
   .kpi-val{font-size:24px}
+
+  /* === Modales — más espacio para formularios con muchos campos === */
+  .modal,.modal-sm{max-height:92vh;-webkit-overflow-scrolling:touch}
+
+  /* === Firma pad — altura cómoda para firmar con dedo === */
+  .firma-canvas{height:210px}
+  #ms-firma-toggle-btn{padding:11px 14px!important;font-size:15px!important;font-weight:600}
+
+  /* === Touch targets — mín. 44px para todos los toggles (override inline styles) === */
+  .btn-tipo{min-height:42px!important;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+  #ms-item-btn-inv,#ms-item-btn-ext,
+  #mr-item-btn-inv,#mr-item-btn-ext,
+  #ms-btn-int,#ms-btn-ext,
+  #mr-entrega-btn-int,#mr-entrega-btn-ext,
+  #mr-resp-btn-int,#mr-resp-btn-ext{padding:8px 12px!important;font-size:13px!important;min-height:42px!important}
+
+  /* === Salida Insumos — quitar columnas # y Obs/Área para tabla limpia === */
+  #tab-salida table th:nth-child(1),#tab-salida table td:nth-child(1),
+  #tab-salida table th:nth-child(10),#tab-salida table td:nth-child(10){display:none}
+
+  /* === Filtros tipo (Todos/Salidas/Recepciones) — full width en toolbar columna === */
+  #filtro-tipo-insumo-wrap{width:100%}
+  #ftipo-todos,#ftipo-sal,#ftipo-rec{flex:1;padding:11px 4px;font-size:12px;text-align:center}
+
+  /* === Prevenir zoom iOS — todos los inputs ≥ 16px (inline styles overridden) === */
+  .fg input,.fg select,.fg textarea{font-size:16px!important;padding:10px!important}
+  #ms-item-search,#me-item-search,#ma-item-search,
+  #mb-item-search,#mc-item-search,#ml-item-search,
+  #me-trab,#ma-trab{font-size:16px!important}
+  #ms-item-ext-nombre,#ms-item-ext-categ,
+  #mr-item-ext-nombre,#mr-item-ext-categ,
+  #ms-persona-retira,#mr-persona-recepciona,
+  #fs-buscar,#mr-resp,#mr-persona-entrega{font-size:16px!important;padding:10px!important}
+
+  /* === Foto slots — gap más compacto === */
+  .foto-slots{gap:5px}
+
+  /* === Botones de acción en tabla — más fáciles de tocar === */
+  .btn-sm{min-height:34px!important;padding:5px 10px!important}
 }
 
 /* ── LOGO ── */
@@ -461,10 +523,11 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <div class="table-wrap">
         <table>
           <thead><tr>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
             <th>Fecha Baja</th><th>Ítem</th><th>N° Serie</th><th>Cant.</th>
             <th>Revisó</th><th>Supervisor</th><th>Motivos</th><th>Foto</th><th></th>
           </tr></thead>
-          <tbody id="tb-bajas"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+          <tbody id="tb-bajas"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -480,7 +543,10 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     </div>
     <div class="toolbar" style="gap:8px">
       <button class="btn btn-primary" onclick="abrirModalCompra()">+ Nueva Solicitud</button>
-      <input type="text" id="fc-buscar" placeholder="🔍 Buscar ítem, responsable..." oninput="renderCompras()" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;outline:none"/>
+      <div style="position:relative;flex:1;min-width:200px">
+        <input type="text" id="fc-buscar" placeholder="🔍 Buscar ítem, responsable..." oninput="renderCompras()" style="width:100%;padding:8px 34px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box"/>
+        <button onclick="document.getElementById('fc-buscar').value='';renderCompras()" title="Limpiar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1">×</button>
+      </div>
       <select id="fc-estado" onchange="renderCompras()" style="padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none">
         <option value="">Todos los estados</option>
         <option>Pendiente</option>
@@ -488,13 +554,15 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <option>Completada</option>
         <option>Cancelada</option>
       </select>
-      <button class="btn" onclick="exportarExcelCompras()" style="white-space:nowrap;background:#2e7d32;color:#fff">📊 Excel</button>
+      <button id="btn-excel-compras" class="btn" onclick="exportarExcelCompras()" style="white-space:nowrap;background:#2e7d32;color:#fff">📊 Excel</button>
       <button class="btn btn-pdf" onclick="generarPDFCompletoCompras()" style="white-space:nowrap;background:#5c3d8f">📋 PDF Completo</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th style="width:36px;text-align:center"><input type="checkbox" id="chk-cmp-all" onchange="toggleTodosCompras(this.checked)" title="Seleccionar todos" style="cursor:pointer"/></th>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
             <th>Fecha Creación</th>
             <th>Ítem del Inventario</th>
             <th style="text-align:center">Cant.</th>
@@ -507,7 +575,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th></th>
           </tr>
         </thead>
-        <tbody id="tb-compras"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
+        <tbody id="tb-compras"><tr><td colspan="12" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -521,7 +589,8 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <div class="stat-card"><div class="val" id="st-baja" style="color:#c62828">0</div><div class="lbl">Dados de baja</div></div>
     </div>
     <div class="toolbar" style="gap:8px">
-      <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem</button>
+      <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem Nuevo</button>
+      <button class="btn" onclick="abrirModalLote()" style="background:#0277bd;color:#fff;border:none;white-space:nowrap">+ Agregar Lote Nuevo</button>
       <div style="position:relative;flex:1;max-width:320px">
         <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario();document.getElementById('fi-buscar-x').style.display=this.value?'flex':'none'" style="padding:8px 36px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;width:100%;box-sizing:border-box;color:#222"/>
         <button id="fi-buscar-x" onclick="document.getElementById('fi-buscar').value='';renderInventario();this.style.display='none'" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999;font-size:16px;line-height:1;padding:2px 4px;align-items:center;justify-content:center">×</button>
@@ -531,6 +600,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <table>
         <thead>
           <tr>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
             <th class="sortable" onclick="sortBy('correlativo')">Corr. <span class="sort-icon" id="sort-correlativo"></span></th>
             <th class="sortable" onclick="sortBy('descripcion')">Descripción <span class="sort-icon" id="sort-descripcion"></span></th>
             <th class="sortable" onclick="sortBy('categoria')">Categoría <span class="sort-icon" id="sort-categoria"></span></th>
@@ -542,6 +612,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th>Acciones</th>
           </tr>
           <tr>
+            <th class="th-filter"></th>
             <th class="th-filter" colspan="2"></th>
             <th class="th-filter">
               <select id="fi-cat" onchange="renderInventario()">
@@ -570,6 +641,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           </tr>
         </thead>
         <tbody id="tb-inv"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+
       </table>
     </div>
   </div>
@@ -578,6 +650,10 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   <div id="tab-entrega" class="tab-panel">
     <div class="toolbar">
       <button class="btn btn-success" onclick="abrirModalEntrega()">+ Registrar Entrega EPP</button>
+      <div style="position:relative;flex:1;min-width:260px">
+        <input type="text" id="fe-buscar" placeholder="🔍 Buscar trabajador, ítem, cargo, observaciones..." oninput="renderEntrega()" style="width:100%;padding:8px 34px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+        <button onclick="document.getElementById('fe-buscar').value='';renderEntrega()" title="Limpiar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1">×</button>
+      </div>
       <label style="font-size:13px;color:#555">Desde</label>
       <input type="date" id="fe-desde" onchange="renderEntrega()"/>
       <label style="font-size:13px;color:#555">Hasta</label>
@@ -588,10 +664,12 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <table>
         <thead>
           <tr>
-            <th onclick="toggleSort('epp',renderEntrega)" style="cursor:pointer;user-select:none">Fecha <span id="ic-epp-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
+            <th onclick="toggleSort('epp',renderEntrega)" style="cursor:pointer;user-select:none">Fecha de Entrega <span id="ic-epp-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th>
             <th>Talla</th><th>Cant.</th><th>Restante</th><th>Estado</th><th>Responsable</th><th></th>
           </tr>
           <tr>
+            <th class="th-filter"></th>
             <th class="th-filter"><input type="text" id="fe-trab-q" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderEntrega()" class="tf-inp"/></th>
             <th class="th-filter"><select id="fe-trab" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fe-cargo" onchange="renderEntrega()" class="tf-sel"><option value="">Todos</option></select></th>
@@ -604,29 +682,44 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFE2()">✕ Limpiar</button></th>
           </tr>
         </thead>
-        <tbody id="tb-epp"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-epp"><tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
 
   <!-- ── TAB: Salida Insumos ── -->
   <div id="tab-salida" class="tab-panel">
-    <div class="toolbar">
-      <button class="btn btn-warn" onclick="abrirModalSalida()">+ Registrar Salida</button>
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px">
+      <button class="btn btn-warn" onclick="abrirModalSalida()">📤 Registrar Salida</button>
+      <button class="btn" style="background:#0277bd;color:#fff;border:none" onclick="abrirModalRecepcion()">📥 Recepcionar Insumo</button>
+      <div style="position:relative;flex:1;min-width:220px">
+        <input type="text" id="fs-buscar" placeholder="🔍 Buscar ítem, turno, responsable, área..." oninput="renderSalida()" style="width:100%;padding:8px 34px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+        <button onclick="document.getElementById('fs-buscar').value='';renderSalida()" title="Limpiar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1">×</button>
+      </div>
+      <div id="filtro-tipo-insumo-wrap" style="display:flex;border:1px solid #cdd8e3;border-radius:7px;overflow:hidden;flex-shrink:0">
+        <button id="ftipo-todos" class="btn-tipo active" onclick="setFiltroTipoInsumo('todos')">Todos</button>
+        <button id="ftipo-sal" class="btn-tipo" onclick="setFiltroTipoInsumo('salida_insumo')">📤 Salidas</button>
+        <button id="ftipo-rec" class="btn-tipo" onclick="setFiltroTipoInsumo('recepcion_insumo')">📥 Recepciones</button>
+      </div>
       <label style="font-size:13px;color:#555">Desde</label>
       <input type="date" id="fs-desde" onchange="renderSalida()"/>
       <label style="font-size:13px;color:#555">Hasta</label>
       <input type="date" id="fs-hasta" onchange="renderSalida()"/>
+      <button class="btn" style="background:#5c3d8f;color:#fff;border:none;white-space:nowrap" onclick="abrirInformeInsumos()">📋 Informe General</button>
       <button class="btn btn-secondary" onclick="limpiarFS()">Limpiar</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
+            <th style="width:110px">Tipo</th>
             <th onclick="toggleSort('sal',renderSalida)" style="cursor:pointer;user-select:none">Fecha <span id="ic-sal-fecha">↓</span></th><th>Turno</th><th>Ítem</th><th>Categoría</th>
-            <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Observaciones</th><th></th>
+            <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Obs / Área</th><th></th>
           </tr>
           <tr>
+            <th class="th-filter"></th>
+            <th class="th-filter"></th>
             <th class="th-filter"><input type="text" id="fs-fecha-q" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderSalida()" class="tf-inp"/></th>
             <th class="th-filter"><select id="fs-turno" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fs-item" onchange="renderSalida()" class="tf-sel"><option value="">Todos</option></select></th>
@@ -638,7 +731,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFS2()">✕ Limpiar</button></th>
           </tr>
         </thead>
-        <tbody id="tb-sal"><tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-sal"><tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -651,15 +744,21 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     </div>
     <div class="toolbar" style="gap:8px">
       <button class="btn" style="background:#7b1fa2;color:#fff;border:none" onclick="abrirModalAsignacion()">📌 Registrar Asignación</button>
+      <div style="position:relative;flex:1;min-width:260px">
+        <input type="text" id="fa-buscar" placeholder="🔍 Buscar trabajador, ítem, cargo, observaciones..." oninput="renderAsignaciones()" style="width:100%;padding:8px 34px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+        <button onclick="document.getElementById('fa-buscar').value='';renderAsignaciones()" title="Limpiar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1">×</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th onclick="toggleSort('asig',renderAsignaciones)" style="cursor:pointer;user-select:none">Fecha Ingreso <span id="ic-asig-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
+            <th style="width:36px;text-align:center;color:#aaa">#</th>
+            <th onclick="toggleSort('asig',renderAsignaciones)" style="cursor:pointer;user-select:none">Fecha de Entrega <span id="ic-asig-fecha">↓</span></th><th>Trabajador</th><th>Cargo</th><th>Ítem</th><th>Categoría</th>
             <th>Cant.</th><th>Foto</th><th>Responsable</th><th>Observaciones</th><th></th>
           </tr>
           <tr>
+            <th class="th-filter"></th>
             <th class="th-filter"><input type="text" id="fa-fecha" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderAsignaciones()" style="width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none" class="tf-inp"/></th>
             <th class="th-filter"><select id="fa-trab" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
             <th class="th-filter"><select id="fa-cargo" onchange="renderAsignaciones()" class="tf-sel"><option value="">Todos</option></select></th>
@@ -672,7 +771,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFA()">✕ Limpiar</button></th>
           </tr>
         </thead>
-        <tbody id="tb-asig"><tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-asig"><tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -764,6 +863,80 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     </div>
     <div class="hmov-list" id="hmov-list">
       <p style="text-align:center;color:#999;padding:40px">Cargando…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Ver/Editar Lote
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-ver-lote">
+  <div class="modal" style="max-width:640px">
+    <div class="mhdr">
+      <h3>📦 Lotes del Ítem</h3>
+      <button class="mclose" onclick="cerrar('modal-ver-lote')">✕</button>
+    </div>
+    <div class="mbody">
+      <p id="mvl-desc" style="margin:0 0 14px;font-weight:600;color:#1a3a5c;font-size:14px"></p>
+      <div class="table-wrap" style="max-height:320px;overflow-y:auto;margin-bottom:0">
+        <table style="width:100%;font-size:13px">
+          <thead>
+            <tr style="background:#1E4F8C;color:#fff">
+              <th style="padding:8px 10px;text-align:left">N° Lote</th>
+              <th style="padding:8px 10px;text-align:center">Cantidad</th>
+              <th style="padding:8px 10px;text-align:left">Fecha Recepción</th>
+              <th style="padding:8px 10px;text-align:left">Observaciones</th>
+              <th style="padding:8px 10px;text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="mvl-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-ver-lote')">Cerrar</button>
+      <button class="btn" onclick="abrirNuevoLoteDesdeVer()" style="background:#0277bd;color:#fff;border:none">+ Agregar nuevo lote</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Lote Nuevo
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-lote">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>📦 Agregar Lote Nuevo</h3>
+      <button class="mclose" onclick="cerrar('modal-lote')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg full">
+          <label>Ítem existente *</label>
+          <div class="item-search-wrap">
+            <input type="text" id="ml-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                   oninput="filtrarItems('ml')" onfocus="filtrarItems('ml')" autocomplete="off"
+                   onkeydown="ddNav(event,'ml-item-list')"
+                   onblur="setTimeout(()=>{const l=document.getElementById('ml-item-list');if(l)l.style.display='none'},160)"
+                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="ml-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="ml-item-val"/>
+          </div>
+        </div>
+        <div class="fg full"><label>N° de Lote *</label><input type="text" id="ml-lote" placeholder="Ej: LOT-2025-001"/></div>
+        <div class="fg"><label>Cantidad a agregar *</label><input type="number" id="ml-cantidad" min="1" value="1"/></div>
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:8px">Fecha de Recepción
+            <button type="button" onclick="document.getElementById('ml-fecha').value=hoy()" style="font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #0277bd;background:#e3f2fd;color:#0277bd;cursor:pointer;font-weight:600;line-height:1.6">● Hoy</button>
+          </label>
+          <input type="date" id="ml-fecha"/>
+        </div>
+        <div class="fg full"><label>Observaciones</label><textarea id="ml-obs" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-lote')">Cancelar</button>
+      <button class="btn" style="background:#0277bd;color:#fff;border:none" onclick="guardarLote()">📦 Registrar Lote</button>
     </div>
   </div>
 </div>
@@ -910,6 +1083,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg full" style="display:flex;align-items:center;gap:10px;padding:4px 0;margin:2px 0">
           <input type="checkbox" id="me-no-descontar" style="width:17px;height:17px;cursor:pointer;accent-color:#1E4F8C;flex-shrink:0"/>
           <label for="me-no-descontar" style="cursor:pointer;margin:0;font-size:13px;font-weight:700;color:#1a3a5c;user-select:none">NO DESCONTAR DEL INVENTARIO GENERAL</label>
+          <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">Al activar esta opción, la cantidad ingresada NO se descontará del stock disponible — solo se sumará al total del ítem en el inventario general.</div></span>
         </div>
         <div class="fg full">
           <label style="display:flex;align-items:center;gap:8px">Fecha de Entrega
@@ -959,7 +1133,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     <div class="mbody">
       <div id="alerta-sal" class="alert alert-warn" style="display:none"></div>
       <div class="fgrid">
-        <div class="fg"><label>Fecha *</label><input type="date" id="ms-fecha"/></div>
+        <div class="fg"><label>Fecha de Entrega *</label><input type="date" id="ms-fecha"/></div>
         <div class="fg"><label>Hora</label><input type="time" id="ms-hora"/></div>
         <div class="fg">
           <label>Turno *</label>
@@ -969,8 +1143,14 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           </select>
         </div>
         <div class="fg full">
-          <label>Ítem *</label>
-          <div class="item-search-wrap">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">Ítem *</label>
+            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+              <button id="ms-item-btn-inv" class="btn-tipo active" onclick="setSalidaItemMode('inventario')" style="padding:3px 12px;font-size:12px;border-radius:0">📦 Del inventario</button>
+              <button id="ms-item-btn-ext" class="btn-tipo" onclick="setSalidaItemMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ No registrado</button>
+            </div>
+          </div>
+          <div id="ms-item-inv-wrap" class="item-search-wrap">
             <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
                    onkeydown="ddNav(event,'ms-item-list')"
@@ -978,22 +1158,70 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <div id="ms-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ms-item-val"/>
           </div>
+          <div id="ms-item-ext-wrap" style="display:none">
+            <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <input type="text" id="ms-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
+          </div>
+          <input type="hidden" id="ms-item-mode" value="inventario"/>
         </div>
         <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
-        <div class="fg">
-          <label>Responsable de Retiro</label>
-          <select id="ms-resp" onchange="autoTurnoSal(this.value)"><option value="">Seleccionar…</option></select>
+        <div id="ms-no-descontar-wrap" class="fg full" style="padding:4px 0">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+            <input type="checkbox" id="ms-no-descontar" style="width:16px;height:16px;cursor:pointer;flex-shrink:0"/>
+            <span style="font-weight:600;color:#1a3a5c">No descontar del inventario general</span>
+            <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">La cantidad retirada se descontará del total del ítem del inventario general.</div></span>
+          </label>
+        </div>
+        <div class="fg full">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">Responsable de Retiro</label>
+            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+              <button id="ms-btn-int" class="btn-tipo active" onclick="setSalidaRespMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
+              <button id="ms-btn-ext" class="btn-tipo" onclick="setSalidaRespMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
+            </div>
+          </div>
+          <select id="ms-resp" onchange="autoTurnoSal(this.value)" style="width:100%"><option value="">Seleccionar…</option></select>
+          <input type="text" id="ms-resp-ext" placeholder="Nombre, empresa o cargo..." style="display:none;width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+          <input type="hidden" id="ms-ext-mode" value="interno"/>
+        </div>
+        <div class="fg full">
+          <label>Persona que Retira</label>
+          <input type="text" id="ms-persona-retira" placeholder="Nombre de quien retira físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+          <div style="margin-top:8px">
+            <button type="button" id="ms-firma-toggle-btn" onclick="toggleFirmaSal()" style="font-size:12px;padding:5px 14px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;width:100%">✍️ Agregar firma</button>
+          </div>
+          <div id="ms-firma-wrap" style="display:none;margin-top:8px">
+            <canvas id="ms-firma-canvas" class="firma-canvas"></canvas>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button type="button" onclick="limpiarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">🗑 Limpiar</button>
+              <button type="button" onclick="ocultarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">✕ Cancelar</button>
+            </div>
+          </div>
+          <input type="hidden" id="ms-firma-data"/>
         </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
         <div class="fg full">
-          <label>Foto</label>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="file" id="ms-foto-file" accept="image/*" capture="environment" onchange="previewFotoS(this)"
-                   style="flex:1;min-width:0;padding:6px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px"/>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="quitarFotoS()">✕ Quitar</button>
+          <label>Fotos (hasta 3)</label>
+          <div class="foto-slots">
+            <div class="foto-slot" onclick="document.getElementById('ms-foto-1').click()">
+              <input type="file" id="ms-foto-1" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',1,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="ms-foto-ph-1"><span>📷</span><small>Foto 1</small></div>
+              <img id="ms-foto-prev-1" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="ms-foto-rm-1" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',1)">✕</button>
+            </div>
+            <div class="foto-slot" onclick="document.getElementById('ms-foto-2').click()">
+              <input type="file" id="ms-foto-2" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',2,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="ms-foto-ph-2"><span>📷</span><small>Foto 2</small></div>
+              <img id="ms-foto-prev-2" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="ms-foto-rm-2" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',2)">✕</button>
+            </div>
+            <div class="foto-slot" onclick="document.getElementById('ms-foto-3').click()">
+              <input type="file" id="ms-foto-3" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',3,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="ms-foto-ph-3"><span>📷</span><small>Foto 3</small></div>
+              <img id="ms-foto-prev-3" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="ms-foto-rm-3" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',3)">✕</button>
+            </div>
           </div>
-          <img id="ms-foto-preview" src="" alt="preview"
-               style="display:none;max-height:130px;max-width:100%;border-radius:7px;margin-top:8px;object-fit:contain;border:1px solid #eee"/>
         </div>
       </div>
     </div>
@@ -1004,6 +1232,175 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════
+     MODAL: Recepcionar Insumo
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-recepcion">
+  <div class="modal">
+    <div class="mhdr">
+      <h3>📥 Recepcionar Insumo</h3>
+      <button class="mclose" onclick="cerrar('modal-recepcion')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+
+        <!-- Fila 1: Fecha | Hora -->
+        <div class="fg"><label>Fecha *</label><input type="date" id="mr-fecha"/></div>
+        <div class="fg"><label>Hora</label><input type="time" id="mr-hora"/></div>
+
+        <!-- Fila 2: Turno | Área -->
+        <div class="fg">
+          <label>Turno *</label>
+          <select id="mr-turno" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+            <option value="">-- Seleccionar --</option>
+            <option>Día</option><option>Noche</option><option>Guardia</option>
+          </select>
+        </div>
+        <div class="fg"><label>Área / Empresa Origen</label><input type="text" id="mr-area" placeholder="Ej: Mantención, Contratista XYZ..."/></div>
+
+        <!-- Persona que Entrega: toggle Interno/Externo -->
+        <div class="fg full">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">Persona que Entrega</label>
+            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+              <button id="mr-entrega-btn-int" class="btn-tipo" onclick="setEntregaMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
+              <button id="mr-entrega-btn-ext" class="btn-tipo active" onclick="setEntregaMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
+            </div>
+          </div>
+          <select id="mr-entrega-sel" style="display:none;width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+            <option value="">-- Seleccionar trabajador --</option>
+          </select>
+          <input type="text" id="mr-persona-entrega" placeholder="Nombre de quien entrega..."/>
+          <input type="hidden" id="mr-entrega-mode" value="externo"/>
+        </div>
+
+        <!-- Ítem -->
+        <div class="fg full">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">Ítem *</label>
+            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+              <button id="mr-item-btn-inv" class="btn-tipo active" onclick="setRecepcionItemMode('inventario')" style="padding:3px 12px;font-size:12px;border-radius:0">📦 Del inventario</button>
+              <button id="mr-item-btn-ext" class="btn-tipo" onclick="setRecepcionItemMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ No registrado</button>
+            </div>
+          </div>
+          <div id="mr-item-inv-wrap">
+            <select id="mr-item" onchange="onItemRecepcionChange()" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+              <option value="">-- Seleccionar ítem --</option>
+            </select>
+            <div id="mr-stock-info" style="margin-top:4px;font-size:12px;color:#2e7d32;padding:5px 10px;background:#f0f7f0;border-radius:5px;display:none;font-weight:600"></div>
+          </div>
+          <div id="mr-item-ext-wrap" style="display:none">
+            <input type="text" id="mr-item-ext-nombre" placeholder="Nombre del ítem..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <input type="text" id="mr-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
+          </div>
+          <input type="hidden" id="mr-item-mode" value="inventario"/>
+        </div>
+
+        <!-- Fila: Cantidad | Estado -->
+        <div class="fg"><label>Cantidad *</label><input type="number" id="mr-cant" min="1" value="1"/></div>
+        <div class="fg">
+          <label>Estado del Ítem Recibido</label>
+          <select id="mr-estado" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+            <option value="">-- Seleccionar --</option>
+            <option>Nuevo</option><option>Bueno</option><option>Regular</option><option>Con observaciones</option>
+          </select>
+        </div>
+
+        <!-- Responsable de Recepción: toggle Interno/Externo -->
+        <div class="fg full">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">Responsable de Recepción *</label>
+            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+              <button id="mr-resp-btn-int" class="btn-tipo active" onclick="setRespRecepMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
+              <button id="mr-resp-btn-ext" class="btn-tipo" onclick="setRespRecepMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
+            </div>
+          </div>
+          <select id="mr-resp-sel" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+            <option value="">-- Seleccionar trabajador --</option>
+          </select>
+          <input type="text" id="mr-resp" placeholder="Nombre, empresa o cargo..." style="display:none"/>
+          <input type="hidden" id="mr-resp-mode" value="interno"/>
+        </div>
+
+        <!-- Persona que recepciona -->
+        <div class="fg full">
+          <label>Persona que Recepciona</label>
+          <input type="text" id="mr-persona-recepciona" placeholder="Nombre de quien recepciona físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="fg full"><label>Observaciones</label>
+          <textarea id="mr-obs" rows="2" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
+
+        <!-- Foto -->
+        <div class="fg full">
+          <label>Fotos (hasta 3)</label>
+          <div class="foto-slots">
+            <div class="foto-slot" onclick="document.getElementById('mr-foto-1').click()">
+              <input type="file" id="mr-foto-1" accept="image/*" onchange="previewFotoSlot('mr',1,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="mr-foto-ph-1"><span>📷</span><small>Foto 1</small></div>
+              <img id="mr-foto-prev-1" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="mr-foto-rm-1" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('mr',1)">✕</button>
+            </div>
+            <div class="foto-slot" onclick="document.getElementById('mr-foto-2').click()">
+              <input type="file" id="mr-foto-2" accept="image/*" onchange="previewFotoSlot('mr',2,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="mr-foto-ph-2"><span>📷</span><small>Foto 2</small></div>
+              <img id="mr-foto-prev-2" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="mr-foto-rm-2" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('mr',2)">✕</button>
+            </div>
+            <div class="foto-slot" onclick="document.getElementById('mr-foto-3').click()">
+              <input type="file" id="mr-foto-3" accept="image/*" onchange="previewFotoSlot('mr',3,this)" style="display:none"/>
+              <div class="foto-slot-ph" id="mr-foto-ph-3"><span>📷</span><small>Foto 3</small></div>
+              <img id="mr-foto-prev-3" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="mr-foto-rm-3" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('mr',3)">✕</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-recepcion')">Cancelar</button>
+      <button class="btn" style="background:#0277bd;color:#fff;border:none" onclick="guardarRecepcion()">📥 Registrar Recepción</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: Informe de Insumos
+══════════════════════════════════════ -->
+<div class="modal-bd" id="modal-informe-insumos">
+  <div class="modal">
+    <div class="mhdr">
+      <h3>📋 Informe de Insumos</h3>
+      <button class="mclose" onclick="cerrar('modal-informe-insumos')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label>Desde</label><input type="date" id="inf-desde"/></div>
+        <div class="fg"><label>Hasta</label><input type="date" id="inf-hasta"/></div>
+        <div class="fg full">
+          <label>Tipo de Movimiento</label>
+          <select id="inf-tipo" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+            <option value="todos">Todos (Salidas + Recepciones)</option>
+            <option value="salida_insumo">Solo Salidas</option>
+            <option value="recepcion_insumo">Solo Recepciones</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:13px;color:#777;margin:14px 0 0;padding:10px 12px;background:#f5f7fa;border-radius:7px;border-left:3px solid #1E4F8C">
+        El informe incluirá todos los movimientos en el período seleccionado. Si no se especifica fecha, se exportarán todos los registros.
+      </p>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-secondary" onclick="cerrar('modal-informe-insumos')">Cancelar</button>
+      <button class="btn" style="background:#1E4F8C;color:#fff;border:none" onclick="exportarExcelInsumos()">📊 Excel</button>
+      <button class="btn" style="background:#5c3d8f;color:#fff;border:none" onclick="imprimirInformeInsumos()">🖨️ Imprimir / PDF</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════
      MODAL: Asignación
@@ -1035,6 +1432,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         </div>
         <div class="fg"><label>RUT</label><input type="text" id="ma-rut" placeholder="12.345.678-9"/></div>
         <div class="fg"><label>Cargo</label><input type="text" id="ma-cargo" placeholder="Cargo del trabajador"/></div>
+        <div class="fg"><label>Turno</label><select id="ma-turno"><option value="">Sin turno</option><option>Turno A</option><option>Turno B</option></select></div>
         <div class="fg full">
           <label>Ítem a asignar *</label>
           <div class="item-search-wrap">
@@ -1050,10 +1448,11 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <label>Cantidad</label>
           <input type="number" id="ma-cantidad" min="1" value="1" style="width:100%"/>
         </div>
-        <div class="fg full" style="display:flex;align-items:center;gap:10px;padding:6px 0">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;color:#1a3a5c;margin:0">
-            <input type="checkbox" id="ma-no-descontar" style="width:16px;height:16px;cursor:pointer"/>
-            No descontar del inventario general
+        <div class="fg full" style="padding:6px 0">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+            <input type="checkbox" id="ma-no-descontar" style="width:16px;height:16px;cursor:pointer;flex-shrink:0"/>
+            <span style="font-weight:600;color:#1a3a5c">No descontar del inventario general</span>
+            <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">Al activar esta opción, la cantidad ingresada NO se descontará del stock disponible — solo se sumará al total del ítem en el inventario general.</div></span>
           </label>
         </div>
         <div class="fg">
@@ -1079,7 +1478,12 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <option>Dañado</option>
           </select>
         </div>
-        <div class="fg"><label>Fecha de Entrega</label><input type="date" id="ma-fecha-ingreso"/></div>
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:8px">Fecha de Entrega
+            <button type="button" onclick="document.getElementById('ma-fecha-ingreso').value=hoy()" style="font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #7b1fa2;background:#f3e5f5;color:#7b1fa2;cursor:pointer;font-weight:600;line-height:1.6">● Hoy</button>
+          </label>
+          <input type="date" id="ma-fecha-ingreso"/>
+        </div>
         <div class="fg full"><label>Observaciones</label><textarea id="ma-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Foto de asignación</label>
@@ -1314,7 +1718,7 @@ function autoTurnoSal(nombre) {
 
 // Close modals on backdrop click — solo modales sin formulario
 document.querySelectorAll('.modal-bd').forEach(bd => {
-  const formModals = ['modal-item','modal-entrega','modal-salida','modal-asignacion','modal-baja'];
+  const formModals = ['modal-item','modal-entrega','modal-salida','modal-recepcion','modal-informe-insumos','modal-asignacion','modal-baja'];
   if (!formModals.includes(bd.id)) {
     bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
   }
@@ -1427,7 +1831,8 @@ function renderAsignaciones() {
   var fCateg = document.getElementById('fa-categ') ? document.getElementById('fa-categ').value : '';
   var fResp  = document.getElementById('fa-resp')  ? document.getElementById('fa-resp').value  : '';
   var fCant  = document.getElementById('fa-cant')  ? document.getElementById('fa-cant').value  : '';
-  var fObs   = document.getElementById('fa-obs')   ? norm(document.getElementById('fa-obs').value) : '';
+  var fObs    = document.getElementById('fa-obs')    ? norm(document.getElementById('fa-obs').value) : '';
+  var fBuscar = document.getElementById('fa-buscar') ? norm(document.getElementById('fa-buscar').value) : '';
   // Aplicar filtros
   var asigs = allAsigs.filter(function(m) {
     var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
@@ -1441,6 +1846,7 @@ function renderAsignaciones() {
     if (fResp  && m.responsable       !== fResp)  return false;
     if (fCant  && String(m.cantidad || 1) !== fCant) return false;
     if (fObs   && !norm(m.observaciones || '').includes(fObs)) return false;
+    if (fBuscar && ![norm(m.nombre_trabajador||''), norm(m.cargo_trabajador||''), norm(desc), norm(m.rut_trabajador||''), norm(m.observaciones||''), norm(m.responsable||'')].some(function(v){ return v.includes(fBuscar); })) return false;
     return true;
   });
   asigs.sort(function(a,b){
@@ -1456,10 +1862,10 @@ function renderAsignaciones() {
   const tb = document.getElementById('tb-asig');
   if (!tb) return;
   if (!asigs.length) {
-    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin resultados</td></tr>';
+    tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Sin resultados</td></tr>';
     return;
   }
-  tb.innerHTML = asigs.map(function(m) {
+  tb.innerHTML = asigs.map(function(m, idx) {
     // Usar datos actuales del ítem si existe en inventario; si fue eliminado, usar snapshot
     const itVivo  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
     const desc     = (itVivo ? itVivo.descripcion : m.descripcion) || '—';
@@ -1468,6 +1874,7 @@ function renderAsignaciones() {
     const itmInfo  = desc;
     const itmSub   = (corr ? 'Corr. ' + corr : '') + (corr && categ ? ' · ' : '') + (categ || '');
     return '<tr onclick="clicFila(this,\'asig\',\'' + m.id + '\')" ondblclick="dblFila(this,\'asig\',\'' + m.id + '\')" style="cursor:pointer">' +
+      '<td style="text-align:center;color:#999;font-size:12px;font-weight:600">' + (idx + 1) + '</td>' +
       '<td>' + ff((itVivo && itVivo.fecha_ingreso) || m.fecha || m.created_at) + '</td>' +
       '<td><strong>' + (m.nombre_trabajador || '—') + '</strong>' +
         (m.rut_trabajador ? '<br><small style="color:#888">' + m.rut_trabajador + '</small>' : '') + '</td>' +
@@ -1480,6 +1887,7 @@ function renderAsignaciones() {
       '<td>' + (m.observaciones || '—') + '</td>' +
       '<td style="white-space:nowrap">'
         + '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarAsignacion(\'' + m.id + '\')" title="Editar">✏️ Editar</button> ' +
+        '<button style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid #2e7d32;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-weight:600;margin-right:4px" onclick="event.stopPropagation();traspasarAEPP(\'' + m.id + '\')" title="Mover a Entrega EPP">🦺 → EPP</button>' +
         '<button class="btn btn-warn btn-sm" onclick="event.stopPropagation();liberarAsignacion(\'' + m.id + '\',' +
           '\'' + (m.item_id || '') + '\',' +
           '\'' + (m.descripcion || '').replace(/'/g,"\\'") + '\')" title="Devolver ítem">↩ Liberar</button> ' +
@@ -1537,6 +1945,7 @@ function seleccionarTrabA(nombre) {
   document.getElementById('ma-trab').value  = nombre;
   document.getElementById('ma-rut').value   = (t && t.rut)   ? t.rut   : '';
   document.getElementById('ma-cargo').value = (t && t.cargo) ? t.cargo : '';
+  if (t && t.turno) document.getElementById('ma-turno').value = 'Turno ' + t.turno;
   document.getElementById('ma-trab-list').style.display = 'none';
 }
 
@@ -1577,6 +1986,7 @@ function abrirModalAsignacion() {
   document.getElementById('ma-trab-list').style.display = 'none';
   document.getElementById('ma-rut').value   = '';
   document.getElementById('ma-cargo').value = '';
+  document.getElementById('ma-turno').value = '';
   document.getElementById('ma-item-search').value = '';
   document.getElementById('ma-item-list').style.display  = 'none';
   document.getElementById('ma-item-val').value    = '';
@@ -1612,6 +2022,7 @@ function editarAsignacion(movId) {
   document.getElementById('ma-trab').value             = m.nombre_trabajador || '';
   document.getElementById('ma-rut').value              = m.rut_trabajador || '';
   document.getElementById('ma-cargo').value            = m.cargo_trabajador || '';
+  document.getElementById('ma-turno').value            = m.turno || '';
   var lbl = itSel ? ((itSel.correlativo ? '['+itSel.correlativo+'] ' : '') + (itSel.descripcion||'') + (itSel.talla ? ' ('+itSel.talla+')' : '')) : (m.descripcion || '');
   document.getElementById('ma-item-search').value      = lbl;
   document.getElementById('ma-item-val').value         = m.item_id || '';
@@ -1685,12 +2096,14 @@ async function guardarAsignacion() {
     observaciones:     document.getElementById('ma-obs').value.trim() || null,
     foto_url:          foto_url,
     estado_entregar:   estadoFisico || null,
+    fecha_entrega:     fechaIngreso || null,
+    turno:             document.getElementById('ma-turno').value || null,
     usuario_email:     currentUser ? (currentUser.email || null) : null,
   };
 
   var res;
   if (editId) {
-    // MODO EDICIÓN: actualizar solo los campos editables
+    // MODO EDICIÓN: actualizar solo los campos editables (sin trigger)
     var updateFields = {
       fecha:             payload.fecha,
       nombre_trabajador: payload.nombre_trabajador,
@@ -1704,36 +2117,28 @@ async function guardarAsignacion() {
     };
     if (foto_url) updateFields.foto_url = foto_url;
     res = await sb.from('inventario_movimientos').update(updateFields).eq('id', editId);
-  } else {
-    res = await sb.from('inventario_movimientos').insert(payload);
-  }
-  if (res.error) {
-    alert('Error: ' + res.error.message);
-    btn.disabled = false; btn.textContent = editId ? '💾 Guardar Cambios' : '📌 Registrar Asignación';
-    return;
-  }
-
-  if (!editId) {
-    // Leer estado real de la DB luego del INSERT (el trigger ya corrió y sumó 1 a disponible)
-    const { data: _cur } = await sb.from('inventario_items')
-      .select('cantidad_total,cantidad_disponible')
-      .eq('id', itemId).single();
-    const _curTotal = _cur ? (_cur.cantidad_total      || 0) : totalActual;
-    const _curDisp  = _cur ? (_cur.cantidad_disponible || 0) : (dispActual + 1); // post-trigger
-
-    if (!noDescontar) {
-      // Solo descuenta del disponible (cancela +1 del trigger); total no cambia
-      var newDisp   = Math.max(0, _curDisp - 1 - cantAsig);
-      var newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
-      await sb.from('inventario_items')
-        .update({ cantidad_disponible: newDisp, estado: newEstado })
-        .eq('id', itemId);
-    } else {
-      // 'No descontar': solo cancelar el +1 del trigger
-      await sb.from('inventario_items')
-        .update({ cantidad_disponible: _curDisp - 1 })
-        .eq('id', itemId);
+    if (res.error) {
+      alert('Error: ' + res.error.message);
+      btn.disabled = false; btn.textContent = '💾 Guardar Cambios';
+      return;
     }
+  } else {
+    // MODO NUEVO: pre-leer stock → insert → SET absoluto (independiente del trigger)
+    const { data: _preA } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', itemId).single();
+    const _preDispA = _preA ? (_preA.cantidad_disponible ?? 0) : dispActual;
+    const newDisp   = noDescontar ? _preDispA : Math.max(0, _preDispA - cantAsig);
+    const newEstado = newDisp <= 0 ? 'En Uso' : (itSel ? (itSel.estado || 'Disponible') : 'Disponible');
+    payload.cantidad_restante = newDisp;
+    res = await sb.from('inventario_movimientos').insert(payload);
+    if (res.error) {
+      alert('Error: ' + res.error.message);
+      btn.disabled = false; btn.textContent = '📌 Registrar Asignación';
+      return;
+    }
+    const _updA = { cantidad_disponible: newDisp, estado: newEstado };
+    if (noDescontar) _updA.cantidad_total = totalActual + cantAsig;
+    const { error: errUpdA } = await sb.from('inventario_items').update(_updA).eq('id', itemId);
+    if (errUpdA) { alert('Asignación guardada pero error al actualizar stock: ' + errUpdA.message); }
   }
 
   // 2) Registrar en historial del ítem (aparte, sin afectar la cantidad si falla)
@@ -1946,16 +2351,17 @@ function renderBajas() {
   var tb = document.getElementById('tb-bajas');
   if (!tb) return;
   if (!bajas.length) {
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin registros de baja</td></tr>';
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros de baja</td></tr>';
     return;
   }
-  tb.innerHTML = bajas.map(function(m) {
+  tb.innerHTML = bajas.map(function(m, idx) {
     var itV  = m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
     var desc = (itV ? itV.descripcion : m.descripcion) || '—';
     var corr = itV ? itV.correlativo : null;
     var serie = m.rut_trabajador || '—';
     var motivosShort = (m.observaciones || '').substring(0, 80) + ((m.observaciones||'').length > 80 ? '…' : '');
     return '<tr>' +
+      '<td style="text-align:center;color:#999;font-size:12px;font-weight:600">' + (idx + 1) + '</td>' +
       '<td>' + ff(m.fecha) + '</td>' +
       '<td><strong>' + desc + '</strong>' + (corr ? '<br><small style="color:#888">Corr. ' + corr + '</small>' : '') + '</td>' +
       '<td><small>' + serie + '</small></td>' +
@@ -2167,6 +2573,44 @@ function generarFichaBaja(movId) {
   w.document.close();
 }
 
+var _trpMovId = null;
+function traspasarAEPP(movId) {
+  _trpMovId = movId;
+  const mov = movs.find(function(x){ return x.id === movId; });
+  // Pre-llenar: fecha_entrega guardada → fecha_ingreso del item → fecha del movimiento → vacío
+  const itVivoTrp = mov && mov.item_id ? items.find(function(x){ return x.id === mov.item_id; }) : null;
+  const rawFecha = mov.fecha_entrega || (itVivoTrp && itVivoTrp.fecha_ingreso) || mov.fecha || '';
+  document.getElementById('trp-fecha-entrega').value = rawFecha ? String(rawFecha).substring(0, 10) : '';
+  const trabTurno = mov.turno || (function() {
+    var t = TRABAJADORES.find(function(x){ return x.rut === mov.rut_trabajador; });
+    return t && t.turno ? 'Turno ' + t.turno : '';
+  })();
+  document.getElementById('trp-turno').value = trabTurno;
+  // Reasignar click del botón para evitar acumulación de handlers
+  const btn = document.getElementById('btn-confirmar-traspasar');
+  const nuevo = btn.cloneNode(true);
+  btn.parentNode.replaceChild(nuevo, btn);
+  nuevo.onclick = async function() {
+    const fechaEntrega = document.getElementById('trp-fecha-entrega').value || null;
+    const turno = document.getElementById('trp-turno').value;
+    const updates = { tipo: 'entrega_epp', fecha_entrega: fechaEntrega, turno: turno || null };
+    nuevo.disabled = true; nuevo.textContent = 'Traspasando…';
+    try {
+      const { error } = await sb.from('inventario_movimientos').update(updates).eq('id', _trpMovId);
+      if (error) throw new Error(error.message);
+      const m = movs.find(function(x){ return x.id === _trpMovId; });
+      if (m) Object.assign(m, updates);
+      cerrar('modal-traspasar-epp');
+      renderAsignaciones();
+      renderEntrega();
+    } catch(e) {
+      alert('Error al traspasar: ' + e.message);
+      nuevo.disabled = false; nuevo.textContent = '🦺 Confirmar Traspaso';
+    }
+  };
+  abrir('modal-traspasar-epp');
+}
+
 function liberarAsignacion(movId, itemId, desc) {
   confirmar('¿Devolver "' + desc + '" y marcarlo como Disponible?', async function() {
   marcarItemReciente(itemId);
@@ -2228,25 +2672,31 @@ function sortBy(col) {
 }
 
 function limpiarFA() {
-  ['fa-fecha','fa-trab','fa-cargo','fa-item','fa-categ','fa-cant','fa-resp','fa-obs'].forEach(function(id){
+  ['fa-buscar','fa-fecha','fa-trab','fa-cargo','fa-item','fa-categ','fa-cant','fa-resp','fa-obs'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
   renderAsignaciones();
 }
 function limpiarFE2() {
-  ['fe-trab-q','fe-trab','fe-cargo','fe-item','fe-talla','fe-estado','fe-resp'].forEach(function(id){
+  ['fe-buscar','fe-trab-q','fe-trab','fe-cargo','fe-item','fe-talla','fe-estado','fe-resp'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
   renderEntrega();
 }
 function limpiarFS2() {
-  ['fs-fecha-q','fs-turno','fs-item','fs-categ','fs-resp'].forEach(function(id){
+  ['fs-buscar','fs-fecha-q','fs-turno','fs-item','fs-categ','fs-resp'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
   renderSalida();
+}
+
+function limpiarFS() {
+  document.getElementById('fs-desde').value = '';
+  document.getElementById('fs-hasta').value = '';
+  setFiltroTipoInsumo('todos');
 }
 
 function limpiarFiltros() {
@@ -2262,8 +2712,26 @@ function renderInventario() {
   const cat    = document.getElementById('fi-cat').value;
   const estado = document.getElementById('fi-estado').value;
   const ubic   = document.getElementById('fi-ubic').value;
+  // Actualizar conteos por categoría en el dropdown
+  const _catSel = document.getElementById('fi-cat');
+  const _cats   = ['EPP','Ropa de Trabajo','Insumos','Equipos y herramientas','Otro'];
+  let _catHtml  = '<option value="">Todas las categorías</option>';
+  _cats.forEach(function(c) {
+    const n = items.filter(function(i){ return (i.categoria||'') === c; }).length;
+    _catHtml += `<option value="${c}"${cat === c ? ' selected' : ''}>${c} (${n})</option>`;
+  });
+  _catSel.innerHTML = _catHtml;
   let rows = [...items];
-  if (cat)    rows = rows.filter(i => i.categoria === cat);
+  if (cat) rows = rows.filter(i => i.categoria === cat);
+  // Actualizar conteos por estado (sobre items ya filtrados por categoría)
+  const _estadoSel = document.getElementById('fi-estado');
+  const _estados   = ['Disponible','No disponible (sin stock)','En Uso','En Reparación','Dado de Baja','Pérdida'];
+  let _estHtml     = '<option value="">Todos los estados</option>';
+  _estados.forEach(function(e) {
+    const n = rows.filter(function(i){ return (i.estado||'') === e; }).length;
+    _estHtml += `<option value="${e}"${estado === e ? ' selected' : ''}>${e} (${n})</option>`;
+  });
+  _estadoSel.innerHTML = _estHtml;
   if (estado) rows = rows.filter(i => i.estado === estado);
   if (ubic)   rows = rows.filter(i => (i.ubicacion||'') === ubic);
   if (q)      rows = rows.filter(i =>
@@ -2289,10 +2757,11 @@ function renderInventario() {
     });
   }
   const tb = document.getElementById('tb-inv');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
-  tb.innerHTML = rows.map(i => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin ítems</td></tr>'; return; }
+  tb.innerHTML = rows.map((i, idx) => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
+    <td style="text-align:center;color:#999;font-size:12px;font-weight:600">${idx + 1}</td>
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}${i.lote?`<span style="color:#fff;background:#5c7aa0;font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle">Lote: ${i.lote}</span>`:''}</span></div></td>
+    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}${i.lote?`<span onclick="event.stopPropagation();abrirModalVerLote('${i.id}')" style="color:#fff;background:#5c7aa0;font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle;cursor:pointer" title="Ver/editar lote">Lote: ${i.lote}</span>`:''}</span></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
@@ -2301,6 +2770,7 @@ function renderInventario() {
     <td>${i.ubicacion||'—'}</td>
     <td onclick="event.stopPropagation()">
       ${i.historial?.length?`<button class="btn btn-secondary btn-sm btn-hist" style="margin-right:4px" onclick="toggleHistorial(event,'${i.id}')" title="Ver historial de modificaciones">🕐</button>`:''}
+      <button class="btn btn-sm" onclick="abrirModalVerLote('${i.id}')" title="Ver/editar lotes" style="background:#e3f2fd;color:#0277bd;border:1px solid #90caf9;margin-right:2px">📦</button>
       <button class="btn btn-secondary btn-sm" onclick="editarItem('${i.id}')">✏️</button>
       <button class="btn btn-danger btn-sm" onclick="borrarItem('${i.id}','${esc(i.descripcion)}')">🗑️</button>
     </td>
@@ -2328,6 +2798,7 @@ function renderEntrega() {
   if (d) allRows = allRows.filter(function(m){ return m.fecha >= d; });
   if (h) allRows = allRows.filter(function(m){ return m.fecha <= h; });
   // Filtros de columna
+  var fBuscar = document.getElementById('fe-buscar') ? norm(document.getElementById('fe-buscar').value) : '';
   var fFecha = (document.getElementById('fe-trab-q') ? document.getElementById('fe-trab-q').value.toLowerCase() : '');
   var fTrab  = document.getElementById('fe-trab')   ? document.getElementById('fe-trab').value   : '';
   var fCargo = document.getElementById('fe-cargo')  ? document.getElementById('fe-cargo').value  : '';
@@ -2336,7 +2807,8 @@ function renderEntrega() {
   var fEstad = document.getElementById('fe-estado') ? document.getElementById('fe-estado').value : '';
   var fResp  = document.getElementById('fe-resp')   ? document.getElementById('fe-resp').value   : '';
   var rows = allRows.filter(function(m) {
-    if (fFecha && !ff(m.fecha).includes(fFecha)) return false;
+    if (fBuscar && ![norm(m.nombre_trabajador||''), norm(m.cargo_trabajador||''), norm(m.descripcion||''), norm(m.rut_trabajador||''), norm(m.observaciones||''), norm(m.responsable||'')].some(function(v){ return v.includes(fBuscar); })) return false;
+    if (fFecha && !ff(m.fecha_entrega || m.fecha).includes(fFecha)) return false;
     if (fTrab  && m.nombre_trabajador !== fTrab)  return false;
     if (fCargo && m.cargo_trabajador  !== fCargo) return false;
     if (fItem  && m.descripcion       !== fItem)  return false;
@@ -2345,12 +2817,13 @@ function renderEntrega() {
     if (fResp  && m.responsable       !== fResp)  return false;
     return true;
   });
-  rows.sort(function(a,b){ return _sortDir.epp==='asc'?(a.fecha||'').localeCompare(b.fecha||''):(b.fecha||'').localeCompare(a.fecha||''); });
+  rows.sort(function(a,b){ const da=a.fecha_entrega||a.fecha||''; const db=b.fecha_entrega||b.fecha||''; return _sortDir.epp==='asc'?da.localeCompare(db):db.localeCompare(da); });
   var icE = document.getElementById('ic-epp-fecha'); if(icE) icE.textContent = _sortDir.epp==='asc'?'↑':'↓';
   const tb = document.getElementById('tb-epp');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'epp','${m.id}')" ondblclick="dblFila(this,'epp','${m.id}')" style="cursor:pointer">
-    <td>${ff(m.fecha)}</td>
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  tb.innerHTML = rows.map((m, idx) => `<tr onclick="clicFila(this,'epp','${m.id}')" ondblclick="dblFila(this,'epp','${m.id}')" style="cursor:pointer">
+    <td style="text-align:center;color:#999;font-size:12px;font-weight:600">${idx + 1}</td>
+    <td>${ff(m.fecha_entrega || m.fecha)}</td>
     <td>${m.nombre_trabajador||'—'}</td>
     <td>${m.cargo_trabajador||'—'}</td>
     <td>${m.descripcion||'—'}${m.categoria?`<br><small style="color:#888">${m.categoria}</small>`:''}</td>
@@ -2366,26 +2839,46 @@ function renderEntrega() {
   </tr>`).join('');
 }
 
-// ── Render Salida ──────────────────────────────────────────────
+// ── Render Salida + Recepción ─────────────────────────────────────
+var _filtroTipoInsumo = 'todos';
+
+function setFiltroTipoInsumo(tipo) {
+  _filtroTipoInsumo = tipo;
+  var mapa = { todos:'ftipo-todos', salida_insumo:'ftipo-sal', recepcion_insumo:'ftipo-rec' };
+  ['ftipo-todos','ftipo-sal','ftipo-rec'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  var activo = document.getElementById(mapa[tipo]);
+  if (activo) activo.classList.add('active');
+  renderSalida();
+}
+
 function renderSalida() {
   const d = document.getElementById('fs-desde').value;
   const h = document.getElementById('fs-hasta').value;
-  var allRows = movs.filter(function(m){ return m.tipo === 'salida_insumo'; });
-  // Poblar selects
+  var allRows = movs.filter(function(m){ return m.tipo === 'salida_insumo' || m.tipo === 'recepcion_insumo'; });
   poblarSelect('fs-turno', allRows.map(function(m){ return m.turno; }));
   poblarSelect('fs-item',  allRows.map(function(m){ return m.descripcion; }));
   poblarSelect('fs-categ', allRows.map(function(m){ return m.categoria; }));
   poblarSelect('fs-resp',  allRows.map(function(m){ return m.responsable; }));
-  // Filtros de fecha (barra superior)
+  if (_filtroTipoInsumo !== 'todos') allRows = allRows.filter(function(m){ return m.tipo === _filtroTipoInsumo; });
   if (d) allRows = allRows.filter(function(m){ return (m.fecha||'').substring(0,10) >= d; });
   if (h) allRows = allRows.filter(function(m){ return (m.fecha||'').substring(0,10) <= h; });
-  // Filtros de columna
-  var fFecha = (document.getElementById('fs-fecha-q') ? document.getElementById('fs-fecha-q').value.toLowerCase() : '');
-  var fTurno = document.getElementById('fs-turno') ? document.getElementById('fs-turno').value : '';
-  var fItem  = document.getElementById('fs-item')  ? document.getElementById('fs-item').value  : '';
-  var fCateg = document.getElementById('fs-categ') ? document.getElementById('fs-categ').value : '';
-  var fResp  = document.getElementById('fs-resp')  ? document.getElementById('fs-resp').value  : '';
+  var fBuscar = document.getElementById('fs-buscar') ? norm(document.getElementById('fs-buscar').value) : '';
+  var fFecha  = document.getElementById('fs-fecha-q') ? document.getElementById('fs-fecha-q').value.toLowerCase() : '';
+  var fTurno  = document.getElementById('fs-turno') ? document.getElementById('fs-turno').value : '';
+  var fItem   = document.getElementById('fs-item')  ? document.getElementById('fs-item').value  : '';
+  var fCateg  = document.getElementById('fs-categ') ? document.getElementById('fs-categ').value : '';
+  var fResp   = document.getElementById('fs-resp')  ? document.getElementById('fs-resp').value  : '';
   var rows = allRows.filter(function(m) {
+    if (fBuscar) {
+      var esRec = m.tipo === 'recepcion_insumo';
+      var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+      var campos = [norm(m.descripcion||''), norm(m.turno||''), norm(m.categoria||''), norm(m.responsable||''), norm(m.observaciones||'')];
+      if (esRec) { campos.push(norm(parts[0]||'')); campos.push(norm(parts[1]||'')); }
+      if (!campos.some(function(v){ return v.includes(fBuscar); })) return false;
+    }
     if (fFecha && !ff(m.fecha).includes(fFecha)) return false;
     if (fTurno && m.turno       !== fTurno) return false;
     if (fItem  && m.descripcion !== fItem)  return false;
@@ -2396,21 +2889,48 @@ function renderSalida() {
   rows.sort(function(a,b){ return _sortDir.sal==='asc'?(a.fecha||'').localeCompare(b.fecha||''):(b.fecha||'').localeCompare(a.fecha||''); });
   var icS = document.getElementById('ic-sal-fecha'); if(icS) icS.textContent = _sortDir.sal==='asc'?'↑':'↓';
   const tb = document.getElementById('tb-sal');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
-  tb.innerHTML = rows.map(m => `<tr onclick="clicFila(this,'sal','${m.id}')" ondblclick="dblFila(this,'sal','${m.id}')" style="cursor:pointer">
-    <td>${ff(m.fecha)}${ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':''}</td>
-    <td>${m.turno||'—'}</td>
-    <td>${m.descripcion||'—'}</td>
-    <td><span class="badge b-info">${m.categoria||'—'}</span></td>
-    <td style="text-align:center"><span style="font-weight:700;color:#c62828">↓ ${m.cantidad}</span></td>
-    <td style="text-align:center">${(()=>{ if(m.cantidad_restante!=null){ const col=m.cantidad_restante<=0?'#c62828':m.cantidad_restante<=2?'#e65100':'#2e7d32'; return `<span style="font-weight:700;color:${col}">↑ ${m.cantidad_restante}</span>`; } const fb=(items.find(x=>x.id===m.item_id)||items.find(x=>x.descripcion===m.descripcion))?.cantidad_disponible; return fb!=null?`<span style="font-weight:700;color:${fb<=0?'#c62828':fb<=2?'#e65100':'#2e7d32'}">↑ ${fb}</span>`:'—'; })()}</td>
-    <td>${m.responsable||'—'}</td>
-    <td>${m.observaciones||'—'}</td>
-    <td style="white-space:nowrap">
-      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarSalida('${m.id}')">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarSalida('${m.id}')">🗑️</button>
-    </td>
-  </tr>`).join('');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  tb.innerHTML = rows.map(function(m, idx) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    var areaOrigen  = parts[0] || '';
+    var personaEntr = parts[1] || '';
+    var tipoBadge = esRec
+      ? '<span class="badge-rec">📥 Recepción</span>'
+      : '<span class="badge-sal">📤 Salida</span>';
+    var cantCell = esRec
+      ? '<span style="font-weight:700;color:#2e7d32">↑ ' + m.cantidad + '</span>'
+      : '<span style="font-weight:700;color:#c62828">↓ ' + m.cantidad + '</span>';
+    var restCell = (function(){
+      if (m.cantidad_restante != null) {
+        var col = m.cantidad_restante<=0?'#c62828':m.cantidad_restante<=2?'#e65100':'#2e7d32';
+        return '<span style="font-weight:700;color:'+col+'">↑ '+m.cantidad_restante+'</span>';
+      }
+      var fb = (items.find(function(x){ return x.id===m.item_id; })||items.find(function(x){ return x.descripcion===m.descripcion; }));
+      var fbD = fb ? fb.cantidad_disponible : null;
+      return fbD!=null?'<span style="font-weight:700;color:'+(fbD<=0?'#c62828':fbD<=2?'#e65100':'#2e7d32')+'">↑ '+fbD+'</span>':'—';
+    })();
+    var obsArea = esRec
+      ? (areaOrigen || personaEntr ? (areaOrigen + (personaEntr ? ' · ' + personaEntr : '')).trim() : (parts[3]||'—'))
+      : (m.observaciones||'—');
+    var btnInforme = '<button class="btn btn-sm" style="background:#5c3d8f;color:#fff;border:none" onclick="event.stopPropagation();informeInsumoSingle(\''+m.id+'\')" title="Generar informe de este registro">📋</button>';
+    var acciones = esRec
+      ? btnInforme + ' <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarRecepcion(\''+m.id+'\')">🗑️</button>'
+      : btnInforme + ' <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarSalida(\''+m.id+'\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarSalida(\''+m.id+'\')">🗑️</button>';
+    return '<tr onclick="clicFila(this,\'sal\',\''+m.id+'\')" ondblclick="dblFila(this,\'sal\',\''+m.id+'\')" style="cursor:pointer'+(esRec?';background:#f8fff9':'')+'">'+
+      '<td style="text-align:center;color:#999;font-size:12px;font-weight:600">'+(idx+1)+'</td>'+
+      '<td>'+tipoBadge+'</td>'+
+      '<td>'+ff(m.fecha)+(ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':'')+'</td>'+
+      '<td>'+(m.turno||'—')+'</td>'+
+      '<td>'+(m.descripcion||'—')+'</td>'+
+      '<td><span class="badge b-info">'+(m.categoria||'—')+'</span></td>'+
+      '<td style="text-align:center">'+cantCell+'</td>'+
+      '<td style="text-align:center">'+restCell+'</td>'+
+      '<td>'+(m.responsable||'—')+'</td>'+
+      '<td>'+obsArea+'</td>'+
+      '<td style="white-space:nowrap">'+acciones+'</td>'+
+    '</tr>';
+  }).join('');
 }
 
 // ── Item Search Dropdown ────────────────────────────────────────
@@ -2627,6 +3147,155 @@ function nextCorrelativo() {
     }
   });
   return maxNum > 0 ? prefix + String(maxNum + 1).padStart(padLen, '0') : '';
+}
+
+var _mvlId  = null;
+var _mvlLbl = '';
+
+function renderLotesTbody(it) {
+  var lotes = it.lotes || [];
+  // Fallback: si no hay array pero sí campo de texto, mostrarlo como entrada legacy
+  if (!lotes.length && it.lote) {
+    lotes = [{ id: 'legacy', numero: it.lote, cantidad: it.cantidad_total || '—', fecha: it.fecha_ingreso || '', observaciones: 'Registrado manualmente' }];
+  }
+  const tbody = document.getElementById('mvl-tbody');
+  if (!lotes.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">Sin lotes registrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lotes.map(function(l, idx) {
+    const fmtFecha = l.fecha ? l.fecha.split('-').reverse().join('-') : '—';
+    return `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:8px 10px;font-weight:600;color:#0277bd">${l.numero||'—'}</td>
+      <td style="padding:8px 10px;text-align:center">${l.cantidad||0}</td>
+      <td style="padding:8px 10px">${fmtFecha}</td>
+      <td style="padding:8px 10px;color:#666;font-size:12px">${l.observaciones||'—'}</td>
+      <td style="padding:8px 10px;text-align:center">
+        <button class="btn btn-danger btn-sm" onclick="eliminarLoteItem('${it.id}','${l.id}')" title="Eliminar lote">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModalVerLote(itemId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  _mvlId  = itemId;
+  _mvlLbl = (it.correlativo ? '[' + it.correlativo + '] ' : '') + it.descripcion;
+  document.getElementById('mvl-desc').textContent = _mvlLbl;
+  renderLotesTbody(it);
+  abrir('modal-ver-lote');
+}
+
+function abrirNuevoLoteDesdeVer() {
+  cerrar('modal-ver-lote');
+  setTimeout(function() {
+    const it = _mvlId ? items.find(x => x.id === _mvlId) : null;
+    if (it) {
+      document.getElementById('ml-item-search').value = _mvlLbl;
+      document.getElementById('ml-item-val').value    = _mvlId;
+    }
+    document.getElementById('ml-lote').value    = nextLote();
+    document.getElementById('ml-cantidad').value = '1';
+    document.getElementById('ml-fecha').value   = hoy();
+    document.getElementById('ml-obs').value     = '';
+    abrir('modal-lote');
+  }, 100);
+}
+
+async function eliminarLoteItem(itemId, loteId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+
+  // Caso legacy: el lote era solo un campo de texto, sin array JSONB
+  if (loteId === 'legacy') {
+    const cantLote = it.cantidad_total || 0;
+    confirmar('¿Eliminar el lote ' + (it.lote || '') + ' (' + cantLote + ' unid.)? Se descontará del inventario.', async function() {
+      const { error } = await sb.from('inventario_items').update({
+        lote: null, lotes: [],
+        cantidad_total: 0, cantidad_disponible: 0,
+        estado: 'No disponible (sin stock)',
+      }).eq('id', itemId);
+      if (error) { console.error(error); alert('Error al eliminar'); return; }
+      it.lote = null; it.lotes = [];
+      it.cantidad_total = 0; it.cantidad_disponible = 0;
+      it.estado = 'No disponible (sin stock)';
+      renderLotesTbody(it);
+      renderInventario(); actualizarStats();
+    });
+    return;
+  }
+
+  // Caso normal: lote en array JSONB
+  const loteEntry = (it.lotes || []).find(l => l.id === loteId);
+  if (!loteEntry) return;
+  confirmar('¿Eliminar el lote ' + loteEntry.numero + ' (' + loteEntry.cantidad + ' unid.)? Se descontará del stock.', async function() {
+    const newLotes  = (it.lotes || []).filter(l => l.id !== loteId);
+    const newTotal  = Math.max(0, (it.cantidad_total || 0) - (loteEntry.cantidad || 0));
+    const newDisp   = Math.max(0, (it.cantidad_disponible || 0) - (loteEntry.cantidad || 0));
+    const loteActual = newLotes.length ? newLotes[newLotes.length - 1].numero : null;
+    const newEstado  = newDisp <= 0 ? 'No disponible (sin stock)' : (it.estado || 'Disponible');
+    const { error } = await sb.from('inventario_items').update({
+      lotes: newLotes, lote: loteActual,
+      cantidad_total: newTotal, cantidad_disponible: newDisp,
+      estado: newEstado,
+    }).eq('id', itemId);
+    if (error) { console.error(error); alert('Error al eliminar'); return; }
+    it.lotes = newLotes; it.lote = loteActual;
+    it.cantidad_total = newTotal; it.cantidad_disponible = newDisp;
+    it.estado = newEstado;
+    renderLotesTbody(it);
+    renderInventario(); actualizarStats();
+  });
+}
+
+function nextLote() {
+  const year   = new Date().getFullYear();
+  const prefix = 'LOT-' + year + '-';
+  let max = 0;
+  items.forEach(function(i) {
+    if (i.lote && i.lote.startsWith(prefix)) {
+      const n = parseInt(i.lote.replace(prefix, '')) || 0;
+      if (n > max) max = n;
+    }
+  });
+  return prefix + String(max + 1).padStart(3, '0');
+}
+
+function abrirModalLote() {
+  document.getElementById('ml-item-search').value = '';
+  document.getElementById('ml-item-val').value    = '';
+  document.getElementById('ml-item-list').style.display = 'none';
+  document.getElementById('ml-lote').value        = nextLote();
+  document.getElementById('ml-cantidad').value    = '1';
+  document.getElementById('ml-fecha').value       = hoy();
+  document.getElementById('ml-obs').value         = '';
+  abrir('modal-lote');
+}
+
+async function guardarLote() {
+  const itemId = document.getElementById('ml-item-val').value;
+  const lote   = document.getElementById('ml-lote').value.trim();
+  const cant   = parseInt(document.getElementById('ml-cantidad').value) || 0;
+  const fecha  = document.getElementById('ml-fecha').value;
+  if (!itemId || !lote || cant < 1) { alert('Completa los campos obligatorios (*)'); return; }
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  const obs       = document.getElementById('ml-obs').value.trim();
+  const newEntry  = { id: Date.now().toString(), numero: lote, cantidad: cant, fecha, observaciones: obs };
+  const newLotes  = (it.lotes || []).concat(newEntry);
+  const newTotal  = (it.cantidad_total || 0) + cant;
+  const newDisp   = (it.cantidad_disponible || 0) + cant;
+  const { error } = await sb.from('inventario_items').update({
+    lote, lotes: newLotes,
+    cantidad_total: newTotal, cantidad_disponible: newDisp,
+    estado: newDisp > 0 ? 'Disponible' : (it.estado || 'Disponible'),
+  }).eq('id', itemId);
+  if (error) { console.error(error); alert('Error al registrar lote'); return; }
+  it.lotes = newLotes; it.lote = lote;
+  it.cantidad_total = newTotal; it.cantidad_disponible = newDisp;
+  cerrar('modal-lote');
+  renderInventario(); actualizarStats();
 }
 
 function abrirModalItem(id) {
@@ -2860,24 +3529,18 @@ async function guardarEntrega() {
     }
     editMovId = null;
   } else {
-    payload.cantidad_restante = noDescontar ? (itSel?.cantidad_disponible || 0) : Math.max(0, (itSel?.cantidad_disponible||0) - cant);
+    // Leer disponible ANTES del INSERT para calcular el valor final de forma robusta
+    const { data: _preE } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', itemId).single();
+    const _preDisp = _preE ? (_preE.cantidad_disponible ?? 0) : (itSel?.cantidad_disponible ?? 0);
+    const _newDisp = noDescontar ? _preDisp : Math.max(0, _preDisp - cant);
+    payload.cantidad_restante = _newDisp;
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; } return; }
-    // Leer valores reales post-trigger
-    const { data: _curE } = await sb.from('inventario_items').select('cantidad_total,cantidad_disponible').eq('id', itemId).single();
-    const _totalE = _curE ? (_curE.cantidad_total || 0) : (itSel?.cantidad_total || 0);
-    const _dispE  = _curE ? (_curE.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
-    if (!noDescontar) {
-      // Solo descontar del disponible (cancelando el +1 del trigger); total no cambia
-      await sb.from('inventario_items').update({
-        cantidad_disponible: Math.max(0, _dispE - 1 - cant)
-      }).eq('id', itemId);
-    } else {
-      // Solo cancelar el +1 automático del trigger sin modificar disponible ni total
-      await sb.from('inventario_items').update({
-        cantidad_disponible: Math.max(0, _dispE - 1)
-      }).eq('id', itemId);
-    }
+    // SET absoluto: anula el +1 del trigger y aplica el descuento en un solo paso
+    const _updE = { cantidad_disponible: _newDisp };
+    if (noDescontar) _updE.cantidad_total = (itSel?.cantidad_total || 0) + cant;
+    const { error: errUpd } = await sb.from('inventario_items').update(_updE).eq('id', itemId);
+    if (errUpd) { alert('Entrega guardada pero error al actualizar stock: ' + errUpd.message); }
   }
   if (btnG) { btnG.disabled = false; btnG.textContent = 'Registrar Entrega'; }
   const mhdrE = document.querySelector('#modal-entrega .mhdr h3');
@@ -2893,15 +3556,26 @@ function abrirModalSalida() {
   document.getElementById('ms-fecha').value = hoy();
   document.getElementById('ms-hora').value  = String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
   document.getElementById('ms-turno').value = '';
+  setSalidaItemMode('inventario');
   document.getElementById('ms-item-search').value = '';
   document.getElementById('ms-item-val').value    = '';
   document.getElementById('ms-item-list').style.display = 'none';
+  document.getElementById('ms-item-ext-nombre').value = '';
+  document.getElementById('ms-item-ext-categ').value  = '';
   document.getElementById('ms-cant').value  = '1';
+  document.getElementById('ms-no-descontar').checked = false;
   document.getElementById('ms-resp').value  = '';
+  document.getElementById('ms-resp-ext').value = '';
+  setSalidaRespMode('interno');
+  document.getElementById('ms-persona-retira').value = '';
+  document.getElementById('ms-firma-data').value = '';
+  document.getElementById('ms-firma-wrap').style.display = 'none';
+  var _msFirmaBtn = document.getElementById('ms-firma-toggle-btn');
+  if (_msFirmaBtn) { _msFirmaBtn.textContent = '✍️ Agregar firma'; _msFirmaBtn.style.background = '#fff'; }
+  var _msFirmaC = document.getElementById('ms-firma-canvas');
+  if (_msFirmaC) { _msFirmaC._firmaReady = false; _msFirmaC.classList.remove('signed'); }
   document.getElementById('ms-obs').value   = '';
-  document.getElementById('ms-foto-file').value = '';
-  var fPrevS = document.getElementById('ms-foto-preview');
-  if (fPrevS) { fPrevS.src = ''; fPrevS.style.display = 'none'; }
+  resetFotoSlots('ms');
   document.getElementById('alerta-sal').style.display = 'none';
   abrir('modal-salida');
 }
@@ -2911,35 +3585,47 @@ let editMovSalId = null;
 async function guardarSalida() {
   const fecha  = document.getElementById('ms-fecha').value;
   const hora   = document.getElementById('ms-hora').value;
+  const itemMode = document.getElementById('ms-item-mode').value;
+  const isItemExt = itemMode === 'externo';
+  const itemExtNombre = isItemExt ? document.getElementById('ms-item-ext-nombre').value.trim() : '';
+  const itemExtCateg  = isItemExt ? document.getElementById('ms-item-ext-categ').value.trim() : '';
   const itemId = document.getElementById('ms-item-val').value;
-  const cant   = parseInt(document.getElementById('ms-cant').value) || 1;
+  const cant         = parseInt(document.getElementById('ms-cant').value) || 1;
+  const noDescontar  = document.getElementById('ms-no-descontar')?.checked || false;
   const turnoS = document.getElementById('ms-turno').value;
-  if (!fecha || !itemId || !turnoS) { alert('Completa los campos obligatorios (*)'); return; }
+  if (!fecha || (!isItemExt && !itemId) || (isItemExt && !itemExtNombre) || !turnoS) {
+    alert('Completa los campos obligatorios (*)'); return;
+  }
   const fechaHora = hora ? fecha + 'T' + hora : fecha;
-  const itSel = items.find(x => x.id === itemId);
-  if (!editMovSalId) {
+  const itSel = isItemExt ? null : items.find(x => x.id === itemId);
+  if (!isItemExt && !editMovSalId && !noDescontar) {
     const disp = itSel?.cantidad_disponible || 0;
     if (disp < cant && !confirm('Stock disponible (' + disp + ') menor a la cantidad solicitada (' + cant + '). ¿Continuar?')) return;
   }
-  let foto_url = editMovSalId ? (movs.find(m => m.id === editMovSalId)?.foto_url || null) : null;
-  const fotoFile = document.getElementById('ms-foto-file')?.files[0];
-  if (fotoFile) {
-    try { foto_url = await subirFotoSalida(fotoFile); }
-    catch(e) { alert(e.message); return; }
-  }
+  const _fotosSal   = await subirFotosSlots('ms', 'salidas');
+  const _firmaSalUrl = await subirFirmaCanvas('ms-firma-data', 'sal');
+  const _allFotosSal = _firmaSalUrl ? [..._fotosSal, _firmaSalUrl] : _fotosSal;
+  let foto_url = _allFotosSal.length > 0
+    ? (_allFotosSal.length === 1 ? _allFotosSal[0] : JSON.stringify(_allFotosSal))
+    : (editMovSalId ? (movs.find(m => m.id === editMovSalId)?.foto_url || null) : null);
   const payload = {
     tipo: 'salida_insumo', fecha: fechaHora,
     turno:        turnoS,
-    item_id:      itemId,
-    descripcion:  itSel?.descripcion || null,
-    categoria:    itSel?.categoria   || null,
+    item_id:      isItemExt ? null : itemId,
+    descripcion:  isItemExt ? itemExtNombre : (itSel?.descripcion || null),
+    categoria:    isItemExt ? (itemExtCateg || null) : (itSel?.categoria || null),
     cantidad:     cant,
-    responsable:  document.getElementById('ms-resp').value.trim() || null,
-    observaciones:document.getElementById('ms-obs').value.trim()  || null,
-    foto_url:     foto_url,
-    usuario_email:currentUser?.email || null,
+    responsable:       getSalidaResp() || null,
+    nombre_trabajador: document.getElementById('ms-persona-retira').value.trim() || null,
+    observaciones:     document.getElementById('ms-obs').value.trim() || null,
+    foto_url:          foto_url,
+    no_descontar:      noDescontar || null,
+    usuario_email:     currentUser?.email || null,
   };
-  if (editMovSalId) {
+  if (isItemExt) {
+    const { error } = await sb.from('inventario_movimientos').insert(payload);
+    if (error) { alert('Error: ' + error.message); return; }
+  } else if (editMovSalId) {
     const oldMov = movs.find(m => m.id === editMovSalId);
     if (oldMov?.item_id) {
       const oldIt = items.find(x => x.id === oldMov.item_id);
@@ -2955,19 +3641,20 @@ async function guardarSalida() {
     if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0, (newIt.cantidad_disponible||0) - cant) }).eq('id', itemId);
     editMovSalId = null;
   } else {
-    payload.cantidad_restante = Math.max(0, (itSel?.cantidad_disponible||0) - cant);
+    const { data: _preS } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', itemId).single();
+    const _preDispS = _preS ? (_preS.cantidad_disponible ?? 0) : (itSel?.cantidad_disponible ?? 0);
+    const _newDispS = noDescontar ? _preDispS : Math.max(0, _preDispS - cant);
+    payload.cantidad_restante = _newDispS;
     const { error } = await sb.from('inventario_movimientos').insert(payload);
     if (error) { alert('Error: ' + error.message); return; }
-    // Leer valores reales post-trigger, solo descontar del disponible; total no cambia
-    const { data: _curS } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', itemId).single();
-    const _dispS  = _curS ? (_curS.cantidad_disponible || 0) : (itSel?.cantidad_disponible || 0) + 1;
-    await sb.from('inventario_items').update({
-      cantidad_disponible: Math.max(0, _dispS - 1 - cant)
-    }).eq('id', itemId);
+    const _updS = { cantidad_disponible: _newDispS };
+    if (noDescontar) _updS.cantidad_total = (itSel?.cantidad_total || 0) + cant;
+    const { error: errUpdS } = await sb.from('inventario_items').update(_updS).eq('id', itemId);
+    if (errUpdS) { alert('Salida guardada pero error al actualizar stock: ' + errUpdS.message); }
   }
   const mhdrS = document.querySelector('#modal-salida .mhdr h3');
   if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
-  marcarItemReciente(itemId);
+  if (!isItemExt && itemId) marcarItemReciente(itemId);
   cerrar('modal-salida');
   await cargarDatos();
 }
@@ -3032,17 +3719,25 @@ async function editarSalida(movId) {
   document.getElementById('ms-fecha').value = _msFechaRaw.substring(0,10);
   document.getElementById('ms-hora').value  = _msFechaRaw.length > 10 ? _msFechaRaw.substring(11,16) : '';
   document.getElementById('ms-turno').value = mov.turno || '';
-  var fPrevSE = document.getElementById('ms-foto-preview');
-  if (mov.foto_url) { fPrevSE.src = mov.foto_url; fPrevSE.style.display = 'block'; }
-  else { fPrevSE.src = ''; fPrevSE.style.display = 'none'; }
-  document.getElementById('ms-foto-file').value = '';
+  resetFotoSlots('ms');
+  parseFotoUrls(mov.foto_url).forEach(function(url, i) { cargarFotoEnSlot('ms', i + 1, url); });
   const itS = items.find(x => x.id === mov.item_id);
   const lblS = itS ? ((itS.correlativo ? '['+itS.correlativo+'] ' : '') + itS.descripcion + (itS.talla ? ' ('+itS.talla+')' : '')) : (mov.descripcion || '');
   document.getElementById('ms-item-search').value = lblS;
   document.getElementById('ms-item-val').value    = mov.item_id || '';
   document.getElementById('ms-item-list').style.display = 'none';
   document.getElementById('ms-cant').value  = mov.cantidad || 1;
-  document.getElementById('ms-resp').value  = mov.responsable || '';
+  document.getElementById('ms-no-descontar').checked = !!mov.no_descontar;
+  var respVal = mov.responsable || '';
+  var isInternal = !!document.querySelector('#ms-resp option[value="'+respVal+'"]');
+  if (respVal && !isInternal) {
+    setSalidaRespMode('externo');
+    document.getElementById('ms-resp-ext').value = respVal;
+  } else {
+    setSalidaRespMode('interno');
+    document.getElementById('ms-resp').value = respVal;
+  }
+  document.getElementById('ms-persona-retira').value = mov.nombre_trabajador || '';
   document.getElementById('ms-obs').value   = mov.observaciones || '';
   document.getElementById('alerta-sal').style.display = 'none';
   document.querySelector('#modal-salida .mhdr h3').textContent = 'Editar Salida Insumo';
@@ -3066,6 +3761,557 @@ function eliminarSalida(movId) {
     if (mov && mov.item_id) marcarItemReciente(mov.item_id);
     await cargarDatos();
   });
+}
+
+// ── Fotos múltiples (hasta 3 slots) ───────────────────────────
+function parseFotoUrls(fotoUrl) {
+  if (!fotoUrl) return [];
+  if (fotoUrl.charAt(0) === '[') { try { return JSON.parse(fotoUrl).filter(Boolean); } catch(e) {} }
+  return [fotoUrl];
+}
+
+function previewFotoSlot(prefix, n, input) {
+  var prev = document.getElementById(prefix + '-foto-prev-' + n);
+  var ph   = document.getElementById(prefix + '-foto-ph-'   + n);
+  var rm   = document.getElementById(prefix + '-foto-rm-'   + n);
+  if (!prev) return;
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      prev.src = e.target.result; prev.style.display = 'block';
+      ph.style.display = 'none'; rm.style.display = 'flex';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function quitarFotoSlot(prefix, n) {
+  var inp  = document.getElementById(prefix + '-foto-' + n);
+  var prev = document.getElementById(prefix + '-foto-prev-' + n);
+  var ph   = document.getElementById(prefix + '-foto-ph-'   + n);
+  var rm   = document.getElementById(prefix + '-foto-rm-'   + n);
+  if (inp)  { inp.value = ''; }
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  if (ph)   ph.style.display = 'flex';
+  if (rm)   rm.style.display = 'none';
+}
+
+function resetFotoSlots(prefix) {
+  [1, 2, 3].forEach(function(n) { quitarFotoSlot(prefix, n); });
+}
+
+function cargarFotoEnSlot(prefix, n, url) {
+  var prev = document.getElementById(prefix + '-foto-prev-' + n);
+  var ph   = document.getElementById(prefix + '-foto-ph-'   + n);
+  var rm   = document.getElementById(prefix + '-foto-rm-'   + n);
+  if (!prev || !url) return;
+  prev.src = url; prev.style.display = 'block';
+  if (ph) ph.style.display = 'none';
+  if (rm) rm.style.display = 'flex';
+}
+
+async function subirFotosSlots(prefix, bucket) {
+  var urls = [];
+  for (var n = 1; n <= 3; n++) {
+    var inp = document.getElementById(prefix + '-foto-' + n);
+    if (!inp || !inp.files[0]) continue;
+    var file = inp.files[0];
+    var ext  = file.name.split('.').pop().toLowerCase();
+    var path = bucket + '/' + Date.now() + '_' + n + '.' + ext;
+    var res  = await sb.storage.from('inventario').upload(path, file, { upsert: true, contentType: file.type });
+    if (!res.error) {
+      var pu = sb.storage.from('inventario').getPublicUrl(path);
+      if (pu.data && pu.data.publicUrl) urls.push(pu.data.publicUrl);
+    }
+  }
+  return urls;
+}
+
+// ── Firma digital ─────────────────────────────────────────────
+function initFirmaCanvas(canvasId, dataId) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas || canvas._firmaReady) return;
+  canvas._firmaReady = true;
+  var dpr = window.devicePixelRatio || 1;
+  var w   = canvas.offsetWidth;
+  var h   = canvas.offsetHeight;
+  canvas.width  = w * dpr;
+  canvas.height = h * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  canvas._ctx = ctx;
+  var drawing = false;
+  function getXY(e) {
+    var rect = canvas.getBoundingClientRect();
+    var src  = e.touches ? e.touches[0] : e;
+    return [src.clientX - rect.left, src.clientY - rect.top];
+  }
+  function start(e) {
+    e.preventDefault(); drawing = true;
+    var p = getXY(e);
+    canvas._ctx.beginPath(); canvas._ctx.moveTo(p[0], p[1]);
+  }
+  function move(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    var p = getXY(e);
+    canvas._ctx.lineWidth = 2.5;
+    canvas._ctx.lineCap   = 'round';
+    canvas._ctx.lineJoin  = 'round';
+    canvas._ctx.strokeStyle = '#1a3a5c';
+    canvas._ctx.lineTo(p[0], p[1]);
+    canvas._ctx.stroke();
+    canvas._ctx.moveTo(p[0], p[1]);
+    canvas.classList.add('signed');
+    document.getElementById(dataId).value = canvas.toDataURL('image/png');
+  }
+  function stop() { drawing = false; }
+  canvas.addEventListener('mousedown',  start);
+  canvas.addEventListener('mousemove',  move);
+  canvas.addEventListener('mouseup',    stop);
+  canvas.addEventListener('mouseleave', stop);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove',  move,  { passive: false });
+  canvas.addEventListener('touchend',   stop);
+}
+
+function toggleFirmaSal() {
+  var wrap = document.getElementById('ms-firma-wrap');
+  var btn  = document.getElementById('ms-firma-toggle-btn');
+  if (wrap.style.display === 'none') {
+    wrap.style.display = 'block';
+    btn.textContent = '✍️ Firma agregada ✓';
+    btn.style.background = '#e8eef7';
+    setTimeout(function() { initFirmaCanvas('ms-firma-canvas', 'ms-firma-data'); }, 30);
+  } else {
+    wrap.style.display = 'none';
+    btn.textContent = '✍️ Agregar firma';
+    btn.style.background = '#fff';
+  }
+}
+
+function ocultarFirmaSal() {
+  document.getElementById('ms-firma-wrap').style.display = 'none';
+  var btn = document.getElementById('ms-firma-toggle-btn');
+  btn.textContent = '✍️ Agregar firma';
+  btn.style.background = '#fff';
+}
+
+function limpiarFirmaSal() {
+  var canvas = document.getElementById('ms-firma-canvas');
+  if (!canvas || !canvas._ctx) return;
+  var dpr = window.devicePixelRatio || 1;
+  canvas._ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+  canvas.classList.remove('signed');
+  canvas._firmaReady = false;
+  document.getElementById('ms-firma-data').value = '';
+  setTimeout(function() { initFirmaCanvas('ms-firma-canvas', 'ms-firma-data'); }, 10);
+}
+
+async function subirFirmaCanvas(dataId, prefix) {
+  var data = document.getElementById(dataId).value;
+  if (!data || !data.startsWith('data:image')) return null;
+  var arr  = data.split(',');
+  var bstr = atob(arr[1]);
+  var n    = bstr.length;
+  var u8   = new Uint8Array(n);
+  while (n--) u8[n] = bstr.charCodeAt(n);
+  var blob = new Blob([u8], { type: 'image/png' });
+  var path = 'firmas/' + Date.now() + '_' + prefix + '.png';
+  var res  = await sb.storage.from('inventario').upload(path, blob, { upsert: true, contentType: 'image/png' });
+  if (res.error) return null;
+  var pu = sb.storage.from('inventario').getPublicUrl(path);
+  return (pu.data && pu.data.publicUrl) ? pu.data.publicUrl : null;
+}
+
+// ── Toggles Ítem inventario/externo ───────────────────────────
+function setSalidaItemMode(modo) {
+  document.getElementById('ms-item-mode').value = modo;
+  var isExt = modo === 'externo';
+  document.getElementById('ms-item-btn-inv').classList.toggle('active', !isExt);
+  document.getElementById('ms-item-btn-ext').classList.toggle('active', isExt);
+  document.getElementById('ms-item-inv-wrap').style.display = isExt ? 'none' : '';
+  document.getElementById('ms-item-ext-wrap').style.display = isExt ? '' : 'none';
+  document.getElementById('ms-no-descontar-wrap').style.display = isExt ? 'none' : '';
+  if (isExt) document.getElementById('ms-no-descontar').checked = false;
+}
+function setRecepcionItemMode(modo) {
+  document.getElementById('mr-item-mode').value = modo;
+  var isExt = modo === 'externo';
+  document.getElementById('mr-item-btn-inv').classList.toggle('active', !isExt);
+  document.getElementById('mr-item-btn-ext').classList.toggle('active', isExt);
+  document.getElementById('mr-item-inv-wrap').style.display = isExt ? 'none' : '';
+  document.getElementById('mr-item-ext-wrap').style.display = isExt ? '' : 'none';
+}
+
+// ── Toggles Interno/Externo ────────────────────────────────────
+function setSalidaRespMode(modo) {
+  document.getElementById('ms-ext-mode').value = modo;
+  var isExt = modo === 'externo';
+  document.getElementById('ms-btn-int').classList.toggle('active', !isExt);
+  document.getElementById('ms-btn-ext').classList.toggle('active', isExt);
+  document.getElementById('ms-resp').style.display = isExt ? 'none' : '';
+  document.getElementById('ms-resp-ext').style.display = isExt ? '' : 'none';
+}
+function getSalidaResp() {
+  return (document.getElementById('ms-ext-mode').value === 'externo'
+    ? document.getElementById('ms-resp-ext').value
+    : document.getElementById('ms-resp').value).trim();
+}
+
+function setEntregaMode(modo) {
+  document.getElementById('mr-entrega-mode').value = modo;
+  var isExt = modo === 'externo';
+  document.getElementById('mr-entrega-btn-int').classList.toggle('active', !isExt);
+  document.getElementById('mr-entrega-btn-ext').classList.toggle('active', isExt);
+  document.getElementById('mr-entrega-sel').style.display = isExt ? 'none' : '';
+  document.getElementById('mr-persona-entrega').style.display = isExt ? '' : 'none';
+}
+function getEntregaPersona() {
+  return (document.getElementById('mr-entrega-mode').value === 'externo'
+    ? document.getElementById('mr-persona-entrega').value
+    : document.getElementById('mr-entrega-sel').value).trim();
+}
+
+function setRespRecepMode(modo) {
+  document.getElementById('mr-resp-mode').value = modo;
+  var isExt = modo === 'externo';
+  document.getElementById('mr-resp-btn-int').classList.toggle('active', !isExt);
+  document.getElementById('mr-resp-btn-ext').classList.toggle('active', isExt);
+  document.getElementById('mr-resp-sel').style.display = isExt ? 'none' : '';
+  document.getElementById('mr-resp').style.display = isExt ? '' : 'none';
+}
+function getRespRecepcion() {
+  return (document.getElementById('mr-resp-mode').value === 'externo'
+    ? document.getElementById('mr-resp').value
+    : document.getElementById('mr-resp-sel').value).trim();
+}
+
+function quitarFotoRec() {
+  document.getElementById('mr-foto-input').value = '';
+  var prev = document.getElementById('mr-foto-preview');
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  var btn = document.getElementById('mr-foto-quitar');
+  if (btn) btn.style.display = 'none';
+}
+
+// ── Recepcionar Insumos ────────────────────────────────────────
+function abrirModalRecepcion() {
+  var hoy2 = new Date().toISOString().split('T')[0];
+  var ahora = new Date().toTimeString().slice(0,5);
+  document.getElementById('mr-fecha').value = hoy2;
+  document.getElementById('mr-hora').value  = ahora;
+  document.getElementById('mr-turno').value = '';
+  document.getElementById('mr-area').value  = '';
+  document.getElementById('mr-persona-entrega').value = '';
+  document.getElementById('mr-cant').value  = '1';
+  document.getElementById('mr-estado').value = '';
+  document.getElementById('mr-resp').value  = '';
+  document.getElementById('mr-persona-recepciona').value = '';
+  document.getElementById('mr-obs').value   = '';
+  resetFotoSlots('mr');
+  var info = document.getElementById('mr-stock-info');
+  if (info) { info.innerHTML=''; info.style.display='none'; }
+
+  // Poblar dropdowns de trabajadores internos
+  var opsTrab = '<option value="">-- Seleccionar trabajador --</option>' +
+    TRABAJADORES.map(function(t){ return '<option value="'+t.nombre+'">'+(t.nombre)+(t.cargo?' — '+t.cargo:'')+'</option>'; }).join('');
+  document.getElementById('mr-entrega-sel').innerHTML = opsTrab;
+  document.getElementById('mr-resp-sel').innerHTML    = opsTrab;
+
+  // Resetear toggles: Entrega=Externo, Responsable=Interno, Ítem=Inventario
+  setEntregaMode('externo');
+  setRespRecepMode('interno');
+  setRecepcionItemMode('inventario');
+  document.getElementById('mr-item-ext-nombre').value = '';
+  document.getElementById('mr-item-ext-categ').value  = '';
+
+  // Poblar selector de ítems
+  var sel = document.getElementById('mr-item');
+  sel.innerHTML = '<option value="">-- Seleccionar ítem --</option>';
+  items.slice().sort(function(a,b){ return (a.descripcion||'').localeCompare(b.descripcion||''); }).forEach(function(it) {
+    var lbl = (it.correlativo ? '['+it.correlativo+'] ' : '') + it.descripcion + (it.talla ? ' ('+it.talla+')' : '');
+    var opt = document.createElement('option');
+    opt.value = it.id;
+    opt.textContent = lbl + ' — Disp: ' + (it.cantidad_disponible||0);
+    sel.appendChild(opt);
+  });
+  abrir('modal-recepcion');
+}
+
+function onItemRecepcionChange() {
+  var itemId = document.getElementById('mr-item').value;
+  var it = items.find(function(x){ return x.id === itemId; });
+  var info = document.getElementById('mr-stock-info');
+  if (!info) return;
+  if (it) {
+    info.innerHTML = 'Stock actual: <strong>' + (it.cantidad_disponible||0) + '</strong> disponibles | Total inventario: <strong>' + (it.cantidad_total||0) + '</strong>';
+    info.style.display = 'block';
+  } else {
+    info.innerHTML = '';
+    info.style.display = 'none';
+  }
+}
+
+function previewFotoRecepcion(input) {
+  var prev = document.getElementById('mr-foto-preview');
+  var btnQ = document.getElementById('mr-foto-quitar');
+  if (!prev) return;
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) { prev.src = e.target.result; prev.style.display = 'block'; if (btnQ) btnQ.style.display = ''; };
+    reader.readAsDataURL(input.files[0]);
+  } else { prev.src = ''; prev.style.display = 'none'; if (btnQ) btnQ.style.display = 'none'; }
+}
+
+async function guardarRecepcion() {
+  var fecha = document.getElementById('mr-fecha').value;
+  var hora  = document.getElementById('mr-hora').value;
+  var turno = document.getElementById('mr-turno').value;
+  var area  = document.getElementById('mr-area').value.trim();
+  var personaEntr = getEntregaPersona();
+  var itemMode = document.getElementById('mr-item-mode').value;
+  var isItemExt = itemMode === 'externo';
+  var itemExtNombre = isItemExt ? document.getElementById('mr-item-ext-nombre').value.trim() : '';
+  var itemExtCateg  = isItemExt ? document.getElementById('mr-item-ext-categ').value.trim() : '';
+  var itemId = document.getElementById('mr-item').value;
+  var cant   = parseInt(document.getElementById('mr-cant').value) || 1;
+  var estado = document.getElementById('mr-estado').value;
+  var resp   = getRespRecepcion();
+  var obs    = document.getElementById('mr-obs').value.trim();
+  if (!fecha || !turno || (!isItemExt && !itemId) || (isItemExt && !itemExtNombre) || !resp) {
+    alert('Completa los campos obligatorios: Fecha, Turno, Ítem y Responsable de Recepción.');
+    return;
+  }
+  var itSel = isItemExt ? null : items.find(function(x){ return x.id === itemId; });
+  if (!isItemExt && !itSel) { alert('Ítem no encontrado.'); return; }
+
+  var _fotosRec = await subirFotosSlots('mr', 'movimientos');
+  var fotoUrl = _fotosRec.length > 0
+    ? (_fotosRec.length === 1 ? _fotosRec[0] : JSON.stringify(_fotosRec))
+    : null;
+
+  // area||personaEntrega||estado||obs empaquetados en observaciones
+  var obsStr = [area, personaEntr, estado, obs].join('||');
+
+  var newDisp = null;
+  var newTotal = null;
+  if (!isItemExt) {
+    var preRec = await sb.from('inventario_items').select('cantidad_disponible,cantidad_total').eq('id', itemId).single();
+    var preDisp  = preRec.data ? (preRec.data.cantidad_disponible ?? 0) : (itSel.cantidad_disponible ?? 0);
+    var preTotal = preRec.data ? (preRec.data.cantidad_total ?? 0) : (itSel.cantidad_total ?? 0);
+    newDisp  = preDisp + cant;
+    newTotal = preTotal + cant;
+  }
+
+  var payload = {
+    tipo: 'recepcion_insumo',
+    fecha: hora ? (fecha + 'T' + hora) : fecha,
+    turno: turno,
+    descripcion: isItemExt ? itemExtNombre : itSel.descripcion,
+    item_id: isItemExt ? null : itemId,
+    cantidad: cant,
+    cantidad_restante: isItemExt ? null : newDisp,
+    responsable: resp,
+    nombre_trabajador: document.getElementById('mr-persona-recepciona').value.trim() || null,
+    observaciones: obsStr,
+    foto_url: fotoUrl,
+    categoria: isItemExt ? (itemExtCateg || '') : (itSel.categoria || '')
+  };
+
+  var insR = await sb.from('inventario_movimientos').insert(payload);
+  if (insR.error) { alert('Error al registrar recepción: ' + insR.error.message); return; }
+
+  if (!isItemExt) {
+    // Actualizar stock (neutralizar trigger +1 y fijar valor correcto)
+    var updR = await sb.from('inventario_items').update({ cantidad_disponible: newDisp, cantidad_total: newTotal }).eq('id', itemId);
+    if (updR.error) alert('Recepción guardada pero error al actualizar stock: ' + updR.error.message);
+  }
+
+  cerrar('modal-recepcion');
+  await cargarDatos();
+}
+
+function eliminarRecepcion(movId) {
+  confirmar('¿Eliminar esta recepción? Se revertirá el stock del ítem.', async function() {
+    var mov = movs.find(function(m){ return m.id === movId; });
+    var itemId = mov ? mov.item_id : null;
+    var cant   = mov ? (mov.cantidad || 0) : 0;
+    if (itemId) {
+      var itR = await sb.from('inventario_items').select('cantidad_disponible,cantidad_total').eq('id', itemId).single();
+      var curDisp  = itR.data ? (itR.data.cantidad_disponible ?? 0) : 0;
+      var curTotal = itR.data ? (itR.data.cantidad_total ?? 0) : 0;
+      await sb.from('inventario_items').update({
+        cantidad_disponible: Math.max(0, curDisp - cant),
+        cantidad_total: Math.max(0, curTotal - cant)
+      }).eq('id', itemId);
+    }
+    var delR = await sb.from('inventario_movimientos').delete().eq('id', movId);
+    if (delR.error) { alert('Error al eliminar: ' + delR.error.message); return; }
+    await cargarDatos();
+  });
+}
+
+// ── Informe Insumos ───────────────────────────────────────────
+function abrirInformeInsumos() {
+  var desde = document.getElementById('fs-desde').value;
+  var hasta = document.getElementById('fs-hasta').value;
+  document.getElementById('inf-desde').value = desde || '';
+  document.getElementById('inf-hasta').value = hasta || '';
+  document.getElementById('inf-tipo').value = _filtroTipoInsumo === 'todos' ? 'todos' : _filtroTipoInsumo;
+  abrir('modal-informe-insumos');
+}
+
+function _getListaInforme() {
+  var desde = document.getElementById('inf-desde').value;
+  var hasta = document.getElementById('inf-hasta').value;
+  var tipo  = document.getElementById('inf-tipo').value;
+  var lista = movs.filter(function(m) {
+    if (tipo === 'todos') return m.tipo === 'salida_insumo' || m.tipo === 'recepcion_insumo';
+    return m.tipo === tipo;
+  });
+  if (desde) lista = lista.filter(function(m){ return (m.fecha||'').substring(0,10) >= desde; });
+  if (hasta) lista = lista.filter(function(m){ return (m.fecha||'').substring(0,10) <= hasta; });
+  lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+  return lista;
+}
+
+function exportarExcelInsumos() {
+  var lista = _getListaInforme();
+  if (!lista.length) { alert('No hay registros para exportar.'); return; }
+  var filas = lista.map(function(m, i) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    return {
+      '#': i + 1,
+      'Tipo': esRec ? 'Recepción' : 'Salida',
+      'Fecha': ff(m.fecha),
+      'Hora': ffh(m.fecha) || '',
+      'Turno': m.turno || '',
+      'Ítem': m.descripcion || '',
+      'Categoría': m.categoria || '',
+      'Cantidad': m.cantidad || 0,
+      'Stock Resultante': m.cantidad_restante != null ? m.cantidad_restante : '',
+      'Responsable': m.responsable || '',
+      'Área Origen': esRec ? (parts[0]||'') : '',
+      'Persona que Entrega': esRec ? (parts[1]||'') : '',
+      'Estado Ítem': esRec ? (parts[2]||'') : '',
+      'Observaciones': esRec ? (parts[3]||'') : (m.observaciones||'')
+    };
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:12},{wch:8},{wch:10},{wch:30},{wch:15},{wch:8},{wch:14},{wch:22},{wch:20},{wch:22},{wch:15},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Insumos');
+  var arr = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+  var b64 = ''; var bytes = new Uint8Array(arr);
+  for (var k=0; k<bytes.length; k++) b64 += String.fromCharCode(bytes[k]);
+  var lnk = document.createElement('a');
+  lnk.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + btoa(b64);
+  lnk.download = 'insumos_' + new Date().toISOString().substring(0,10) + '.xlsx';
+  lnk.click();
+  cerrar('modal-informe-insumos');
+}
+
+function imprimirInformeInsumos() {
+  var lista = _getListaInforme();
+  if (!lista.length) { alert('No hay registros para imprimir.'); return; }
+  _abrirVentanaPDFInsumos(lista);
+  cerrar('modal-informe-insumos');
+}
+
+function informeInsumoSingle(movId) {
+  var mov = movs.find(function(m){ return m.id === movId; });
+  if (!mov) { alert('Registro no encontrado.'); return; }
+  _abrirVentanaPDFInsumos([mov]);
+}
+
+function _abrirVentanaPDFInsumos(lista) {
+  var desde = document.getElementById('inf-desde').value;
+  var hasta = document.getElementById('inf-hasta').value;
+  var tipo  = document.getElementById('inf-tipo').value;
+  var tipoLabel = tipo==='salida_insumo' ? 'Salidas' : tipo==='recepcion_insumo' ? 'Recepciones' : 'Salidas y Recepciones';
+  var periodoLabel = (desde || hasta)
+    ? ('Período: ' + (desde ? ff(desde) : '—') + ' al ' + (hasta ? ff(hasta) : '—'))
+    : 'Todos los registros';
+
+  var rows = lista.map(function(m, i) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    var areaCell = esRec ? ((parts[0]||'') + (parts[1] ? '<br><small style="color:#888">' + parts[1] + '</small>' : '')) : '—';
+    var obsCell  = esRec ? (parts[2] ? parts[2] + (parts[3] ? '<br><small>' + parts[3] + '</small>' : '') : (parts[3]||'—')) : (m.observaciones||'—');
+    var cantColor = esRec ? '#2e7d32' : '#c62828';
+    var cantArrow = esRec ? '↑' : '↓';
+    var tipoBadge = esRec
+      ? '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📥 Recepción</span>'
+      : '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
+    var rowBg = esRec ? '#f8fff9' : '#fff';
+    var restStr = m.cantidad_restante != null ? String(m.cantidad_restante) : '—';
+    return '<tr style="background:'+rowBg+';border-bottom:1px solid #e4ebf3">' +
+      '<td style="padding:5px 8px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
+      '<td style="padding:5px 8px">' + tipoBadge + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + ff(m.fecha) + (ffh(m.fecha) ? '<br><small style="color:#888">' + ffh(m.fecha) + '</small>' : '') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.turno||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9.5pt;font-weight:600">' + (m.descripcion||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.categoria||'—') + '</td>' +
+      '<td style="padding:5px 8px;text-align:center;font-weight:700;color:'+cantColor+'">' + cantArrow + ' ' + m.cantidad + '</td>' +
+      '<td style="padding:5px 8px;text-align:center;font-weight:600;font-size:9pt">' + restStr + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.responsable||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + areaCell + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + obsCell + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var salCnt  = lista.filter(function(m){ return m.tipo === 'salida_insumo'; }).length;
+  var recCnt  = lista.filter(function(m){ return m.tipo === 'recepcion_insumo'; }).length;
+  var salTot  = lista.filter(function(m){ return m.tipo === 'salida_insumo'; }).reduce(function(a,m){ return a + (m.cantidad||0); }, 0);
+  var recTot  = lista.filter(function(m){ return m.tipo === 'recepcion_insumo'; }).reduce(function(a,m){ return a + (m.cantidad||0); }, 0);
+
+  var _pdfUser   = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  var _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser ? currentUser.email : '');
+
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>' +
+    '<title>Informe Insumos</title>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+    '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.2cm 1.8cm;box-sizing:border-box}' +
+    '@media print{body{margin:0}.page{padding:0.8cm 1.2cm}}' +
+    'table{border-collapse:collapse;width:100%}thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    'th{padding:6px 8px;text-align:left;font-size:9pt}' +
+    '</style></head><body><div class="page">' +
+    '<table style="margin-bottom:12px"><tr>' +
+      '<td style="border:none;width:65px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:55px;height:55px;object-fit:contain;border-radius:8px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
+      '<td style="border:none;vertical-align:middle;text-align:center">' +
+        '<div style="font-size:16pt;font-weight:700;color:#1E4F8C">Informe de Insumos — ' + tipoLabel + '</div>' +
+        '<div style="font-size:9.5pt;color:#888;margin-top:3px">' + periodoLabel + ' &nbsp;|&nbsp; ' + lista.length + ' registro' + (lista.length>1?'s':'') + '</div>' +
+        '<div style="font-size:9pt;color:#aaa;margin-top:1px">Generado el ' + ff(new Date().toISOString()) + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+      '</td><td style="border:none;width:65px"></td>' +
+    '</tr></table>' +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 10px"/>' +
+    '<div style="display:flex;gap:20px;margin-bottom:14px;font-size:10pt">' +
+      (recCnt ? '<div style="background:#e8f5e9;padding:8px 16px;border-radius:8px;color:#2e7d32"><strong>📥 Recepciones:</strong> ' + recCnt + ' mov. — ' + recTot + ' uds.</div>' : '') +
+      (salCnt ? '<div style="background:#fff3e0;padding:8px 16px;border-radius:8px;color:#e65100"><strong>📤 Salidas:</strong> ' + salCnt + ' mov. — ' + salTot + ' uds.</div>' : '') +
+    '</div>' +
+    '<table>' +
+      '<thead><tr>' +
+        '<th style="width:28px;text-align:center">#</th>' +
+        '<th style="width:100px">Tipo</th>' +
+        '<th style="width:80px">Fecha</th>' +
+        '<th style="width:55px">Turno</th>' +
+        '<th>Ítem</th>' +
+        '<th style="width:80px">Categoría</th>' +
+        '<th style="width:50px;text-align:center">Cant.</th>' +
+        '<th style="width:55px;text-align:center">Restante</th>' +
+        '<th style="width:110px">Responsable</th>' +
+        '<th style="width:110px">Área / Entregante</th>' +
+        '<th>Estado / Obs.</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>' +
+    '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
+
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // -- Exportar Excel ------------------------------------------------
@@ -3648,11 +4894,6 @@ function limpiarFE() {
   document.getElementById('fe-hasta').value = '';
   renderEntrega();
 }
-function limpiarFS() {
-  document.getElementById('fs-desde').value = '';
-  document.getElementById('fs-hasta').value = '';
-  renderSalida();
-}
 
 // ── Modal PDF ──────────────────────────────────────────────────
 function abrirPDF() {
@@ -3988,13 +5229,18 @@ function generarPDFCompletoCompras() {
 }
 
 function exportarExcelCompras() {
-  var q    = norm(document.getElementById('fc-buscar') ? document.getElementById('fc-buscar').value : '');
-  var fEst = document.getElementById('fc-estado') ? document.getElementById('fc-estado').value : '';
-  var lista = _compras.filter(function(c) {
-    if (q && !norm(c.descripcion || '').includes(q) && !norm(c.responsable || '').includes(q) && !norm(c.observaciones || '').includes(q)) return false;
-    if (fEst && c.estado !== fEst) return false;
-    return true;
-  });
+  var lista;
+  if (_selCompras.size > 0) {
+    lista = _compras.filter(function(c){ return _selCompras.has(c.id); });
+  } else {
+    var q    = norm(document.getElementById('fc-buscar') ? document.getElementById('fc-buscar').value : '');
+    var fEst = document.getElementById('fc-estado') ? document.getElementById('fc-estado').value : '';
+    lista = _compras.filter(function(c) {
+      if (q && !norm(c.descripcion || '').includes(q) && !norm(c.responsable || '').includes(q) && !norm(c.observaciones || '').includes(q)) return false;
+      if (fEst && c.estado !== fEst) return false;
+      return true;
+    });
+  }
   if (!lista.length) { alert('No hay solicitudes para exportar.'); return; }
 
   // Hoja 1: resumen de solicitudes
@@ -4236,6 +5482,26 @@ init();
 
 // ── Gestión de Compras (recordatorio con días restantes) ─────────
 var _compras = [];
+var _selCompras = new Set();
+
+function toggleTodosCompras(checked) {
+  document.querySelectorAll('#tb-compras .chk-cmp').forEach(function(cb) {
+    cb.checked = checked;
+    if (checked) _selCompras.add(cb.dataset.id); else _selCompras.delete(cb.dataset.id);
+  });
+  _actualizarBtnExcelCmp();
+}
+function toggleSelCompra(id, checked) {
+  if (checked) _selCompras.add(id); else _selCompras.delete(id);
+  var all = document.querySelectorAll('#tb-compras .chk-cmp');
+  var chkAll = document.getElementById('chk-cmp-all');
+  if (chkAll && all.length) chkAll.checked = Array.from(all).every(function(cb){ return cb.checked; });
+  _actualizarBtnExcelCmp();
+}
+function _actualizarBtnExcelCmp() {
+  var btn = document.getElementById('btn-excel-compras');
+  if (btn) btn.textContent = _selCompras.size > 0 ? '📊 Excel (' + _selCompras.size + ')' : '📊 Excel';
+}
 var _editCompraId = null;
 
 async function cargarCompras() {
@@ -4318,10 +5584,10 @@ function renderCompras() {
 
   var tb = document.getElementById('tb-compras');
   if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr>';
+    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#999;padding:30px">Sin solicitudes registradas</td></tr>';
     return;
   }
-  tb.innerHTML = rows.map(function(c) {
+  tb.innerHTML = rows.map(function(c, idx) {
     var it = c.item_id ? items.find(function(x){ return x.id === c.item_id; }) : null;
     var itemNombre = it
       ? ((it.correlativo ? '<span style="color:#888;font-size:11px;margin-right:4px">' + it.correlativo + '</span>' : '') + it.descripcion)
@@ -4343,6 +5609,8 @@ function renderCompras() {
     var rowBg = (c.estado !== 'Completada' && c.estado !== 'Cancelada' && dias !== null && dias < 0) ? 'background:#fff5f5;' : '';
     var fmtD = function(d){ return d ? d.substring(0,10).split('-').reverse().join('-') : '—'; };
     return '<tr id="row-' + c.id + '" style="' + rowBg + 'cursor:pointer" onclick="clicFilaCmp(\'' + c.id + '\')" ondblclick="dblFilaCmp(\'' + c.id + '\')" title="Clic: ver detalle · Doble clic: editar">' +
+      '<td onclick="event.stopPropagation()" style="text-align:center;padding:4px"><input type="checkbox" class="chk-cmp" data-id="' + c.id + '"' + (_selCompras.has(c.id) ? ' checked' : '') + ' onchange="toggleSelCompra(\'' + c.id + '\',this.checked)"/></td>' +
+      '<td style="text-align:center;color:#999;font-size:12px;font-weight:600">' + (idx + 1) + '</td>' +
       '<td style="white-space:nowrap">' + fmtD(c.fecha) + '</td>' +
       '<td style="max-width:220px"><div style="display:flex;align-items:flex-start">' + imgHtml + '<div><span>' + itemNombre + '</span>' + trabBadge + '</div></div></td>' +
       '<td style="text-align:center;font-weight:600">' + (c.cantidad || '—') + '</td>' +
@@ -4359,9 +5627,16 @@ function renderCompras() {
       '</td>' +
     '</tr>' +
     '<tr id="det-' + c.id + '" style="display:none">' +
-      '<td colspan="10" style="padding:0;border-bottom:2px solid #c5d8f0">' + renderDetalleCompra(c) + '</td>' +
+      '<td colspan="11" style="padding:0;border-bottom:2px solid #c5d8f0">' + renderDetalleCompra(c) + '</td>' +
     '</tr>';
   }).join('');
+  // Sincronizar checkbox "seleccionar todos" con el estado actual
+  var chkAll = document.getElementById('chk-cmp-all');
+  if (chkAll) {
+    var allVisible = document.querySelectorAll('#tb-compras .chk-cmp');
+    chkAll.checked = allVisible.length > 0 && Array.from(allVisible).every(function(cb){ return cb.checked; });
+  }
+  _actualizarBtnExcelCmp();
 }
 
 function _infoBox(label, val) {
@@ -4493,6 +5768,14 @@ function toggleDetCompra(id) {
     });
   }
 }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var openDet = document.querySelector('#tb-compras tr[id^="det-"]:not([style*="none"])');
+  if (!openDet) return;
+  var id = openDet.id.replace('det-', '');
+  toggleDetCompra(id);
+});
 
 async function toggleTrabGestionado(compraId, idx) {
   var c = _compras.find(function(x){ return x.id === compraId; });
@@ -4870,6 +6153,35 @@ function eliminarCompra(id) {
 </div>
 
 <!-- ── Modal confirmación eliminación ── -->
+<div class="modal-bd" id="modal-traspasar-epp" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="mhdr" style="background:#2e7d32">
+      <h3 style="color:#fff">🦺 Traspasar a Entrega EPP</h3>
+      <button class="modal-close" style="color:#fff" onclick="cerrar('modal-traspasar-epp')">✕</button>
+    </div>
+    <div class="mbody" style="padding:24px">
+      <p style="margin-bottom:16px;color:#444;font-size:14px">El registro pasará de <strong>Asignaciones</strong> a la tabla de <strong>Entrega EPP</strong>.</p>
+      <div class="fg full">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:600;font-size:13px">Fecha de Entrega
+          <button type="button" onclick="document.getElementById('trp-fecha-entrega').value=hoy()" style="font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #2e7d32;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-weight:600;line-height:1.6">● Hoy</button>
+        </label>
+        <input type="date" id="trp-fecha-entrega" style="width:100%;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px"/>
+      </div>
+      <div class="fg full" style="margin-top:12px">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px">Turno</label>
+        <select id="trp-turno" style="width:100%;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;background:#fff">
+          <option value="">Seleccionar turno…</option>
+          <option>Turno A</option><option>Turno B</option>
+        </select>
+      </div>
+    </div>
+    <div class="mftr" style="justify-content:center;gap:16px">
+      <button class="btn btn-secondary" style="min-width:120px" onclick="cerrar('modal-traspasar-epp')">Cancelar</button>
+      <button id="btn-confirmar-traspasar" class="btn" style="background:#2e7d32;color:#fff;min-width:160px">🦺 Confirmar Traspaso</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bd" id="modal-confirm" style="display:none">
   <div class="modal" style="max-width:420px">
     <div class="mhdr" style="background:#b71c1c">

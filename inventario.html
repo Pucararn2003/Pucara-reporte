@@ -725,19 +725,28 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <input type="date" id="fs-desde" onchange="renderSalida()"/>
       <label style="font-size:13px;color:#555">Hasta</label>
       <input type="date" id="fs-hasta" onchange="renderSalida()"/>
-      <button class="btn" style="background:#5c3d8f;color:#fff;border:none;white-space:nowrap" onclick="abrirInformeInsumos()">📋 Informe General</button>
+      <button id="btn-excel-sal" class="btn" onclick="exportarExcelSalAuto()" style="white-space:nowrap;background:#2e7d32;color:#fff;border:none">📊 Excel</button>
+      <button id="btn-pdf-sal"   class="btn" onclick="exportarPDFSalAuto()"   style="white-space:nowrap;background:#5c3d8f;color:#fff;border:none">🖨️ PDF</button>
+      <button class="btn" style="background:#b71c1c;color:#fff;border:none;white-space:nowrap" onclick="abrirInformeInsumos()">📋 Informe Completo</button>
       <button class="btn btn-secondary" onclick="limpiarFS()">Limpiar</button>
+    </div>
+    <!-- Barra de selección -->
+    <div id="sal-sel-bar" style="display:none;align-items:center;gap:10px;background:#e8f0fe;border:1px solid #90caf9;border-radius:8px;padding:7px 14px;margin-bottom:8px;flex-wrap:wrap">
+      <span id="sal-sel-count" style="font-size:13px;font-weight:700;color:#1565c0"></span>
+      <button onclick="_limpiarSelSal()" style="padding:4px 12px;background:none;border:1px solid #90caf9;border-radius:6px;font-size:12px;color:#1565c0;cursor:pointer">✕ Deseleccionar todo</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th style="width:32px;text-align:center"><input type="checkbox" id="cb-sal-all" onchange="toggleAllSal(this.checked)" style="cursor:pointer;width:15px;height:15px"/></th>
             <th style="width:36px;text-align:center;color:#aaa">#</th>
             <th style="width:110px">Tipo</th>
             <th onclick="toggleSort('sal',renderSalida)" style="cursor:pointer;user-select:none">Fecha <span id="ic-sal-fecha">↓</span></th><th>Turno</th><th>Ítem</th><th>Categoría</th>
             <th>Cant.</th><th>Restante</th><th>Responsable</th><th>Obs / Área</th><th></th>
           </tr>
           <tr>
+            <th class="th-filter"></th>
             <th class="th-filter"></th>
             <th class="th-filter"></th>
             <th class="th-filter"><input type="text" id="fs-fecha-q" placeholder="dd/mm/aaaa..." oninput="autoFecha(this);renderSalida()" class="tf-inp"/></th>
@@ -751,7 +760,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <th class="th-filter"><button class="btn-clear" onclick="limpiarFS2()">✕ Limpiar</button></th>
           </tr>
         </thead>
-        <tbody id="tb-sal"><tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
+        <tbody id="tb-sal"><tr><td colspan="12" style="text-align:center;color:#999;padding:30px">Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1186,6 +1195,13 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <div id="ms-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ms-item-val"/>
           </div>
+          <div id="ms-lote-wrap" style="display:none;margin-top:8px;background:#f0f7ff;border:1px solid #c8dff5;border-radius:8px;padding:8px 10px">
+            <label style="font-size:11px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:5px">📦 Lote a descontar</label>
+            <select id="ms-lote-id" onchange="onChangeLoteSal()" style="width:100%;padding:8px 10px;border:1px solid #90caf9;border-radius:7px;font-size:16px;outline:none;background:#fff;color:#1a3a5c">
+              <option value="">— Descontar del total general —</option>
+            </select>
+            <div id="ms-lote-stock" style="font-size:11px;margin-top:5px;color:#555"></div>
+          </div>
           <div id="ms-item-ext-wrap" style="display:none">
             <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
             <input type="text" id="ms-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
@@ -1200,6 +1216,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">La cantidad retirada se descontará del total del ítem del inventario general.</div></span>
           </label>
         </div>
+        <div class="fg full"><label>Observaciones del ítem</label><textarea id="ms-obs" rows="2" placeholder="Notas u observaciones sobre este ítem..."></textarea></div>
         <!-- Botón para agregar ítem a la lista (multi-ítem) -->
         <div class="fg full" style="padding:0 0 4px">
           <button type="button" onclick="agregarItemLista()" style="width:100%;padding:9px;background:#e8f4fc;border:1px dashed #64b5f6;border-radius:8px;color:#1565c0;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
@@ -1233,7 +1250,6 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           </div>
           <input type="hidden" id="ms-firma-data"/>
         </div>
-        <div class="fg full"><label>Observaciones</label><textarea id="ms-obs" rows="2"></textarea></div>
         <div class="fg full">
           <label>Fotos (hasta 3)</label>
           <div class="foto-slots">
@@ -1288,7 +1304,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <label>Turno *</label>
           <select id="mr-turno" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
             <option value="">-- Seleccionar --</option>
-            <option>Día</option><option>Noche</option><option>Guardia</option>
+            <option>Turno A</option><option>Turno B</option>
           </select>
         </div>
         <div class="fg"><label>Área / Empresa Origen</label><input type="text" id="mr-area" placeholder="Ej: Mantención, Contratista XYZ..."/></div>
@@ -1309,19 +1325,31 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <input type="hidden" id="mr-entrega-mode" value="externo"/>
         </div>
 
+        <!-- Lista multi-ítem recepción -->
+        <div id="mr-items-lista-wrap" style="display:none;border:1px solid #c8dff5;border-radius:8px;overflow:hidden;margin-bottom:4px;background:#f0f7ff" class="fg full">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#1a3a5c">
+            <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:.4px">ÍTEMS A RECEPCIONAR</span>
+            <span id="mr-items-count" style="font-size:11px;color:rgba(255,255,255,.7)"></span>
+          </div>
+          <div id="mr-items-lista"></div>
+        </div>
+
         <!-- Ítem -->
         <div class="fg full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label style="margin:0">Ítem *</label>
+            <label id="mr-item-label" style="margin:0">Ítem *</label>
             <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
               <button id="mr-item-btn-inv" class="btn-tipo active" onclick="setRecepcionItemMode('inventario')" style="padding:3px 12px;font-size:12px;border-radius:0">📦 Del inventario</button>
               <button id="mr-item-btn-ext" class="btn-tipo" onclick="setRecepcionItemMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ No registrado</button>
             </div>
           </div>
-          <div id="mr-item-inv-wrap">
-            <select id="mr-item" onchange="onItemRecepcionChange()" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
-              <option value="">-- Seleccionar ítem --</option>
-            </select>
+          <div id="mr-item-inv-wrap" class="item-search-wrap">
+            <input type="text" id="mr-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                   oninput="filtrarItems('mr')" onfocus="filtrarItems('mr')" autocomplete="off"
+                   onkeydown="ddNav(event,'mr-item-list')"
+                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+            <div id="mr-item-list" class="item-dropdown"></div>
+            <input type="hidden" id="mr-item-val"/>
             <div id="mr-stock-info" style="margin-top:4px;font-size:12px;color:#2e7d32;padding:5px 10px;background:#f0f7f0;border-radius:5px;display:none;font-weight:600"></div>
           </div>
           <div id="mr-item-ext-wrap" style="display:none">
@@ -1339,6 +1367,18 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <option value="">-- Seleccionar --</option>
             <option>Nuevo</option><option>Bueno</option><option>Regular</option><option>Con observaciones</option>
           </select>
+        </div>
+
+        <!-- Observaciones del ítem (por ítem) -->
+        <div class="fg full"><label>Observaciones del ítem</label>
+          <textarea id="mr-obs" rows="2" placeholder="Notas u observaciones sobre este ítem..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
+
+        <!-- Botón agregar ítem a la lista -->
+        <div class="fg full" style="padding:0 0 4px">
+          <button type="button" onclick="agregarItemListaRec()" style="width:100%;padding:9px;background:#e8f4fc;border:1px dashed #64b5f6;border-radius:8px;color:#1565c0;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span style="font-size:16px;line-height:1">＋</span> Agregar ítem a la lista
+          </button>
         </div>
 
         <!-- Responsable de Recepción: toggle Interno/Externo -->
@@ -1361,11 +1401,6 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg full">
           <label>Persona que Recepciona</label>
           <input type="text" id="mr-persona-recepciona" placeholder="Nombre de quien recepciona físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
-        </div>
-
-        <!-- Observaciones -->
-        <div class="fg full"><label>Observaciones</label>
-          <textarea id="mr-obs" rows="2" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
         </div>
 
         <!-- Foto -->
@@ -2924,7 +2959,7 @@ function renderSalida() {
   rows.sort(function(a,b){ return _sortDir.sal==='asc'?(a.fecha||'').localeCompare(b.fecha||''):(b.fecha||'').localeCompare(a.fecha||''); });
   var icS = document.getElementById('ic-sal-fecha'); if(icS) icS.textContent = _sortDir.sal==='asc'?'↑':'↓';
   const tb = document.getElementById('tb-sal');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#999;padding:30px">Sin registros</td></tr>'; _updateSelSalBar(); return; }
   tb.innerHTML = rows.map(function(m, idx) {
     var esRec = m.tipo === 'recepcion_insumo';
     var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
@@ -2952,7 +2987,9 @@ function renderSalida() {
     var acciones = esRec
       ? btnInforme + ' <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarRecepcion(\''+m.id+'\')">🗑️</button>'
       : btnInforme + ' <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editarSalida(\''+m.id+'\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarSalida(\''+m.id+'\')">🗑️</button>';
-    return '<tr onclick="clicFila(this,\'sal\',\''+m.id+'\')" ondblclick="dblFila(this,\'sal\',\''+m.id+'\')" style="cursor:pointer'+(esRec?';background:#f8fff9':'')+'">'+
+    var chk = _selSal.has(m.id) ? 'checked' : '';
+    return '<tr onclick="clicFila(this,\'sal\',\''+m.id+'\')" ondblclick="dblFila(this,\'sal\',\''+m.id+'\')" style="cursor:pointer'+(esRec?';background:#f8fff9':'')+(chk?';outline:2px solid #90caf9;outline-offset:-2px':'')+'">'+
+      '<td style="text-align:center" onclick="event.stopPropagation()"><input type="checkbox" '+chk+' onchange="toggleSalRow(\''+m.id+'\',this.checked)" style="cursor:pointer;width:15px;height:15px"/></td>'+
       '<td style="text-align:center;color:#999;font-size:12px;font-weight:600">'+(idx+1)+'</td>'+
       '<td>'+tipoBadge+'</td>'+
       '<td>'+ff(m.fecha)+(ffh(m.fecha)?'<br><small style="color:#888">'+ffh(m.fecha)+'</small>':'')+'</td>'+
@@ -2966,6 +3003,8 @@ function renderSalida() {
       '<td style="white-space:nowrap">'+acciones+'</td>'+
     '</tr>';
   }).join('');
+  _lastSalRows = rows;
+  _updateSelSalBar();
 }
 
 // ── Item Search Dropdown ────────────────────────────────────────
@@ -3020,8 +3059,15 @@ function seleccionarItemDD(el) {
     document.getElementById('ma-talla').value = it.talla    || '';
   } else if (prefix === 'mc') {
     // Compras: solo rellenar búsqueda, sin alertas de stock
+  } else if (prefix === 'mr') {
+    var info = document.getElementById('mr-stock-info');
+    if (info) {
+      info.innerHTML = 'Stock actual: <strong>' + (it.cantidad_disponible||0) + '</strong> disponibles | Total: <strong>' + (it.cantidad_total||0) + '</strong>';
+      info.style.display = 'block';
+    }
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
+    mostrarLotesSalida(it);
   }
 }
 
@@ -3585,6 +3631,141 @@ async function guardarEntrega() {
   await cargarDatos();
 }
 
+// ── Selección multi-fila salidas ──────────────────────────────────
+var _selSal = new Set();
+var _lastSalRows = [];
+
+function toggleSalRow(id, checked) {
+  if (checked) _selSal.add(id); else _selSal.delete(id);
+  _updateSelSalBar();
+  // Actualizar checkbox de "seleccionar todo"
+  var cbAll = document.getElementById('cb-sal-all');
+  if (cbAll) {
+    var cbs = document.querySelectorAll('#tb-sal input[type=checkbox]');
+    cbAll.indeterminate = _selSal.size > 0 && _selSal.size < cbs.length;
+    cbAll.checked = cbs.length > 0 && _selSal.size === cbs.length;
+  }
+  // Resaltar fila
+  var tr = document.querySelector('#tb-sal input[onchange*="' + id + '"]')?.closest('tr');
+  if (tr) tr.style.outline = checked ? '2px solid #90caf9' : '';
+}
+
+function toggleAllSal(checked) {
+  var cbs = document.querySelectorAll('#tb-sal input[type=checkbox]');
+  cbs.forEach(function(cb) {
+    cb.checked = checked;
+    var m = cb.getAttribute('onchange').match(/'([^']+)'/);
+    if (m) { if (checked) _selSal.add(m[1]); else _selSal.delete(m[1]); }
+    var tr = cb.closest('tr');
+    if (tr) tr.style.outline = checked ? '2px solid #90caf9' : '';
+  });
+  _updateSelSalBar();
+}
+
+function _limpiarSelSal() {
+  _selSal.clear();
+  var cbAll = document.getElementById('cb-sal-all');
+  if (cbAll) { cbAll.checked = false; cbAll.indeterminate = false; }
+  document.querySelectorAll('#tb-sal input[type=checkbox]').forEach(function(cb){ cb.checked = false; });
+  document.querySelectorAll('#tb-sal tr').forEach(function(tr){ tr.style.outline = ''; });
+  _updateSelSalBar();
+}
+
+function _updateSelSalBar() {
+  var bar    = document.getElementById('sal-sel-bar');
+  var count  = document.getElementById('sal-sel-count');
+  var btnXl  = document.getElementById('btn-excel-sal');
+  var btnPdf = document.getElementById('btn-pdf-sal');
+  var n = _selSal.size;
+  if (bar)    bar.style.display = n === 0 ? 'none' : 'flex';
+  if (count)  count.textContent = n + ' registro' + (n > 1 ? 's' : '') + ' seleccionado' + (n > 1 ? 's' : '');
+  if (btnXl)  btnXl.textContent  = n > 0 ? '📊 Excel (' + n + ')' : '📊 Excel';
+  if (btnPdf) btnPdf.textContent = n > 0 ? '🖨️ PDF (' + n + ')'  : '🖨️ PDF';
+}
+
+function exportarExcelSalAuto() {
+  if (_selSal.size > 0) { exportarSelSalExcel(); return; }
+  if (!_lastSalRows.length) { alert('No hay registros visibles para exportar.'); return; }
+  var lista = _lastSalRows;
+  var filas = lista.map(function(m, i) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    return {
+      '#': i + 1, 'Tipo': esRec ? 'Recepción' : 'Salida',
+      'Fecha': ff(m.fecha), 'Hora': ffh(m.fecha) || '', 'Turno': m.turno || '',
+      'Ítem': m.descripcion || '', 'Categoría': m.categoria || '',
+      'Cantidad': m.cantidad || 0, 'Stock Resultante': m.cantidad_restante != null ? m.cantidad_restante : '',
+      'Responsable': m.responsable || '',
+      'Área Origen': esRec ? (parts[0]||'') : '', 'Persona que Entrega': esRec ? (parts[1]||'') : '',
+      'Estado Ítem': esRec ? (parts[2]||'') : '', 'Observaciones': esRec ? (parts[3]||'') : (m.observaciones||'')
+    };
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:12},{wch:8},{wch:10},{wch:30},{wch:15},{wch:8},{wch:14},{wch:22},{wch:20},{wch:22},{wch:15},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Insumos');
+  var arr = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+  var b64 = ''; var bytes = new Uint8Array(arr);
+  for (var k=0; k<bytes.length; k++) b64 += String.fromCharCode(bytes[k]);
+  var lnk = document.createElement('a');
+  lnk.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + btoa(b64);
+  lnk.download = 'insumos_' + new Date().toISOString().substring(0,10) + '.xlsx';
+  lnk.click();
+}
+
+function exportarPDFSalAuto() {
+  var lista = _selSal.size > 0
+    ? movs.filter(function(m){ return _selSal.has(m.id); })
+    : _lastSalRows.slice();
+  if (!lista.length) { alert('No hay registros para generar el PDF.'); return; }
+  lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+  _abrirVentanaPDFInsumos(lista);
+}
+
+function exportarSelSalPDF() {
+  var lista = movs.filter(function(m){ return _selSal.has(m.id); });
+  if (!lista.length) return;
+  lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+  _abrirVentanaPDFInsumos(lista);
+}
+
+function exportarSelSalExcel() {
+  var lista = movs.filter(function(m){ return _selSal.has(m.id); });
+  if (!lista.length) return;
+  lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+  var filas = lista.map(function(m, i) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    return {
+      '#': i + 1,
+      'Tipo': esRec ? 'Recepción' : 'Salida',
+      'Fecha': ff(m.fecha),
+      'Hora': ffh(m.fecha) || '',
+      'Turno': m.turno || '',
+      'Ítem': m.descripcion || '',
+      'Categoría': m.categoria || '',
+      'Cantidad': m.cantidad || 0,
+      'Stock Resultante': m.cantidad_restante != null ? m.cantidad_restante : '',
+      'Responsable': m.responsable || '',
+      'Área Origen': esRec ? (parts[0]||'') : '',
+      'Persona que Entrega': esRec ? (parts[1]||'') : '',
+      'Estado Ítem': esRec ? (parts[2]||'') : '',
+      'Observaciones': esRec ? (parts[3]||'') : (m.observaciones||'')
+    };
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:12},{wch:8},{wch:10},{wch:30},{wch:15},{wch:8},{wch:14},{wch:22},{wch:20},{wch:22},{wch:15},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Insumos');
+  var arr = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+  var b64 = ''; var bytes = new Uint8Array(arr);
+  for (var k=0; k<bytes.length; k++) b64 += String.fromCharCode(bytes[k]);
+  var lnk = document.createElement('a');
+  lnk.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + btoa(b64);
+  lnk.download = 'seleccion_insumos_' + new Date().toISOString().substring(0,10) + '.xlsx';
+  lnk.click();
+}
+
 // ── Modal Salida ───────────────────────────────────────────────
 // ── Multi-ítem salida ────────────────────────────────────────────
 var _msItemsList = [];
@@ -3604,8 +3785,12 @@ function renderMsItemsLista() {
   lista.innerHTML = _msItemsList.map(function(it, idx) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;' +
       (idx < _msItemsList.length - 1 ? 'border-bottom:1px solid #dce8f5;' : '') + '">' +
-      '<span style="flex:1;font-size:13px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-        (it.isExt ? '✏️ ' : '📦 ') + it.descripcion + '</span>' +
+      '<div style="flex:1;overflow:hidden">' +
+        '<div style="font-size:13px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+          (it.isExt ? '✏️ ' : '📦 ') + it.descripcion + '</div>' +
+        (it.observaciones ? '<div style="font-size:11px;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">' + it.observaciones + '</div>' : '') +
+      '</div>' +
+      (it.loteNumero ? '<span style="font-size:10px;color:#0277bd;background:#e3f2fd;border-radius:10px;padding:1px 7px;white-space:nowrap;flex-shrink:0">' + it.loteNumero + '</span>' : '') +
       '<span style="font-size:13px;color:#555;white-space:nowrap;background:#e8f4fc;border-radius:12px;padding:1px 8px">× ' + it.cantidad + '</span>' +
       '<button type="button" onclick="quitarItemLista(' + idx + ')" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0">✕</button>' +
     '</div>';
@@ -3625,14 +3810,28 @@ function agregarItemLista() {
   if (!isExt && !itemId)      { alert('Selecciona un ítem del inventario.'); return; }
   if (isExt && !extNombreVal) { alert('Ingresa el nombre del ítem.'); return; }
 
+  // Capturar lote seleccionado (solo para ítems del inventario)
+  var _lSel    = !isExt ? document.getElementById('ms-lote-id') : null;
+  var _loteId  = (_lSel && _lSel.value) ? _lSel.value : null;
+  var _loteNum = null;
+  if (_loteId && _lSel && _lSel.options[_lSel.selectedIndex]) {
+    _loteNum = _lSel.options[_lSel.selectedIndex].dataset.num || null;
+  }
+
+  // Capturar observaciones del ítem actual
+  var _obsVal = document.getElementById('ms-obs').value.trim();
+
   var itSel = isExt ? null : items.find(function(x){ return x.id === itemId; });
   _msItemsList.push({
-    itemId:      isExt ? null : itemId,
-    descripcion: isExt ? extNombreVal : (itSel ? itSel.descripcion : ''),
-    categoria:   isExt ? (extCategVal || null) : (itSel ? itSel.categoria : null),
-    cantidad:    cant,
-    noDescontar: noDesc,
-    isExt:       isExt,
+    itemId:       isExt ? null : itemId,
+    descripcion:  isExt ? extNombreVal : (itSel ? itSel.descripcion : ''),
+    categoria:    isExt ? (extCategVal || null) : (itSel ? itSel.categoria : null),
+    cantidad:     cant,
+    noDescontar:  noDesc,
+    isExt:        isExt,
+    loteId:       _loteId,
+    loteNumero:   _loteNum,
+    observaciones: _obsVal || null,
   });
 
   // Limpiar campos para el siguiente ítem
@@ -3642,7 +3841,14 @@ function agregarItemLista() {
   document.getElementById('ms-item-ext-nombre').value = '';
   document.getElementById('ms-item-ext-categ').value  = '';
   document.getElementById('ms-cant').value = '1';
+  document.getElementById('ms-cant').removeAttribute('max');
   document.getElementById('ms-no-descontar').checked = false;
+  document.getElementById('ms-obs').value = '';
+  var _lWrap = document.getElementById('ms-lote-wrap');
+  if (_lWrap) { _lWrap.style.display = 'none'; }
+  var _lSelR = document.getElementById('ms-lote-id');
+  if (_lSelR) { _lSelR.innerHTML = '<option value="">— Descontar del total general —</option>'; }
+  document.getElementById('ms-lote-stock').textContent = '';
   setSalidaItemMode('inventario');
   renderMsItemsLista();
 }
@@ -3650,6 +3856,70 @@ function agregarItemLista() {
 function quitarItemLista(idx) {
   _msItemsList.splice(idx, 1);
   renderMsItemsLista();
+}
+
+// ── Multi-ítem Recepción ──────────────────────────────────────────
+var _mrItemsList = [];
+
+function renderMrItemsLista() {
+  var wrap   = document.getElementById('mr-items-lista-wrap');
+  var lista  = document.getElementById('mr-items-lista');
+  var count  = document.getElementById('mr-items-count');
+  var label  = document.getElementById('mr-item-label');
+  if (!lista) return;
+  if (_mrItemsList.length === 0) {
+    wrap.style.display = 'none';
+    if (label) label.textContent = 'Ítem *';
+    return;
+  }
+  wrap.style.display = '';
+  if (label) label.textContent = 'Agregar otro ítem';
+  if (count) count.textContent = _mrItemsList.length + ' ítem(s)';
+  lista.innerHTML = _mrItemsList.map(function(it, idx) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #dbe9f8">' +
+      '<div style="flex:1;overflow:hidden">' +
+        '<div style="font-size:13px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+          '📦 ' + it.descripcion + '</div>' +
+        (it.observaciones ? '<div style="font-size:11px;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">' + it.observaciones + '</div>' : '') +
+      '</div>' +
+      '<div style="white-space:nowrap;font-size:12px;color:#1565c0;font-weight:700">+' + it.cantidad + '</div>' +
+      '<div style="white-space:nowrap;font-size:11px;color:#666">' + (it.estado || '') + '</div>' +
+      '<button onclick="quitarItemListaRec(' + idx + ')" style="background:none;border:none;color:#c62828;font-size:16px;cursor:pointer;padding:0 2px;line-height:1">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function agregarItemListaRec() {
+  var itemMode = document.getElementById('mr-item-mode').value;
+  var isExt    = itemMode === 'externo';
+  var itemId   = isExt ? null : (document.getElementById('mr-item-val').value || '');
+  var extNombre = isExt ? document.getElementById('mr-item-ext-nombre').value.trim() : '';
+  if (!isExt && !itemId) { alert('Selecciona un ítem del inventario.'); return; }
+  if (isExt && !extNombre) { alert('Ingresa el nombre del ítem no registrado.'); return; }
+  var cant    = parseInt(document.getElementById('mr-cant').value) || 1;
+  var estado  = document.getElementById('mr-estado').value;
+  var obs     = document.getElementById('mr-obs').value.trim();
+  var lbl     = isExt ? extNombre :
+    (function(){ var it = items.find(function(x){ return x.id === itemId; }); return it ? ((it.correlativo ? '['+it.correlativo+'] ' : '') + it.descripcion) : itemId; })();
+  var extCateg = isExt ? document.getElementById('mr-item-ext-categ').value.trim() : '';
+  _mrItemsList.push({ itemId: itemId, descripcion: lbl, cantidad: cant, estado: estado, observaciones: obs, isExt: isExt, extNombre: extNombre, extCateg: extCateg });
+  renderMrItemsLista();
+  // Limpiar campos del ítem para el siguiente
+  document.getElementById('mr-item-val').value    = '';
+  document.getElementById('mr-item-search').value = '';
+  document.getElementById('mr-item-list').style.display = 'none';
+  document.getElementById('mr-item-ext-nombre').value = '';
+  document.getElementById('mr-item-ext-categ').value  = '';
+  document.getElementById('mr-cant').value  = '1';
+  document.getElementById('mr-estado').value = '';
+  document.getElementById('mr-obs').value   = '';
+  var info = document.getElementById('mr-stock-info');
+  if (info) { info.innerHTML = ''; info.style.display = 'none'; }
+}
+
+function quitarItemListaRec(idx) {
+  _mrItemsList.splice(idx, 1);
+  renderMrItemsLista();
 }
 // ────────────────────────────────────────────────────────────────
 
@@ -3682,6 +3952,14 @@ function abrirModalSalida() {
   document.getElementById('ms-obs').value   = '';
   resetFotoSlots('ms');
   document.getElementById('alerta-sal').style.display = 'none';
+  // Reset lote selector
+  var _lWrapA = document.getElementById('ms-lote-wrap');
+  if (_lWrapA) _lWrapA.style.display = 'none';
+  var _lSelA = document.getElementById('ms-lote-id');
+  if (_lSelA) _lSelA.innerHTML = '<option value="">— Descontar del total general —</option>';
+  var _lStA = document.getElementById('ms-lote-stock');
+  if (_lStA) _lStA.textContent = '';
+  document.getElementById('ms-cant').removeAttribute('max');
   // Reset lista multi-ítem
   _msItemsList = [];
   renderMsItemsLista();
@@ -3721,15 +3999,24 @@ async function _guardarSalidaImpl() {
   var _noDesc      = document.getElementById('ms-no-descontar')?.checked || false;
   var _currentFill = _isItemExt ? !!_extNombre : !!_itemId;
 
+  var _lSel2   = !_isItemExt ? document.getElementById('ms-lote-id') : null;
+  var _curLoteId  = (_lSel2 && _lSel2.value) ? _lSel2.value : null;
+  var _curLoteNum = null;
+  if (_curLoteId && _lSel2 && _lSel2.options[_lSel2.selectedIndex]) {
+    _curLoteNum = _lSel2.options[_lSel2.selectedIndex].dataset.num || null;
+  }
   if (_currentFill) {
     var _itSelCur = _isItemExt ? null : items.find(function(x){ return x.id === _itemId; });
     allItems.push({
-      itemId:      _isItemExt ? null : _itemId,
-      descripcion: _isItemExt ? _extNombre  : (_itSelCur ? _itSelCur.descripcion : ''),
-      categoria:   _isItemExt ? (_extCateg || null) : (_itSelCur ? _itSelCur.categoria : null),
-      cantidad:    _cant,
-      noDescontar: _noDesc,
-      isExt:       _isItemExt,
+      itemId:        _isItemExt ? null : _itemId,
+      descripcion:   _isItemExt ? _extNombre  : (_itSelCur ? _itSelCur.descripcion : ''),
+      categoria:     _isItemExt ? (_extCateg || null) : (_itSelCur ? _itSelCur.categoria : null),
+      cantidad:      _cant,
+      noDescontar:   _noDesc,
+      isExt:         _isItemExt,
+      loteId:        _curLoteId,
+      loteNumero:    _curLoteNum,
+      observaciones: document.getElementById('ms-obs').value.trim() || null,
     });
   }
 
@@ -3752,7 +4039,6 @@ async function _guardarSalidaImpl() {
     tipo: 'salida_insumo', fecha: fechaHora, turno: turnoS,
     responsable:       getSalidaResp() || null,
     nombre_trabajador: document.getElementById('ms-persona-retira').value.trim() || null,
-    observaciones:     document.getElementById('ms-obs').value.trim() || null,
     foto_url:          foto_url_base,
     usuario_email:     currentUser?.email || null,
   };
@@ -3771,10 +4057,12 @@ async function _guardarSalidaImpl() {
       }
     }
     const payload = Object.assign({}, sharedFields, {
-      item_id: it.isExt ? null : it.itemId,
-      descripcion: it.isExt ? it.descripcion : (itSel?.descripcion || null),
-      categoria:   it.isExt ? it.categoria   : (itSel?.categoria   || null),
-      cantidad: it.cantidad, no_descontar: it.noDescontar || null,
+      item_id:      it.isExt ? null : it.itemId,
+      descripcion:  it.isExt ? it.descripcion : (itSel?.descripcion || null),
+      categoria:    it.isExt ? it.categoria   : (itSel?.categoria   || null),
+      cantidad:     it.cantidad,
+      no_descontar: it.noDescontar || null,
+      observaciones: it.observaciones || null,
     });
     const { error } = await sb.from('inventario_movimientos').update(payload).eq('id', editMovSalId);
     if (error) { alert('Error: ' + error.message); editMovSalId = null; return; }
@@ -3802,11 +4090,12 @@ async function _guardarSalidaImpl() {
     }
 
     var payload = Object.assign({}, sharedFields, {
-      item_id:     it.isExt ? null : it.itemId,
-      descripcion: it.isExt ? it.descripcion : (itSel?.descripcion || null),
-      categoria:   it.isExt ? it.categoria   : (itSel?.categoria   || null),
-      cantidad:    it.cantidad,
+      item_id:      it.isExt ? null : it.itemId,
+      descripcion:  it.isExt ? it.descripcion : (itSel?.descripcion || null),
+      categoria:    it.isExt ? it.categoria   : (itSel?.categoria   || null),
+      cantidad:     it.cantidad,
       no_descontar: it.noDescontar || null,
+      observaciones: it.observaciones || null,
     });
 
     if (it.isExt) {
@@ -3821,6 +4110,14 @@ async function _guardarSalidaImpl() {
       if (error) { alert('Error guardando "' + it.descripcion + '": ' + error.message); continue; }
       var _upd = { cantidad_disponible: _newDisp };
       if (it.noDescontar) _upd.cantidad_total = (itSel?.cantidad_total || 0) + it.cantidad;
+      // Descontar del lote específico si fue seleccionado
+      if (!it.noDescontar && it.loteId && itSel && itSel.lotes && itSel.lotes.length) {
+        _upd.lotes = itSel.lotes.map(function(l) {
+          if (l.id === it.loteId) return Object.assign({}, l, { cantidad: Math.max(0, (l.cantidad||0) - it.cantidad) });
+          return l;
+        });
+        itSel.lotes = _upd.lotes;
+      }
       await sb.from('inventario_items').update(_upd).eq('id', it.itemId);
       marcarItemReciente(it.itemId);
     }
@@ -3944,57 +4241,101 @@ function generarComprobanteSalida() {
   cerrar('modal-comprobante-salida');
   var d = window._lastComprobante;
   if (!d) return;
-  var fechaStr = d.fecha ? (d.fecha.substring(0,10).split('-').reverse().join('/') + (d.fecha.length > 10 ? '  ' + d.fecha.substring(11,16) + ' h' : '')) : '—';
 
+  var _pdfUser   = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  var _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser ? currentUser.email : '');
+
+  var fechaCorta = d.fecha ? d.fecha.substring(0,10).split('-').reverse().join('/') : '—';
+  var horaStr    = d.fecha && d.fecha.length > 10 ? d.fecha.substring(11,16) + ' h' : '';
+  var tipoBadge  = '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
+
+  // Filas: una por ítem (multi) o una fila general (simple)
+  var tableRows;
+  if (d.items && d.items.length > 1) {
+    tableRows = d.items.map(function(it, i) {
+      return '<tr style="background:' + (i%2===0?'#fff':'#fafcff') + ';border-bottom:1px solid #e4ebf3">' +
+        '<td style="padding:6px 9px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
+        '<td style="padding:6px 9px">' + tipoBadge + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + fechaCorta + (horaStr ? '<br><small style="color:#888">' + horaStr + '</small>' : '') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (d.turno||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9.5pt;font-weight:600">' + (it.descripcion||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (it.categoria||'—') + '</td>' +
+        '<td style="padding:6px 9px;text-align:center;font-weight:700;color:#c62828">↓ ' + it.cantidad + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (d.responsable||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (d.personaRetira||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (it.observaciones||'—') + '</td>' +
+      '</tr>';
+    }).join('');
+  } else {
+    var obsOne = d.observaciones || (d.items && d.items[0] && d.items[0].observaciones) || '—';
+    tableRows = '<tr style="background:#fff;border-bottom:1px solid #e4ebf3">' +
+      '<td style="padding:6px 9px;text-align:center;color:#888;font-size:9pt">1</td>' +
+      '<td style="padding:6px 9px">' + tipoBadge + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + fechaCorta + (horaStr ? '<br><small style="color:#888">' + horaStr + '</small>' : '') + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + (d.turno||'—') + '</td>' +
+      '<td style="padding:6px 9px;font-size:9.5pt;font-weight:600">' + (d.descripcion||'—') + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + (d.categoria||'—') + '</td>' +
+      '<td style="padding:6px 9px;text-align:center;font-weight:700;color:#c62828">↓ ' + (d.cantidad||1) + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + (d.responsable||'—') + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + (d.personaRetira||'—') + '</td>' +
+      '<td style="padding:6px 9px;font-size:9pt">' + obsOne + '</td>' +
+    '</tr>';
+  }
+
+  // Fotos
   var fotosHtml = '';
   var fotos = Array.isArray(d.fotoUrls) ? d.fotoUrls.filter(Boolean) : [];
   if (fotos.length) {
-    fotosHtml += '<div class="sec-title">FOTOGRAFÍAS</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px">' +
-      fotos.map(function(url) {
-        return '<img src="' + url + '" style="max-width:140px;max-height:120px;border-radius:8px;border:1px solid #dde6f0;object-fit:contain"/>';
-      }).join('') +
-      '</div>';
+    fotosHtml = '<div style="margin-top:18px">' +
+      '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Fotografías</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      fotos.map(function(url){ return '<img src="' + url + '" style="max-width:160px;max-height:130px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+      '</div></div>';
   }
 
+  // Firma
   var firmaHtml = '';
   if (d.firmaData && d.firmaData.startsWith('data:image')) {
-    firmaHtml = '<div class="sec-title">FIRMA — ' + (d.personaRetira || 'Persona que retira') + '</div>' +
-      '<div style="text-align:center;margin-bottom:16px">' +
-      '<img src="' + d.firmaData + '" style="max-width:280px;height:auto;border:2px solid #1a3a5c;border-radius:8px;background:#f8f9fb"/>' +
-      '</div>';
+    firmaHtml = '<div style="margin-top:18px">' +
+      '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Firma — ' + (d.personaRetira || 'Persona que retira') + '</div>' +
+      '<div style="border:2px solid #1a3a5c;border-radius:10px;padding:8px;display:inline-block;background:#f8f9fb">' +
+      '<img src="' + d.firmaData + '" style="max-width:280px;height:auto;display:block"/>' +
+      '</div></div>';
   }
 
-  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Comprobante de Entrega</title>' +
-    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#333;padding:24px;max-width:520px;margin:auto}' +
-    '.logo{text-align:center;margin-bottom:12px}.logo img{height:60px;object-fit:contain}' +
-    'h1{font-size:15px;text-align:center;color:#1a3a5c;margin:8px 0 2px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}' +
-    '.sub{text-align:center;font-size:11px;color:#888;margin-bottom:16px}' +
-    'table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px}' +
-    'td{padding:8px 10px;border-bottom:1px solid #eef2f7;vertical-align:top}' +
-    'td:first-child{font-weight:700;color:#555;width:44%;font-size:11px;text-transform:uppercase;letter-spacing:.3px}' +
-    '.sec-title{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #eef2f7}' +
-    '.footer{margin-top:20px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:10px}' +
-    '.btn-print{display:block;margin:16px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}' +
-    '@media print{.btn-print{display:none}}</style></head><body>' +
-    '<div class="logo"><img src="' + LOGO_URL + '" alt="Pucará" onerror="this.style.display=\'none\'"/></div>' +
-    '<h1>Comprobante de Entrega de Insumos</h1>' +
-    '<div class="sub">RN-2003 — Control de Inventario Pucará</div>' +
-    '<table>' +
-    '<tr><td>Fecha y hora</td><td>' + fechaStr + '</td></tr>' +
-    '<tr><td>Turno</td><td>' + (d.turno || '—') + '</td></tr>' +
-    '<tr><td>Ítem entregado</td><td><strong>' + (d.descripcion || '—') + '</strong></td></tr>' +
-    (d.categoria ? '<tr><td>Categoría</td><td>' + d.categoria + '</td></tr>' : '') +
-    '<tr><td>Cantidad</td><td>' + (d.cantidad || 1) + '</td></tr>' +
-    '<tr><td>Responsable entrega</td><td>' + (d.responsable || '—') + '</td></tr>' +
-    (d.personaRetira ? '<tr><td>Persona que retira</td><td>' + d.personaRetira + '</td></tr>' : '') +
-    (d.observaciones ? '<tr><td>Observaciones</td><td>' + d.observaciones + '</td></tr>' : '') +
-    '</table>' +
-    fotosHtml +
-    firmaHtml +
-    '<div class="footer">Generado el ' + new Date().toLocaleDateString('es-CL') + ' — Sistema de Control de Inventario Pucará</div>' +
-    '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>' +
-    '</body></html>';
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Comprobante de Entrega</title>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+    '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.2cm 1.8cm;box-sizing:border-box}' +
+    '@media print{body{margin:0}.page{padding:0.8cm 1.2cm}.np{display:none}}' +
+    'table{border-collapse:collapse;width:100%}thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    'th{padding:7px 9px;text-align:left;font-size:9pt}' +
+    '</style></head><body><div class="page">' +
+    '<table style="margin-bottom:12px"><tr>' +
+      '<td style="border:none;width:65px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:55px;height:55px;object-fit:contain;border-radius:8px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
+      '<td style="border:none;vertical-align:middle;text-align:center">' +
+        '<div style="font-size:16pt;font-weight:700;color:#1E4F8C">Comprobante de Entrega de Insumos</div>' +
+        '<div style="font-size:10pt;font-weight:700;color:#1E4F8C">RN-2003 — Control de Inventario Pucará</div>' +
+        '<div style="font-size:9pt;color:#aaa;margin-top:2px">Generado el ' + new Date().toLocaleDateString('es-CL') + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+      '</td><td style="border:none;width:65px"></td>' +
+    '</tr></table>' +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 14px"/>' +
+    '<table><thead><tr>' +
+      '<th style="width:28px;text-align:center">#</th>' +
+      '<th style="width:80px">Tipo</th>' +
+      '<th style="width:80px">Fecha</th>' +
+      '<th style="width:65px">Turno</th>' +
+      '<th>Ítem</th>' +
+      '<th style="width:80px">Categoría</th>' +
+      '<th style="width:50px;text-align:center">Cant.</th>' +
+      '<th style="width:110px">Responsable</th>' +
+      '<th style="width:110px">Persona que Retira</th>' +
+      '<th>Observaciones</th>' +
+    '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
+    fotosHtml + firmaHtml +
+    '<div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:10px">Generado el ' + new Date().toLocaleDateString('es-CL') + ' — Sistema de Control de Inventario Pucará</div>' +
+    '<button class="np" onclick="window.print()" style="display:block;margin:16px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>' +
+    '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
+
   var w = window.open('', '_blank');
   if (w) { w.document.write(html); w.document.close(); }
 }
@@ -4368,7 +4709,50 @@ function setSalidaItemMode(modo) {
   document.getElementById('ms-item-ext-wrap').style.display = isExt ? '' : 'none';
   document.getElementById('ms-no-descontar-wrap').style.display = isExt ? 'none' : '';
   if (isExt) document.getElementById('ms-no-descontar').checked = false;
+  if (isExt) { var lw = document.getElementById('ms-lote-wrap'); if (lw) lw.style.display = 'none'; }
 }
+function mostrarLotesSalida(it) {
+  var wrap  = document.getElementById('ms-lote-wrap');
+  var sel   = document.getElementById('ms-lote-id');
+  var stock = document.getElementById('ms-lote-stock');
+  var cant  = document.getElementById('ms-cant');
+  if (!wrap || !sel) return;
+  var lotes = (it && it.lotes) ? it.lotes.filter(function(l){ return (l.cantidad||0) > 0; }) : [];
+  if (!lotes.length) { wrap.style.display = 'none'; sel.innerHTML = '<option value="">— Descontar del total general —</option>'; return; }
+  wrap.style.display = '';
+  sel.innerHTML = '<option value="">— Descontar del total general —</option>' +
+    lotes.map(function(l) {
+      var fStr = l.fecha ? ' (' + l.fecha.split('-').reverse().join('/') + ')' : '';
+      var obsEsc = (l.observaciones || '').replace(/"/g, '&quot;');
+      return '<option value="' + l.id + '" data-cant="' + (l.cantidad||0) + '" data-num="' + (l.numero||'') + '" data-obs="' + obsEsc + '">' +
+        l.numero + fStr + ' — ' + (l.cantidad||0) + ' uds.' + (l.observaciones ? ' · ' + l.observaciones : '') + '</option>';
+    }).join('');
+  onChangeLoteSal();
+}
+
+function onChangeLoteSal() {
+  var sel   = document.getElementById('ms-lote-id');
+  var stock = document.getElementById('ms-lote-stock');
+  var cant  = document.getElementById('ms-cant');
+  if (!sel) return;
+  var opt = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  var c = opt && opt.dataset.cant ? parseInt(opt.dataset.cant) : 0;
+  if (!opt || !opt.value) {
+    if (stock) stock.textContent = '';
+    if (cant) cant.removeAttribute('max');
+    return;
+  }
+  var obsLote = opt.dataset.obs || '';
+  if (stock) {
+    stock.innerHTML = '<span style="color:' + (c <= 1 ? '#c62828' : '#2e7d32') + ';font-weight:700">Disponible en este lote: ' + c + ' uds.</span>' +
+      (obsLote ? '<span style="color:#555;margin-left:10px">· ' + obsLote + '</span>' : '');
+  }
+  if (cant) {
+    cant.max = c;
+    if (parseInt(cant.value) > c) cant.value = c;
+  }
+}
+
 function setRecepcionItemMode(modo) {
   document.getElementById('mr-item-mode').value = modo;
   var isExt = modo === 'externo';
@@ -4457,35 +4841,19 @@ function abrirModalRecepcion() {
   setEntregaMode('externo');
   setRespRecepMode('interno');
   setRecepcionItemMode('inventario');
+  document.getElementById('mr-item-search').value = '';
+  document.getElementById('mr-item-val').value    = '';
+  document.getElementById('mr-item-list').style.display = 'none';
   document.getElementById('mr-item-ext-nombre').value = '';
   document.getElementById('mr-item-ext-categ').value  = '';
 
-  // Poblar selector de ítems
-  var sel = document.getElementById('mr-item');
-  sel.innerHTML = '<option value="">-- Seleccionar ítem --</option>';
-  items.slice().sort(function(a,b){ return (a.descripcion||'').localeCompare(b.descripcion||''); }).forEach(function(it) {
-    var lbl = (it.correlativo ? '['+it.correlativo+'] ' : '') + it.descripcion + (it.talla ? ' ('+it.talla+')' : '');
-    var opt = document.createElement('option');
-    opt.value = it.id;
-    opt.textContent = lbl + ' — Disp: ' + (it.cantidad_disponible||0);
-    sel.appendChild(opt);
-  });
+  // Resetear lista multi-ítem
+  _mrItemsList = [];
+  renderMrItemsLista();
+
   abrir('modal-recepcion');
 }
 
-function onItemRecepcionChange() {
-  var itemId = document.getElementById('mr-item').value;
-  var it = items.find(function(x){ return x.id === itemId; });
-  var info = document.getElementById('mr-stock-info');
-  if (!info) return;
-  if (it) {
-    info.innerHTML = 'Stock actual: <strong>' + (it.cantidad_disponible||0) + '</strong> disponibles | Total inventario: <strong>' + (it.cantidad_total||0) + '</strong>';
-    info.style.display = 'block';
-  } else {
-    info.innerHTML = '';
-    info.style.display = 'none';
-  }
-}
 
 function previewFotoRecepcion(input) {
   var prev = document.getElementById('mr-foto-preview');
@@ -4512,67 +4880,88 @@ async function guardarRecepcion() {
   }
 }
 async function _guardarRecepcionImpl() {
-  var fecha = document.getElementById('mr-fecha').value;
-  var hora  = document.getElementById('mr-hora').value;
-  var turno = document.getElementById('mr-turno').value;
-  var area  = document.getElementById('mr-area').value.trim();
+  var fecha       = document.getElementById('mr-fecha').value;
+  var hora        = document.getElementById('mr-hora').value;
+  var turno       = document.getElementById('mr-turno').value;
+  var area        = document.getElementById('mr-area').value.trim();
   var personaEntr = getEntregaPersona();
-  var itemMode = document.getElementById('mr-item-mode').value;
-  var isItemExt = itemMode === 'externo';
-  var itemExtNombre = isItemExt ? document.getElementById('mr-item-ext-nombre').value.trim() : '';
-  var itemExtCateg  = isItemExt ? document.getElementById('mr-item-ext-categ').value.trim() : '';
-  var itemId = document.getElementById('mr-item').value;
-  var cant   = parseInt(document.getElementById('mr-cant').value) || 1;
-  var estado = document.getElementById('mr-estado').value;
-  var resp   = getRespRecepcion();
-  var obs    = document.getElementById('mr-obs').value.trim();
-  if (!fecha || !turno || (!isItemExt && !itemId) || (isItemExt && !itemExtNombre) || !resp) {
-    alert('Completa los campos obligatorios: Fecha, Turno, Ítem y Responsable de Recepción.');
+  var resp        = getRespRecepcion();
+  var personaRecep = document.getElementById('mr-persona-recepciona').value.trim() || null;
+
+  if (!fecha || !turno || !resp) {
+    alert('Completa los campos obligatorios: Fecha, Turno y Responsable de Recepción.');
     return;
   }
-  var itSel = isItemExt ? null : items.find(function(x){ return x.id === itemId; });
-  if (!isItemExt && !itSel) { alert('Ítem no encontrado.'); return; }
+
+  // Construir lista de ítems: los de la lista + el ítem actual si está completo
+  var itemMode    = document.getElementById('mr-item-mode').value;
+  var isItemExt   = itemMode === 'externo';
+  var itemId      = isItemExt ? null : (document.getElementById('mr-item-val').value || '');
+  var extNombre   = isItemExt ? document.getElementById('mr-item-ext-nombre').value.trim() : '';
+  var extCateg    = isItemExt ? document.getElementById('mr-item-ext-categ').value.trim() : '';
+  var cant        = parseInt(document.getElementById('mr-cant').value) || 1;
+  var estado      = document.getElementById('mr-estado').value;
+  var obs         = document.getElementById('mr-obs').value.trim();
+
+  var allItems = _mrItemsList.slice();
+  // Agregar ítem del formulario si tiene datos suficientes
+  if ((!isItemExt && itemId) || (isItemExt && extNombre)) {
+    var lbl = isItemExt ? extNombre :
+      (function(){ var it = items.find(function(x){ return x.id === itemId; }); return it ? it.descripcion : itemId; })();
+    allItems.push({ itemId: itemId, descripcion: lbl, cantidad: cant, estado: estado, observaciones: obs, isExt: isItemExt, extNombre: extNombre, extCateg: extCateg });
+  }
+
+  if (allItems.length === 0) {
+    alert('Agrega al menos un ítem a recepcionar.');
+    return;
+  }
 
   var _fotosRec = await subirFotosSlots('mr', 'movimientos');
   var fotoUrl = _fotosRec.length > 0
     ? (_fotosRec.length === 1 ? _fotosRec[0] : JSON.stringify(_fotosRec))
     : null;
 
-  // area||personaEntrega||estado||obs empaquetados en observaciones
-  var obsStr = [area, personaEntr, estado, obs].join('||');
+  var fechaHora = hora ? (fecha + 'T' + hora) : fecha;
 
-  var newDisp = null;
-  var newTotal = null;
-  if (!isItemExt) {
-    var preRec = await sb.from('inventario_items').select('cantidad_disponible,cantidad_total').eq('id', itemId).single();
-    var preDisp  = preRec.data ? (preRec.data.cantidad_disponible ?? 0) : (itSel.cantidad_disponible ?? 0);
-    var preTotal = preRec.data ? (preRec.data.cantidad_total ?? 0) : (itSel.cantidad_total ?? 0);
-    newDisp  = preDisp + cant;
-    newTotal = preTotal + cant;
-  }
+  for (var i = 0; i < allItems.length; i++) {
+    var it = allItems[i];
+    var itSel = (!it.isExt && it.itemId) ? items.find(function(x){ return x.id === it.itemId; }) : null;
 
-  var payload = {
-    tipo: 'recepcion_insumo',
-    fecha: hora ? (fecha + 'T' + hora) : fecha,
-    turno: turno,
-    descripcion: isItemExt ? itemExtNombre : itSel.descripcion,
-    item_id: isItemExt ? null : itemId,
-    cantidad: cant,
-    cantidad_restante: isItemExt ? null : newDisp,
-    responsable: resp,
-    nombre_trabajador: document.getElementById('mr-persona-recepciona').value.trim() || null,
-    observaciones: obsStr,
-    foto_url: fotoUrl,
-    categoria: isItemExt ? (itemExtCateg || '') : (itSel.categoria || '')
-  };
+    var newDisp  = null;
+    var newTotal = null;
+    if (!it.isExt && itSel) {
+      var preRec = await sb.from('inventario_items').select('cantidad_disponible,cantidad_total').eq('id', it.itemId).single();
+      var preDisp  = preRec.data ? (preRec.data.cantidad_disponible ?? 0) : (itSel.cantidad_disponible ?? 0);
+      var preTotal = preRec.data ? (preRec.data.cantidad_total ?? 0) : (itSel.cantidad_total ?? 0);
+      newDisp  = preDisp + it.cantidad;
+      newTotal = preTotal + it.cantidad;
+    }
 
-  var insR = await sb.from('inventario_movimientos').insert(payload);
-  if (insR.error) { alert('Error al registrar recepción: ' + insR.error.message); return; }
+    // area||personaEntrega||estado||obs empaquetados en observaciones (por ítem)
+    var obsStr = [area, personaEntr, it.estado || '', it.observaciones || ''].join('||');
 
-  if (!isItemExt) {
-    // Actualizar stock (neutralizar trigger +1 y fijar valor correcto)
-    var updR = await sb.from('inventario_items').update({ cantidad_disponible: newDisp, cantidad_total: newTotal }).eq('id', itemId);
-    if (updR.error) alert('Recepción guardada pero error al actualizar stock: ' + updR.error.message);
+    var payload = {
+      tipo: 'recepcion_insumo',
+      fecha: fechaHora,
+      turno: turno,
+      descripcion: it.isExt ? it.extNombre : (itSel ? itSel.descripcion : it.descripcion),
+      item_id: it.isExt ? null : it.itemId,
+      cantidad: it.cantidad,
+      cantidad_restante: it.isExt ? null : newDisp,
+      responsable: resp,
+      nombre_trabajador: personaRecep,
+      observaciones: obsStr,
+      foto_url: fotoUrl,
+      categoria: it.isExt ? (it.extCateg || '') : (itSel ? (itSel.categoria || '') : '')
+    };
+
+    var insR = await sb.from('inventario_movimientos').insert(payload);
+    if (insR.error) { alert('Error al registrar recepción: ' + insR.error.message); return; }
+
+    if (!it.isExt && itSel) {
+      var updR = await sb.from('inventario_items').update({ cantidad_disponible: newDisp, cantidad_total: newTotal }).eq('id', it.itemId);
+      if (updR.error) alert('Recepción guardada pero error al actualizar stock: ' + updR.error.message);
+    }
   }
 
   cerrar('modal-recepcion');

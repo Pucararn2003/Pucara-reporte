@@ -178,7 +178,7 @@ th.sortable:hover{background:#163d6e}
 .foto-slot-ph span{font-size:26px}
 .foto-slot img{width:100%;height:100%;object-fit:cover;display:block}
 .foto-slot-rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:2}
-.firma-canvas{display:block;width:100%;height:170px;background:#f8f9fb;border:2px dashed #cdd8e3;border-radius:10px;cursor:crosshair;touch-action:none;box-sizing:border-box}
+.firma-canvas{display:block;width:100%;height:170px;background:#f8f9fb;border:2px dashed #cdd8e3;border-radius:10px;cursor:crosshair;touch-action:none;box-sizing:border-box;will-change:transform}
 .firma-canvas.signed{border-color:#1a3a5c;border-style:solid}
 
 /* ── Insumos: tipo filter buttons & badges ── */
@@ -363,10 +363,14 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   }
   .mftr .btn{flex:1;min-width:120px;text-align:center;padding:11px}
   .fgrid{grid-template-columns:1fr !important}
+  /* Salida + Recepción: mantener 2 cols para Fecha/Hora lado a lado */
+  #modal-salida .fgrid,#modal-recepcion .fgrid{grid-template-columns:1fr 1fr !important}
   /* Form fields compactos + prevenir zoom iOS (font-size >= 16px) */
-  .fg{margin-bottom:8px}
+  .fg{margin-bottom:6px}
   .fg label{font-size:10px}
-  .fg input,.fg select,.fg textarea{font-size:16px;padding:7px 10px}
+  .fg input,.fg select,.fg textarea{font-size:16px;padding:6px 10px}
+  /* Compactar mbody de salida y recepción */
+  #modal-salida .mbody,#modal-recepcion .mbody{padding:6px 12px 4px}
 
   /* === Ocultar inputs de fecha vacíos que aparecen como recuadros en blanco === */
   /* Dados de Baja */
@@ -390,16 +394,16 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   .modal,.modal-sm{max-height:92vh;-webkit-overflow-scrolling:touch}
 
   /* === Firma pad — altura cómoda para firmar con dedo === */
-  .firma-canvas{height:210px}
-  #ms-firma-toggle-btn{padding:11px 14px!important;font-size:15px!important;font-weight:600}
+  .firma-canvas{height:160px}
+  #ms-firma-toggle-btn{padding:8px 12px!important;font-size:13px!important;font-weight:600}
 
-  /* === Touch targets — mín. 44px para todos los toggles (override inline styles) === */
-  .btn-tipo{min-height:42px!important;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+  /* === Touch targets — mín. 38px para toggles en modales compactos === */
+  .btn-tipo{min-height:38px!important;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
   #ms-item-btn-inv,#ms-item-btn-ext,
   #mr-item-btn-inv,#mr-item-btn-ext,
   #ms-btn-int,#ms-btn-ext,
   #mr-entrega-btn-int,#mr-entrega-btn-ext,
-  #mr-resp-btn-int,#mr-resp-btn-ext{padding:8px 12px!important;font-size:13px!important;min-height:42px!important}
+  #mr-resp-btn-int,#mr-resp-btn-ext{padding:6px 10px!important;font-size:12px!important;min-height:38px!important}
 
   /* === Salida Insumos — quitar columnas # y Obs/Área para tabla limpia === */
   #tab-salida table th:nth-child(1),#tab-salida table td:nth-child(1),
@@ -410,14 +414,17 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   #ftipo-todos,#ftipo-sal,#ftipo-rec{flex:1;padding:11px 4px;font-size:12px;text-align:center}
 
   /* === Prevenir zoom iOS — todos los inputs ≥ 16px (inline styles overridden) === */
-  .fg input,.fg select,.fg textarea{font-size:16px!important;padding:10px!important}
+  .fg input,.fg select,.fg textarea{font-size:16px!important;padding:8px 10px!important}
   #ms-item-search,#me-item-search,#ma-item-search,
   #mb-item-search,#mc-item-search,#ml-item-search,
   #me-trab,#ma-trab{font-size:16px!important}
   #ms-item-ext-nombre,#ms-item-ext-categ,
   #mr-item-ext-nombre,#mr-item-ext-categ,
   #ms-persona-retira,#mr-persona-recepciona,
-  #fs-buscar,#mr-resp,#mr-persona-entrega{font-size:16px!important;padding:10px!important}
+  #fs-buscar,#mr-resp,#mr-persona-entrega{font-size:16px!important;padding:8px 10px!important}
+  /* Botones limpiar/cancelar firma más compactos */
+  #ms-firma-wrap .btn-tipo,
+  #ms-firma-wrap button{padding:6px 0!important;font-size:12px!important;min-height:34px!important}
 
   /* === Foto slots — gap más compacto === */
   .foto-slots{gap:5px}
@@ -3925,9 +3932,9 @@ function initFirmaCanvas(canvasId, dataId) {
   var canvas = document.getElementById(canvasId);
   if (!canvas || canvas._firmaReady) return;
   canvas._firmaReady = true;
-  var dpr = window.devicePixelRatio || 1;
-  var w   = canvas.offsetWidth;
-  var h   = canvas.offsetHeight;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap 2x — suficiente calidad, más rápido
+  var w = canvas.offsetWidth;
+  var h = canvas.offsetHeight;
   canvas.width  = w * dpr;
   canvas.height = h * dpr;
   var ctx = canvas.getContext('2d');
@@ -3938,54 +3945,76 @@ function initFirmaCanvas(canvasId, dataId) {
   ctx.strokeStyle = '#1a3a5c';
   canvas._ctx = ctx;
   var drawing = false;
-  var lastX = 0, lastY = 0, pendingX = 0, pendingY = 0, rafId = null;
+  var pts = [];
+  var rafId = null;
   function getXY(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src  = e.touches ? e.touches[0] : e;
-    return [src.clientX - rect.left, src.clientY - rect.top];
+    var r = canvas.getBoundingClientRect();
+    return [e.clientX - r.left, e.clientY - r.top];
   }
-  function start(e) {
+  function flushPts() {
+    rafId = null;
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i+1][0]) / 2;
+      var my = (pts[i][1] + pts[i+1][1]) / 2;
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    var last = pts[pts.length - 1];
+    ctx.lineTo(last[0], last[1]);
+    ctx.stroke();
+    pts = [last]; // conservar último punto como inicio del siguiente segmento
+    canvas.classList.add('signed');
+  }
+  function onDown(e) {
     e.preventDefault();
     drawing = true;
     var p = getXY(e);
-    lastX = p[0]; lastY = p[1];
+    pts = [p];
     ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
+    ctx.moveTo(p[0], p[1]);
+    if (canvas.setPointerCapture && e.pointerId != null) canvas.setPointerCapture(e.pointerId);
   }
-  function move(e) {
+  function onMove(e) {
     if (!drawing) return;
     e.preventDefault();
-    var p = getXY(e);
-    pendingX = p[0]; pendingY = p[1];
-    if (rafId) return;
-    rafId = requestAnimationFrame(function() {
-      rafId = null;
-      var mx = (lastX + pendingX) / 2;
-      var my = (lastY + pendingY) / 2;
-      ctx.quadraticCurveTo(lastX, lastY, mx, my);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(mx, my);
-      lastX = pendingX; lastY = pendingY;
-      canvas.classList.add('signed');
-    });
+    // getCoalescedEvents recupera puntos intermedios omitidos entre frames
+    var evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
+    for (var i = 0; i < evs.length; i++) pts.push(getXY(evs[i]));
+    if (!rafId) rafId = requestAnimationFrame(flushPts);
   }
-  function stop() {
+  function onUp(e) {
     if (!drawing) return;
     drawing = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    flushPts();
     document.getElementById(dataId).value = canvas.toDataURL('image/png');
   }
-  canvas.addEventListener('mousedown',  start);
-  canvas.addEventListener('mousemove',  move);
-  canvas.addEventListener('mouseup',    stop);
-  canvas.addEventListener('mouseleave', stop);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove',  move,  { passive: false });
-  canvas.addEventListener('touchend',   stop);
+  // Pointer Events API — menor latencia en móvil que touch events
+  if (window.PointerEvent) {
+    canvas.addEventListener('pointerdown',   onDown);
+    canvas.addEventListener('pointermove',   onMove);
+    canvas.addEventListener('pointerup',     onUp);
+    canvas.addEventListener('pointercancel', onUp);
+  } else {
+    canvas.addEventListener('mousedown',  onDown);
+    canvas.addEventListener('mousemove',  onMove);
+    canvas.addEventListener('mouseup',    onUp);
+    canvas.addEventListener('mouseleave', onUp);
+    canvas.addEventListener('touchstart', onDown, { passive: false });
+    canvas.addEventListener('touchmove',  onMove,  { passive: false });
+    canvas.addEventListener('touchend',   onUp);
+  }
 }
 
 function toggleFirmaSal() {
+  // En móvil → abrir overlay landscape
+  if (window.matchMedia('(max-width:600px)').matches) {
+    abrirFirmaOverlay('ms-firma-data');
+    return;
+  }
+  // Desktop → canvas inline
   var wrap = document.getElementById('ms-firma-wrap');
   var btn  = document.getElementById('ms-firma-toggle-btn');
   if (wrap.style.display === 'none') {
@@ -3998,6 +4027,90 @@ function toggleFirmaSal() {
     btn.textContent = '✍️ Agregar firma';
     btn.style.background = '#fff';
   }
+}
+
+// ── Firma Landscape Overlay ────────────────────────────────────────────────
+var _firmaOverlayDataId = null;
+var _firmaOverlayCanvasReady = false;
+
+function abrirFirmaOverlay(dataId) {
+  _firmaOverlayDataId = dataId;
+  _firmaOverlayCanvasReady = false;
+  document.getElementById('firma-overlay-data').value = '';
+  var canvas = document.getElementById('firma-overlay-canvas');
+  if (canvas) { canvas._firmaReady = false; canvas.classList.remove('signed'); }
+  var ov = document.getElementById('firma-landscape-overlay');
+  ov.style.display = 'flex';
+  // Intentar forzar landscape (Android Chrome)
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(function(){});
+  }
+  _actualizarOverlayOrientacion();
+  window.addEventListener('resize', _firmaOverlayResizeHandler);
+}
+
+function _firmaOverlayResizeHandler() {
+  _actualizarOverlayOrientacion();
+}
+
+function _actualizarOverlayOrientacion() {
+  var isLandscape = window.innerWidth > window.innerHeight;
+  var hint    = document.getElementById('firma-rotate-hint');
+  var section = document.getElementById('firma-canvas-section');
+  if (!hint || !section) return;
+  hint.style.display    = isLandscape ? 'none'  : 'flex';
+  section.style.display = isLandscape ? 'flex'  : 'none';
+  if (isLandscape && !_firmaOverlayCanvasReady) {
+    _firmaOverlayCanvasReady = true;
+    // Doble RAF para asegurar que el canvas tiene dimensiones correctas
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        initFirmaCanvas('firma-overlay-canvas', 'firma-overlay-data');
+      });
+    });
+  }
+}
+
+function cerrarFirmaOverlay() {
+  document.getElementById('firma-landscape-overlay').style.display = 'none';
+  window.removeEventListener('resize', _firmaOverlayResizeHandler);
+  if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+}
+
+function limpiarFirmaOverlay() {
+  var canvas = document.getElementById('firma-overlay-canvas');
+  if (!canvas) return;
+  _firmaOverlayCanvasReady = false;
+  canvas._firmaReady = false;
+  canvas.classList.remove('signed');
+  document.getElementById('firma-overlay-data').value = '';
+  // Reinicializar canvas limpio
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      _firmaOverlayCanvasReady = true;
+      initFirmaCanvas('firma-overlay-canvas', 'firma-overlay-data');
+    });
+  });
+}
+
+function confirmarFirmaOverlay() {
+  var data = document.getElementById('firma-overlay-data').value;
+  if (!data || !data.startsWith('data:image')) {
+    var canvas = document.getElementById('firma-overlay-canvas');
+    if (canvas && canvas.classList.contains('signed')) {
+      data = canvas.toDataURL('image/png');
+    } else {
+      alert('Por favor firme antes de confirmar.');
+      return;
+    }
+  }
+  if (_firmaOverlayDataId) {
+    document.getElementById(_firmaOverlayDataId).value = data;
+  }
+  // Actualizar botón toggle
+  var btn = document.getElementById('ms-firma-toggle-btn');
+  if (btn) { btn.textContent = '✍️ Firma agregada ✓'; btn.style.background = '#e8eef7'; }
+  cerrarFirmaOverlay();
 }
 
 function ocultarFirmaSal() {
@@ -6413,5 +6526,64 @@ function eliminarCompra(id) {
     </div>
   </div>
 </div>
+<!-- ══ Firma Landscape Overlay (solo móvil) ══════════════════════════════ -->
+<style>
+@keyframes _firmaPhoneRock{0%,100%{transform:rotate(0deg)}30%,70%{transform:rotate(-82deg)}}
+@keyframes _firmaArrowPulse{0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+</style>
+<div id="firma-landscape-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:#fff;flex-direction:column;box-sizing:border-box">
+
+  <!-- Indicador: girar teléfono (visible cuando portrait) -->
+  <div id="firma-rotate-hint" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:24px;padding:24px;text-align:center">
+    <div style="position:relative;width:90px;height:90px">
+      <!-- phone SVG animado -->
+      <svg style="animation:_firmaPhoneRock 2.4s ease-in-out infinite;transform-origin:center" width="90" height="90" viewBox="0 0 90 90" fill="none">
+        <rect x="28" y="10" width="34" height="60" rx="6" fill="#e8eef7" stroke="#1a3a5c" stroke-width="3"/>
+        <rect x="36" y="62" width="18" height="4" rx="2" fill="#1a3a5c" opacity=".5"/>
+        <rect x="37" y="14" width="16" height="2" rx="1" fill="#1a3a5c" opacity=".3"/>
+      </svg>
+      <!-- flecha circular -->
+      <svg style="position:absolute;top:-12px;right:-14px;animation:_firmaArrowPulse 2.4s ease-in-out infinite" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <path d="M10 18 A10 10 0 1 1 18 28" stroke="#1a3a5c" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <polyline points="14,24 10,28 6,24" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <div>
+      <p style="font-size:17px;font-weight:700;color:#1a3a5c;margin:0 0 8px">Gira tu teléfono</p>
+      <p style="font-size:14px;color:#888;margin:0">La firma requiere modo horizontal</p>
+    </div>
+    <button onclick="cerrarFirmaOverlay()" style="margin-top:8px;padding:10px 28px;border:1px solid #cdd8e3;border-radius:8px;background:#fff;color:#888;font-size:13px;cursor:pointer">Cancelar</button>
+  </div>
+
+  <!-- Canvas de firma (visible cuando landscape) -->
+  <div id="firma-canvas-section" style="display:none;flex-direction:column;height:100%;width:100%;box-sizing:border-box">
+    <!-- Header con badge de modo horizontal -->
+    <div style="background:#1a3a5c;color:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700">✍️ Firma digital</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <!-- badge "modo horizontal" — el punto de referencia -->
+        <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="3"/>
+            <line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="1" stroke-dasharray="3 2" opacity=".5"/>
+          </svg>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.6px">MODO HORIZONTAL</span>
+        </div>
+        <button onclick="cerrarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+    </div>
+    <!-- Canvas -->
+    <div style="flex:1;padding:10px;box-sizing:border-box;min-height:0">
+      <canvas id="firma-overlay-canvas" style="display:block;width:100%;height:100%;background:#f8f9fb;border:2px dashed #cdd8e3;border-radius:10px;cursor:crosshair;touch-action:none;box-sizing:border-box;will-change:transform"></canvas>
+    </div>
+    <!-- Footer -->
+    <div style="background:#f0f4f8;padding:8px 14px;display:flex;gap:10px;flex-shrink:0">
+      <button onclick="limpiarFirmaOverlay()" style="flex:1;padding:10px 0;background:#fff;border:1px solid #cdd8e3;border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-weight:500">🗑 Limpiar</button>
+      <button onclick="confirmarFirmaOverlay()" style="flex:2;padding:10px 0;background:#1a3a5c;border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#fff;font-weight:700">✓ Confirmar firma</button>
+    </div>
+  </div>
+</div>
+
+<input type="hidden" id="firma-overlay-data"/>
 </body>
 </html>

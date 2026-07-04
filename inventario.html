@@ -6626,20 +6626,24 @@ function eliminarCompra(id) {
 
   <!-- Canvas de firma (visible cuando landscape) -->
   <div id="firma-canvas-section" style="display:none;flex-direction:column;flex:1;min-height:0;width:100%;box-sizing:border-box">
-    <!-- Header con TODOS los controles: siempre visible en landscape-top (lado derecho al sostener en portrait) -->
-    <div style="background:#1a3a5c;color:#fff;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:6px">
-      <span style="font-size:13px;font-weight:700;white-space:nowrap">✍️ Firma</span>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-        <!-- badge modo horizontal -->
-        <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:20px;padding:2px 8px;white-space:nowrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="3"/></svg>
-          <span style="font-size:9px;font-weight:700;letter-spacing:.5px">HORIZONTAL</span>
+    <!--
+      En Android portrait con landscape bloqueado, este header aparece como strip VERTICAL en el lado derecho.
+      landscape-LEFT = borde físico SUPERIOR del strip (lejos de la barra de nav).
+      Por eso los botones de acción van PRIMERO (izquierda landscape = arriba físico).
+    -->
+    <div style="background:#1a3a5c;color:#fff;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <!-- IZQUIERDA landscape (= ARRIBA físico en portrait): botones de acción — siempre visibles -->
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="confirmarFirmaOverlay()" style="background:#4caf50;border:none;color:#fff;border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">✓ Confirmar</button>
+        <button onclick="limpiarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:500;white-space:nowrap">🗑</button>
+      </div>
+      <!-- DERECHA landscape (= ABAJO físico, cerca de barra nav): título e info secundaria -->
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:20px;padding:2px 8px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="3"/></svg>
+          <span style="font-size:9px;font-weight:700;letter-spacing:.5px">HORIZ</span>
         </div>
-        <!-- Limpiar -->
-        <button onclick="limpiarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:500">🗑 Limpiar</button>
-        <!-- Confirmar -->
-        <button onclick="confirmarFirmaOverlay()" style="background:#4caf50;border:none;color:#fff;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:700">✓ Confirmar</button>
-        <!-- Cerrar -->
+        <span style="font-size:12px;font-weight:700;white-space:nowrap">✍️ Firma</span>
         <button onclick="cerrarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
       </div>
     </div>

@@ -1431,7 +1431,8 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     <div class="mftr">
       <button class="btn btn-secondary" onclick="cerrar('modal-informe-insumos')">Cancelar</button>
       <button class="btn" style="background:#1E4F8C;color:#fff;border:none" onclick="exportarExcelInsumos()">📊 Excel</button>
-      <button class="btn" style="background:#5c3d8f;color:#fff;border:none" onclick="imprimirInformeInsumos()">🖨️ Imprimir / PDF</button>
+      <button class="btn" style="background:#5c3d8f;color:#fff;border:none" onclick="imprimirInformeInsumos()">🖨️ PDF</button>
+      <button class="btn" style="background:#b71c1c;color:#fff;border:none" onclick="imprimirInformeCompleto()">📋 Informe Completo</button>
     </div>
   </div>
 </div>
@@ -4670,6 +4671,178 @@ function informeInsumoSingle(movId) {
   var mov = movs.find(function(m){ return m.id === movId; });
   if (!mov) { alert('Registro no encontrado.'); return; }
   _abrirVentanaPDFInsumos([mov]);
+}
+
+function imprimirInformeCompleto() {
+  var lista = _getListaInforme();
+  if (!lista.length) { alert('No hay registros para generar el informe.'); return; }
+  _abrirVentanaPDFCompleto(lista);
+  cerrar('modal-informe-insumos');
+}
+
+function _abrirVentanaPDFCompleto(lista) {
+  var desde = document.getElementById('inf-desde').value;
+  var hasta  = document.getElementById('inf-hasta').value;
+  var tipo   = document.getElementById('inf-tipo').value;
+  var tipoLabel = tipo==='salida_insumo' ? 'Salidas' : tipo==='recepcion_insumo' ? 'Recepciones' : 'Salidas y Recepciones';
+  var periodoLabel = (desde || hasta)
+    ? ('Período: ' + (desde ? ff(desde) : '—') + ' al ' + (hasta ? ff(hasta) : '—'))
+    : 'Todos los registros';
+
+  var _pdfUser   = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  var _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser ? currentUser.email : '');
+
+  var salCnt = lista.filter(function(m){ return m.tipo === 'salida_insumo'; }).length;
+  var recCnt = lista.filter(function(m){ return m.tipo === 'recepcion_insumo'; }).length;
+  var salTot = lista.filter(function(m){ return m.tipo === 'salida_insumo'; }).reduce(function(a,m){ return a+(m.cantidad||0); }, 0);
+  var recTot = lista.filter(function(m){ return m.tipo === 'recepcion_insumo'; }).reduce(function(a,m){ return a+(m.cantidad||0); }, 0);
+
+  // ── Filas tabla resumen ──
+  var summaryRows = lista.map(function(m, i) {
+    var esRec = m.tipo === 'recepcion_insumo';
+    var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    var areaCell = esRec ? ((parts[0]||'') + (parts[1] ? '<br><small style="color:#888">' + parts[1] + '</small>' : '')) : '—';
+    var obsCell  = esRec ? (parts[2] ? parts[2] + (parts[3] ? '<br><small>' + parts[3] + '</small>' : '') : (parts[3]||'—')) : (m.observaciones||'—');
+    var cantColor = esRec ? '#2e7d32' : '#c62828';
+    var cantArrow = esRec ? '↑' : '↓';
+    var tipoBadge = esRec
+      ? '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📥 Recepción</span>'
+      : '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
+    var rowBg = esRec ? '#f8fff9' : '#fff';
+    var restStr = m.cantidad_restante != null ? String(m.cantidad_restante) : '—';
+    var personaLabel = esRec
+      ? ((m.nombre_trabajador ? m.nombre_trabajador : '') + (areaCell !== '—' ? (m.nombre_trabajador ? '<br><small style="color:#888">' + areaCell + '</small>' : areaCell) : '')) || '—'
+      : (m.nombre_trabajador || '—');
+    var hasMedia = m.foto_url ? true : false;
+    var refIcon = hasMedia ? ' <span style="color:#1E4F8C;font-size:8pt">📎</span>' : '';
+    return '<tr style="background:'+rowBg+';border-bottom:1px solid #e4ebf3">' +
+      '<td style="padding:5px 8px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
+      '<td style="padding:5px 8px">' + tipoBadge + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + ff(m.fecha) + (ffh(m.fecha) ? '<br><small style="color:#888">' + ffh(m.fecha) + '</small>' : '') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.turno||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9.5pt;font-weight:600">' + (m.descripcion||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.categoria||'—') + '</td>' +
+      '<td style="padding:5px 8px;text-align:center;font-weight:700;color:'+cantColor+'">' + cantArrow + ' ' + m.cantidad + '</td>' +
+      '<td style="padding:5px 8px;text-align:center;font-weight:600;font-size:9pt">' + restStr + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + (m.responsable||'—') + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + personaLabel + refIcon + '</td>' +
+      '<td style="padding:5px 8px;font-size:9pt">' + obsCell + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // ── Comprobantes individuales ──
+  var cards = lista.map(function(m, i) {
+    var esRec   = m.tipo === 'recepcion_insumo';
+    var parts   = esRec && m.observaciones ? m.observaciones.split('||') : [];
+    var obsText = esRec
+      ? (parts[2] ? parts[2] + (parts[3] ? '<br>' + parts[3] : '') : (parts[3]||''))
+      : (m.observaciones || '');
+    var areaOrigen = esRec ? (parts[0]||'') : '';
+    var entregadoPor = esRec ? (parts[1]||'') : '';
+    var fechaStr = m.fecha ? (ff(m.fecha) + (ffh(m.fecha) ? '  ' + ffh(m.fecha) + ' h' : '')) : '—';
+
+    var allUrls = parseFotoUrls(m.foto_url);
+    var fotos   = allUrls.filter(function(u){ return u.indexOf('/firmas/') === -1; });
+    var firmas  = allUrls.filter(function(u){ return u.indexOf('/firmas/') !== -1; });
+
+    var fotosHtml = fotos.length
+      ? '<div style="margin-top:12px"><div class="stl">FOTOGRAFÍAS</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+        fotos.map(function(url){ return '<img src="' + url + '" style="max-width:150px;max-height:120px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+        '</div></div>'
+      : '';
+
+    var firmaHtml = firmas.length
+      ? '<div style="margin-top:12px"><div class="stl">FIRMA — ' + (m.nombre_trabajador || 'Persona que retira') + '</div>' +
+        '<div style="display:flex;gap:8px">' +
+        firmas.map(function(url){ return '<img src="' + url + '" style="max-width:240px;max-height:100px;border-radius:6px;border:2px solid #1a3a5c;object-fit:contain;background:#f8f9fb"/>'; }).join('') +
+        '</div></div>'
+      : '';
+
+    var tipoBadge = esRec
+      ? '<span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:8px;font-size:9pt;font-weight:700">📥 Recepción</span>'
+      : '<span style="background:#fff3e0;color:#e65100;padding:2px 10px;border-radius:8px;font-size:9pt;font-weight:700">📤 Salida</span>';
+
+    var rows = '';
+    rows += '<tr><td>Categoría</td><td>' + (m.categoria||'—') + '</td></tr>';
+    rows += '<tr><td>Cantidad</td><td style="font-weight:700;color:' + (esRec?'#2e7d32':'#c62828') + '">' + (esRec?'↑ ':'↓ ') + (m.cantidad||1) +
+      (m.cantidad_restante!=null ? '<small style="color:#888;font-weight:400;margin-left:6px">(stock resultante: ' + m.cantidad_restante + ')</small>' : '') + '</td></tr>';
+    rows += '<tr><td>Responsable entrega</td><td>' + (m.responsable||'—') + '</td></tr>';
+    if (m.nombre_trabajador) rows += '<tr><td>' + (esRec ? 'Persona que entrega' : 'Persona que retira') + '</td><td>' + m.nombre_trabajador + '</td></tr>';
+    if (areaOrigen)    rows += '<tr><td>Área origen</td><td>' + areaOrigen + '</td></tr>';
+    if (entregadoPor)  rows += '<tr><td>Entregado por</td><td>' + entregadoPor + '</td></tr>';
+    if (obsText)       rows += '<tr><td>Estado / Obs.</td><td>' + obsText + '</td></tr>';
+
+    return '<div style="margin-bottom:18px;border:1px solid #d0dcea;border-radius:10px;overflow:hidden;page-break-inside:avoid;break-inside:avoid">' +
+      '<div style="background:#1a3a5c;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span style="color:rgba(255,255,255,.45);font-size:9pt;min-width:16px">' + (i+1) + '</span>' +
+        tipoBadge +
+        '<span style="font-size:10.5pt;font-weight:700;color:#fff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.descripcion||'—') + '</span>' +
+        '<span style="font-size:9pt;color:rgba(255,255,255,.8);white-space:nowrap">' + fechaStr + '</span>' +
+        (m.turno ? '<span style="background:rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:1px 9px;font-size:9pt;white-space:nowrap">' + m.turno + '</span>' : '') +
+      '</div>' +
+      '<div style="padding:12px 14px">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:9.5pt">' +
+          '<colgroup><col style="width:38%"/><col/></colgroup>' +
+          rows +
+        '</table>' +
+        fotosHtml + firmaHtml +
+      '</div></div>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>' +
+    '<title>Informe Completo de Insumos</title>' +
+    '<style>' +
+      'body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+      '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.2cm 1.8cm;box-sizing:border-box}' +
+      '@media print{body{margin:0}.page{padding:0.8cm 1.2cm}.np{display:none}}' +
+      'table{border-collapse:collapse;width:100%}thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      'th,td{border:1px solid #dde6f0}th{padding:6px 8px;text-align:left;font-size:9pt}' +
+      '.stl{font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #eef2f7}' +
+      '.cards-body td{padding:5px 8px;vertical-align:top;border:none;border-bottom:1px solid #eef2f7}' +
+      '.cards-body td:first-child{font-weight:700;color:#777;font-size:8.5pt;text-transform:uppercase;letter-spacing:.3px}' +
+    '</style></head><body><div class="page">' +
+
+    '<table style="margin-bottom:12px"><tr>' +
+      '<td style="border:none;width:65px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:55px;height:55px;object-fit:contain;border-radius:8px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
+      '<td style="border:none;vertical-align:middle;text-align:center">' +
+        '<div style="font-size:16pt;font-weight:700;color:#1E4F8C">Informe Completo — ' + tipoLabel + '</div>' +
+        '<div style="font-size:10pt;font-weight:700;color:#1E4F8C">RN-2003 — Control de Inventario Pucará</div>' +
+        '<div style="font-size:9.5pt;color:#888;margin-top:3px">' + periodoLabel + ' &nbsp;|&nbsp; ' + lista.length + ' registro' + (lista.length>1?'s':'') + '</div>' +
+        '<div style="font-size:9pt;color:#aaa;margin-top:1px">Generado el ' + ff(new Date().toISOString()) + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+      '</td><td style="border:none;width:65px"></td>' +
+    '</tr></table>' +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 10px"/>' +
+
+    '<div style="display:flex;gap:16px;margin-bottom:14px;font-size:10pt">' +
+      (recCnt ? '<div style="background:#e8f5e9;padding:8px 16px;border-radius:8px;color:#2e7d32"><strong>📥 Recepciones:</strong> ' + recCnt + ' mov. — ' + recTot + ' uds.</div>' : '') +
+      (salCnt ? '<div style="background:#fff3e0;padding:8px 16px;border-radius:8px;color:#e65100"><strong>📤 Salidas:</strong> ' + salCnt + ' mov. — ' + salTot + ' uds.</div>' : '') +
+    '</div>' +
+
+    '<table><thead><tr>' +
+      '<th style="width:28px;text-align:center">#</th>' +
+      '<th style="width:100px">Tipo</th>' +
+      '<th style="width:80px">Fecha</th>' +
+      '<th style="width:55px">Turno</th>' +
+      '<th>Ítem</th>' +
+      '<th style="width:80px">Categoría</th>' +
+      '<th style="width:50px;text-align:center">Cant.</th>' +
+      '<th style="width:55px;text-align:center">Restante</th>' +
+      '<th style="width:110px">Responsable</th>' +
+      '<th style="width:110px">Persona que Retira/Recepciona</th>' +
+      '<th>Estado / Obs.</th>' +
+    '</tr></thead><tbody>' + summaryRows + '</tbody></table>' +
+
+    '<div style="page-break-before:always;break-before:page">' +
+      '<div style="font-size:13pt;font-weight:700;color:#1E4F8C;margin:0 0 16px;border-left:5px solid #1E4F8C;padding-left:10px">Comprobantes por Registro</div>' +
+      '<div class="cards-body">' + cards + '</div>' +
+    '</div>' +
+
+    '<button class="np" onclick="window.print()" style="display:block;margin:20px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>' +
+    '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
+
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
 }
 
 function _abrirVentanaPDFInsumos(lista) {

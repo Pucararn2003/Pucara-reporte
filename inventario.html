@@ -3589,7 +3589,7 @@ function abrirModalSalida() {
   document.getElementById('ms-resp').value  = _trabSesion ? _trabSesion.nombre : '';
   document.getElementById('ms-resp-ext').value = '';
   setSalidaRespMode('interno');
-  if (_trabSesion && _trabSesion.turno) document.getElementById('ms-turno').value = _trabSesion.turno;
+  if (_trabSesion && _trabSesion.turno) document.getElementById('ms-turno').value = 'Turno ' + _trabSesion.turno;
   document.getElementById('ms-persona-retira').value = '';
   document.getElementById('ms-firma-data').value = '';
   document.getElementById('ms-firma-wrap').style.display = 'none';

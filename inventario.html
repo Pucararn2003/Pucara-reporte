@@ -3857,6 +3857,57 @@ function generarComprobanteSalida() {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
+async function compartirComprobanteSalida() {
+  cerrar('modal-comprobante-salida');
+  var d = window._lastComprobante;
+  if (!d) return;
+  var fechaStr = d.fecha ? (d.fecha.substring(0,10).split('-').reverse().join('/') + (d.fecha.length > 10 ? '  ' + d.fecha.substring(11,16) + ' h' : '')) : '—';
+
+  // Texto formateado para WhatsApp (*negrita*) y correo
+  var lineas = [
+    '🧳 *COMPROBANTE DE ENTREGA*',
+    '_RN-2003 — Pucará_',
+    '',
+    '📅 *Fecha:* ' + fechaStr,
+    '🔄 *Turno:* ' + (d.turno || '—'),
+    '📦 *Ítem:* ' + (d.descripcion || '—')
+  ];
+  if (d.categoria) lineas.push('🏷 *Categoría:* ' + d.categoria);
+  lineas.push('📊 *Cantidad:* ' + (d.cantidad || 1));
+  lineas.push('👤 *Responsable:* ' + (d.responsable || '—'));
+  if (d.personaRetira) lineas.push('🤝 *Retira:* ' + d.personaRetira);
+  if (d.observaciones) lineas.push('💬 *Obs.:* ' + d.observaciones);
+  lineas.push('', '_' + new Date().toLocaleDateString('es-CL') + ' — Sistema Pucará_');
+  var textoShare = lineas.join('\n');
+
+  // Intentar Web Share API (móvil: abre selector nativo WhatsApp / Mail / etc.)
+  if (navigator.share) {
+    try {
+      var shareData = {
+        title: 'Comprobante — ' + (d.descripcion || 'Entrega'),
+        text: textoShare
+      };
+      // Adjuntar firma como imagen si el navegador lo soporta
+      if (d.firmaData && d.firmaData.startsWith('data:image') && navigator.canShare) {
+        try {
+          var arr = d.firmaData.split(','), mime = arr[0].match(/:(.*?);/)[1];
+          var bstr = atob(arr[1]), n2 = bstr.length, u8 = new Uint8Array(n2);
+          while (n2--) u8[n2] = bstr.charCodeAt(n2);
+          var imgFile = new File([u8], 'firma.png', {type: mime});
+          if (navigator.canShare({files: [imgFile]})) shareData.files = [imgFile];
+        } catch(e2) {}
+      }
+      await navigator.share(shareData);
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback desktop: abrir HTML en nueva pestaña con botón imprimir
+  generarComprobanteSalida();
+}
+
 function eliminarSalida(movId) {
   confirmar('¿Eliminar esta salida de insumos? El stock del ítem será restaurado.', async function() {
     const mov = movs.find(m => m.id === movId);
@@ -6539,7 +6590,7 @@ function eliminarCompra(id) {
       <p style="font-size:13px;color:#666;margin:0 0 22px">¿Desea generar un comprobante de esta entrega?</p>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="cerrar('modal-comprobante-salida')" style="flex:1">No, gracias</button>
-        <button class="btn" style="flex:1;background:#1a3a5c;color:#fff;border:none" onclick="generarComprobanteSalida()">📄 Generar</button>
+        <button class="btn" style="flex:1;background:#1a3a5c;color:#fff;border:none" onclick="compartirComprobanteSalida()">📤 Compartir</button>
       </div>
     </div>
   </div>
@@ -6574,30 +6625,27 @@ function eliminarCompra(id) {
   </div>
 
   <!-- Canvas de firma (visible cuando landscape) -->
-  <div id="firma-canvas-section" style="display:none;flex-direction:column;height:100%;width:100%;box-sizing:border-box">
-    <!-- Header con badge de modo horizontal -->
-    <div style="background:#1a3a5c;color:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700">✍️ Firma digital</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <!-- badge "modo horizontal" — el punto de referencia -->
-        <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="7" width="20" height="10" rx="3"/>
-            <line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="1" stroke-dasharray="3 2" opacity=".5"/>
-          </svg>
-          <span style="font-size:10px;font-weight:700;letter-spacing:.6px">MODO HORIZONTAL</span>
+  <div id="firma-canvas-section" style="display:none;flex-direction:column;flex:1;min-height:0;width:100%;box-sizing:border-box">
+    <!-- Header con TODOS los controles: siempre visible en landscape-top (lado derecho al sostener en portrait) -->
+    <div style="background:#1a3a5c;color:#fff;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:6px">
+      <span style="font-size:13px;font-weight:700;white-space:nowrap">✍️ Firma</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+        <!-- badge modo horizontal -->
+        <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:20px;padding:2px 8px;white-space:nowrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="3"/></svg>
+          <span style="font-size:9px;font-weight:700;letter-spacing:.5px">HORIZONTAL</span>
         </div>
-        <button onclick="cerrarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+        <!-- Limpiar -->
+        <button onclick="limpiarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:500">🗑 Limpiar</button>
+        <!-- Confirmar -->
+        <button onclick="confirmarFirmaOverlay()" style="background:#4caf50;border:none;color:#fff;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:700">✓ Confirmar</button>
+        <!-- Cerrar -->
+        <button onclick="cerrarFirmaOverlay()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
       </div>
     </div>
-    <!-- Canvas -->
-    <div style="flex:1;padding:10px;box-sizing:border-box;min-height:0">
+    <!-- Canvas — ocupa todo el espacio restante -->
+    <div style="flex:1;padding:10px;box-sizing:border-box;min-height:0;overflow:hidden">
       <canvas id="firma-overlay-canvas" style="display:block;width:100%;height:100%;background:#f8f9fb;border:2px dashed #cdd8e3;border-radius:10px;cursor:crosshair;touch-action:none;box-sizing:border-box;will-change:transform"></canvas>
-    </div>
-    <!-- Footer -->
-    <div style="background:#f0f4f8;padding:8px 14px;display:flex;gap:10px;flex-shrink:0">
-      <button onclick="limpiarFirmaOverlay()" style="flex:1;padding:10px 0;background:#fff;border:1px solid #cdd8e3;border-radius:8px;font-size:13px;cursor:pointer;color:#555;font-weight:500">🗑 Limpiar</button>
-      <button onclick="confirmarFirmaOverlay()" style="flex:2;padding:10px 0;background:#1a3a5c;border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#fff;font-weight:700">✓ Confirmar firma</button>
     </div>
   </div>
 </div>

@@ -425,6 +425,8 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   /* === Filtros tipo (Todos/Salidas/Recepciones) — full width en toolbar columna === */
   #filtro-tipo-insumo-wrap{width:100%}
   #ftipo-todos,#ftipo-sal,#ftipo-rec{flex:1;padding:11px 4px;font-size:12px;text-align:center}
+  /* === Ocultar controles de filtro/export en móvil === */
+  #sal-toolbar-extra{display:none!important}
 
   /* === Prevenir zoom iOS — todos los inputs ≥ 16px (inline styles overridden) === */
   .fg input,.fg select,.fg textarea{font-size:16px!important;padding:8px 10px!important}
@@ -575,7 +577,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <option>Cancelada</option>
       </select>
       <button id="btn-excel-compras" class="btn" onclick="exportarExcelCompras()" style="white-space:nowrap;background:#2e7d32;color:#fff">📊 Excel</button>
-      <button class="btn btn-pdf" onclick="generarPDFCompletoCompras()" style="white-space:nowrap;background:#5c3d8f">📋 PDF Completo</button>
+      <button id="btn-pdf-compras" class="btn btn-pdf" onclick="generarPDFCompletoCompras()" style="white-space:nowrap;background:#5c3d8f">📋 PDF Completo</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -716,6 +718,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <input type="text" id="fs-buscar" placeholder="🔍 Buscar ítem, turno, responsable, área..." oninput="renderSalida()" style="width:100%;padding:8px 34px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
         <button onclick="document.getElementById('fs-buscar').value='';renderSalida()" title="Limpiar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1">×</button>
       </div>
+      <div id="sal-toolbar-extra" style="display:contents">
       <div id="filtro-tipo-insumo-wrap" style="display:flex;border:1px solid #cdd8e3;border-radius:7px;overflow:hidden;flex-shrink:0">
         <button id="ftipo-todos" class="btn-tipo active" onclick="setFiltroTipoInsumo('todos')">Todos</button>
         <button id="ftipo-sal" class="btn-tipo" onclick="setFiltroTipoInsumo('salida_insumo')">📤 Salidas</button>
@@ -729,6 +732,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
       <button id="btn-pdf-sal"   class="btn" onclick="exportarPDFSalAuto()"   style="white-space:nowrap;background:#5c3d8f;color:#fff;border:none">🖨️ PDF</button>
       <button class="btn" style="background:#b71c1c;color:#fff;border:none;white-space:nowrap" onclick="abrirInformeInsumos()">📋 Informe Completo</button>
       <button class="btn btn-secondary" onclick="limpiarFS()">Limpiar</button>
+      </div>
     </div>
     <!-- Barra de selección -->
     <div id="sal-sel-bar" style="display:none;align-items:center;gap:10px;background:#e8f0fe;border:1px solid #90caf9;border-radius:8px;padding:7px 14px;margin-bottom:8px;flex-wrap:wrap">
@@ -1191,7 +1195,9 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
                    oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
                    onkeydown="ddNav(event,'ms-item-list')"
-                   style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none"/>
+                   style="width:100%;padding:9px 36px 9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <button onclick="document.getElementById('ms-item-search').value='';document.getElementById('ms-item-val').value='';document.getElementById('ms-item-list').style.display='none';var lw=document.getElementById('ms-lote-wrap');if(lw)lw.style.display='none';_actualizarMsItemOpciones();"
+                    title="Limpiar" style="position:absolute;right:8px;top:10px;background:none;border:none;cursor:pointer;color:#bbb;font-size:20px;padding:0;line-height:1;z-index:2">×</button>
             <div id="ms-item-list" class="item-dropdown"></div>
             <input type="hidden" id="ms-item-val"/>
           </div>
@@ -1203,11 +1209,12 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             <div id="ms-lote-stock" style="font-size:11px;margin-top:5px;color:#555"></div>
           </div>
           <div id="ms-item-ext-wrap" style="display:none">
-            <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." oninput="_actualizarMsItemOpciones()" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
             <input type="text" id="ms-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
           </div>
           <input type="hidden" id="ms-item-mode" value="inventario"/>
         </div>
+        <div id="ms-item-opciones-wrap" style="display:none;contents:contents">
         <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
         <div id="ms-no-descontar-wrap" class="fg full" style="padding:4px 0">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
@@ -1217,11 +1224,23 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           </label>
         </div>
         <div class="fg full"><label>Observaciones del ítem</label><textarea id="ms-obs" rows="2" placeholder="Notas u observaciones sobre este ítem..."></textarea></div>
+        <div class="fg full" style="padding:2px 0 0">
+          <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.3px">Foto del ítem <small style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional, máx. 1)</small></label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+            <div class="foto-slot" style="width:88px;height:66px;flex-shrink:0" onclick="document.getElementById('ms-item-foto-file').click()">
+              <input type="file" id="ms-item-foto-file" accept="image/*" capture="environment" onchange="previewMsItemFoto(this)" style="display:none"/>
+              <div class="foto-slot-ph" id="ms-item-foto-ph"><span>📷</span></div>
+              <img id="ms-item-foto-prev" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+              <button class="foto-slot-rm" id="ms-item-foto-rm" style="display:none" onclick="event.stopPropagation();quitarMsItemFoto()">✕</button>
+            </div>
+          </div>
+        </div>
         <!-- Botón para agregar ítem a la lista (multi-ítem) -->
         <div class="fg full" style="padding:0 0 4px">
           <button type="button" onclick="agregarItemLista()" style="width:100%;padding:9px;background:#e8f4fc;border:1px dashed #64b5f6;border-radius:8px;color:#1565c0;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
             <span style="font-size:16px;line-height:1">＋</span> Agregar ítem a la lista
           </button>
+        </div>
         </div>
         <div class="fg full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -1239,7 +1258,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
           <label>Persona que Retira</label>
           <input type="text" id="ms-persona-retira" placeholder="Nombre de quien retira físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
           <div style="margin-top:8px">
-            <button type="button" id="ms-firma-toggle-btn" onclick="toggleFirmaSal()" style="font-size:12px;padding:5px 14px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;width:100%">✍️ Agregar firma</button>
+            <button type="button" id="ms-firma-toggle-btn" onclick="toggleFirmaSal()" style="font-size:12px;padding:5px 14px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;width:100%">✍️ Firma persona que retira</button>
           </div>
           <div id="ms-firma-wrap" style="display:none;margin-top:8px">
             <canvas id="ms-firma-canvas" class="firma-canvas"></canvas>
@@ -1249,29 +1268,6 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
             </div>
           </div>
           <input type="hidden" id="ms-firma-data"/>
-        </div>
-        <div class="fg full">
-          <label>Fotos (hasta 3)</label>
-          <div class="foto-slots">
-            <div class="foto-slot" onclick="document.getElementById('ms-foto-1').click()">
-              <input type="file" id="ms-foto-1" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',1,this)" style="display:none"/>
-              <div class="foto-slot-ph" id="ms-foto-ph-1"><span>📷</span><small>Foto 1</small></div>
-              <img id="ms-foto-prev-1" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
-              <button class="foto-slot-rm" id="ms-foto-rm-1" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',1)">✕</button>
-            </div>
-            <div class="foto-slot" onclick="document.getElementById('ms-foto-2').click()">
-              <input type="file" id="ms-foto-2" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',2,this)" style="display:none"/>
-              <div class="foto-slot-ph" id="ms-foto-ph-2"><span>📷</span><small>Foto 2</small></div>
-              <img id="ms-foto-prev-2" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
-              <button class="foto-slot-rm" id="ms-foto-rm-2" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',2)">✕</button>
-            </div>
-            <div class="foto-slot" onclick="document.getElementById('ms-foto-3').click()">
-              <input type="file" id="ms-foto-3" accept="image/*" capture="environment" onchange="previewFotoSlot('ms',3,this)" style="display:none"/>
-              <div class="foto-slot-ph" id="ms-foto-ph-3"><span>📷</span><small>Foto 3</small></div>
-              <img id="ms-foto-prev-3" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
-              <button class="foto-slot-rm" id="ms-foto-rm-3" style="display:none" onclick="event.stopPropagation();quitarFotoSlot('ms',3)">✕</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -3068,6 +3064,7 @@ function seleccionarItemDD(el) {
   } else {
     mostrarAlertaStock('alerta-sal', it.cantidad_disponible || 0);
     mostrarLotesSalida(it);
+    if (prefix === 'ms') _actualizarMsItemOpciones();
   }
 }
 
@@ -3770,6 +3767,36 @@ function exportarSelSalExcel() {
 // ── Multi-ítem salida ────────────────────────────────────────────
 var _msItemsList = [];
 
+function previewMsItemFoto(input) {
+  var f = input.files[0]; if (!f) return;
+  var prev = document.getElementById('ms-item-foto-prev');
+  var ph   = document.getElementById('ms-item-foto-ph');
+  var rm   = document.getElementById('ms-item-foto-rm');
+  prev.src = URL.createObjectURL(f);
+  prev.style.display = 'block';
+  if (ph) ph.style.display = 'none';
+  if (rm) rm.style.display = 'flex';
+}
+function _actualizarMsItemOpciones() {
+  var mode  = document.getElementById('ms-item-mode') ? document.getElementById('ms-item-mode').value : 'inventario';
+  var tieneItem = mode === 'externo'
+    ? (document.getElementById('ms-item-ext-nombre').value.trim() !== '')
+    : (document.getElementById('ms-item-val').value !== '');
+  var wrap = document.getElementById('ms-item-opciones-wrap');
+  if (wrap) wrap.style.display = tieneItem ? 'contents' : 'none';
+}
+
+function quitarMsItemFoto() {
+  var inp  = document.getElementById('ms-item-foto-file');
+  var prev = document.getElementById('ms-item-foto-prev');
+  var ph   = document.getElementById('ms-item-foto-ph');
+  var rm   = document.getElementById('ms-item-foto-rm');
+  if (inp)  { inp.value = ''; }
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  if (ph)   ph.style.display = 'flex';
+  if (rm)   rm.style.display = 'none';
+}
+
 function renderMsItemsLista() {
   var wrap  = document.getElementById('ms-items-lista-wrap');
   var lista = document.getElementById('ms-items-lista');
@@ -3785,6 +3812,7 @@ function renderMsItemsLista() {
   lista.innerHTML = _msItemsList.map(function(it, idx) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;' +
       (idx < _msItemsList.length - 1 ? 'border-bottom:1px solid #dce8f5;' : '') + '">' +
+      (it.fotoPreview ? '<img src="' + it.fotoPreview + '" style="width:40px;height:32px;object-fit:cover;border-radius:5px;border:1px solid #cdd8e3;flex-shrink:0"/>' : '') +
       '<div style="flex:1;overflow:hidden">' +
         '<div style="font-size:13px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
           (it.isExt ? '✏️ ' : '📦 ') + it.descripcion + '</div>' +
@@ -3818,8 +3846,11 @@ function agregarItemLista() {
     _loteNum = _lSel.options[_lSel.selectedIndex].dataset.num || null;
   }
 
-  // Capturar observaciones del ítem actual
-  var _obsVal = document.getElementById('ms-obs').value.trim();
+  // Capturar observaciones y foto del ítem actual
+  var _obsVal  = document.getElementById('ms-obs').value.trim();
+  var _fotoInp = document.getElementById('ms-item-foto-file');
+  var _fotoFile    = _fotoInp && _fotoInp.files[0] ? _fotoInp.files[0] : null;
+  var _fotoPrev    = _fotoFile ? document.getElementById('ms-item-foto-prev').src : null;
 
   var itSel = isExt ? null : items.find(function(x){ return x.id === itemId; });
   _msItemsList.push({
@@ -3832,6 +3863,8 @@ function agregarItemLista() {
     loteId:       _loteId,
     loteNumero:   _loteNum,
     observaciones: _obsVal || null,
+    fotoFile:     _fotoFile,
+    fotoPreview:  _fotoPrev,
   });
 
   // Limpiar campos para el siguiente ítem
@@ -3844,6 +3877,7 @@ function agregarItemLista() {
   document.getElementById('ms-cant').removeAttribute('max');
   document.getElementById('ms-no-descontar').checked = false;
   document.getElementById('ms-obs').value = '';
+  quitarMsItemFoto();
   var _lWrap = document.getElementById('ms-lote-wrap');
   if (_lWrap) { _lWrap.style.display = 'none'; }
   var _lSelR = document.getElementById('ms-lote-id');
@@ -3851,6 +3885,7 @@ function agregarItemLista() {
   document.getElementById('ms-lote-stock').textContent = '';
   setSalidaItemMode('inventario');
   renderMsItemsLista();
+  _actualizarMsItemOpciones();
 }
 
 function quitarItemLista(idx) {
@@ -3946,11 +3981,11 @@ function abrirModalSalida() {
   document.getElementById('ms-firma-data').value = '';
   document.getElementById('ms-firma-wrap').style.display = 'none';
   var _msFirmaBtn = document.getElementById('ms-firma-toggle-btn');
-  if (_msFirmaBtn) { _msFirmaBtn.textContent = '✍️ Agregar firma'; _msFirmaBtn.style.background = '#fff'; }
+  if (_msFirmaBtn) { _msFirmaBtn.textContent = '✍️ Firma persona que retira'; _msFirmaBtn.style.background = '#fff'; }
   var _msFirmaC = document.getElementById('ms-firma-canvas');
   if (_msFirmaC) { _msFirmaC._firmaReady = false; _msFirmaC.classList.remove('signed'); }
   document.getElementById('ms-obs').value   = '';
-  resetFotoSlots('ms');
+  quitarMsItemFoto();
   document.getElementById('alerta-sal').style.display = 'none';
   // Reset lote selector
   var _lWrapA = document.getElementById('ms-lote-wrap');
@@ -4006,7 +4041,9 @@ async function _guardarSalidaImpl() {
     _curLoteNum = _lSel2.options[_lSel2.selectedIndex].dataset.num || null;
   }
   if (_currentFill) {
-    var _itSelCur = _isItemExt ? null : items.find(function(x){ return x.id === _itemId; });
+    var _itSelCur  = _isItemExt ? null : items.find(function(x){ return x.id === _itemId; });
+    var _curFotoInp = document.getElementById('ms-item-foto-file');
+    var _curFotoFile = _curFotoInp && _curFotoInp.files[0] ? _curFotoInp.files[0] : null;
     allItems.push({
       itemId:        _isItemExt ? null : _itemId,
       descripcion:   _isItemExt ? _extNombre  : (_itSelCur ? _itSelCur.descripcion : ''),
@@ -4017,6 +4054,7 @@ async function _guardarSalidaImpl() {
       loteId:        _curLoteId,
       loteNumero:    _curLoteNum,
       observaciones: document.getElementById('ms-obs').value.trim() || null,
+      fotoFile:      _curFotoFile,
     });
   }
 
@@ -4028,18 +4066,23 @@ async function _guardarSalidaImpl() {
   if (editMovSalId && !_currentFill) { alert('Selecciona un ítem.'); return; }
 
   const fechaHora  = hora ? fecha + 'T' + hora : fecha;
-  const _fotosSal  = await subirFotosSlots('ms', 'salidas');
   const _firmaSalUrl = await subirFirmaCanvas('ms-firma-data', 'sal');
-  const _allFotosSal = _firmaSalUrl ? [..._fotosSal, _firmaSalUrl] : _fotosSal;
-  const foto_url_base = _allFotosSal.length > 0
-    ? (_allFotosSal.length === 1 ? _allFotosSal[0] : JSON.stringify(_allFotosSal))
-    : (editMovSalId ? (movs.find(function(m){ return m.id === editMovSalId; })?.foto_url || null) : null);
+
+  // Helper: sube 1 archivo y retorna la URL pública (o null)
+  async function _subirUnaFotoSal(file, idx) {
+    if (!file) return null;
+    var ext  = file.name.split('.').pop().toLowerCase();
+    var path = 'salidas/' + Date.now() + '_' + idx + '.' + ext;
+    var res  = await sb.storage.from('inventario').upload(path, file, { upsert: true, contentType: file.type });
+    if (res.error) return null;
+    var pu = sb.storage.from('inventario').getPublicUrl(path);
+    return (pu.data && pu.data.publicUrl) ? pu.data.publicUrl : null;
+  }
 
   const sharedFields = {
     tipo: 'salida_insumo', fecha: fechaHora, turno: turnoS,
     responsable:       getSalidaResp() || null,
     nombre_trabajador: document.getElementById('ms-persona-retira').value.trim() || null,
-    foto_url:          foto_url_base,
     usuario_email:     currentUser?.email || null,
   };
 
@@ -4056,6 +4099,17 @@ async function _guardarSalidaImpl() {
         oldIt.cantidad_disponible = restored;
       }
     }
+    // Para edición: subir foto del slot per-ítem si el usuario eligió nueva
+    var _editFotoFile = document.getElementById('ms-item-foto-file')?.files[0] || null;
+    var _editFotoUrl  = await _subirUnaFotoSal(_editFotoFile, 0);
+    var _editOldFoto  = movs.find(function(m){ return m.id === editMovSalId; })?.foto_url || null;
+    var _editAllFotos = [];
+    if (_editFotoUrl) _editAllFotos.push(_editFotoUrl);
+    else if (_editOldFoto) _editAllFotos.push(_editOldFoto);
+    if (_firmaSalUrl) _editAllFotos.push(_firmaSalUrl);
+    var _editFotoFinal = _editAllFotos.length > 0
+      ? (_editAllFotos.length === 1 ? _editAllFotos[0] : JSON.stringify(_editAllFotos))
+      : null;
     const payload = Object.assign({}, sharedFields, {
       item_id:      it.isExt ? null : it.itemId,
       descripcion:  it.isExt ? it.descripcion : (itSel?.descripcion || null),
@@ -4063,6 +4117,7 @@ async function _guardarSalidaImpl() {
       cantidad:     it.cantidad,
       no_descontar: it.noDescontar || null,
       observaciones: it.observaciones || null,
+      foto_url:     _editFotoFinal,
     });
     const { error } = await sb.from('inventario_movimientos').update(payload).eq('id', editMovSalId);
     if (error) { alert('Error: ' + error.message); editMovSalId = null; return; }
@@ -4089,6 +4144,15 @@ async function _guardarSalidaImpl() {
       if (disp < it.cantidad && !confirm('Stock de "' + it.descripcion + '": disponible ' + disp + ', solicitado ' + it.cantidad + '. ¿Continuar?')) continue;
     }
 
+    // Subir foto individual del ítem + combinar con firma compartida
+    var _itFotoUrl = await _subirUnaFotoSal(it.fotoFile || null, i);
+    var _itFotos = [];
+    if (_itFotoUrl)   _itFotos.push(_itFotoUrl);
+    if (_firmaSalUrl) _itFotos.push(_firmaSalUrl);
+    var _itFotoFinal = _itFotos.length > 0
+      ? (_itFotos.length === 1 ? _itFotos[0] : JSON.stringify(_itFotos))
+      : null;
+
     var payload = Object.assign({}, sharedFields, {
       item_id:      it.isExt ? null : it.itemId,
       descripcion:  it.isExt ? it.descripcion : (itSel?.descripcion || null),
@@ -4096,6 +4160,7 @@ async function _guardarSalidaImpl() {
       cantidad:     it.cantidad,
       no_descontar: it.noDescontar || null,
       observaciones: it.observaciones || null,
+      foto_url:     _itFotoFinal,
     });
 
     if (it.isExt) {
@@ -4121,6 +4186,7 @@ async function _guardarSalidaImpl() {
       await sb.from('inventario_items').update(_upd).eq('id', it.itemId);
       marcarItemReciente(it.itemId);
     }
+    it._uploadedFotoUrl = _itFotoUrl;
     savedItems.push(it);
   }
 
@@ -4141,7 +4207,7 @@ async function _guardarSalidaImpl() {
     personaRetira:document.getElementById('ms-persona-retira').value.trim(),
     observaciones:sharedFields.observaciones,
     firmaData:    document.getElementById('ms-firma-data').value,
-    fotoUrls:     _fotosSal,
+    fotoUrls:     savedItems.map(function(x){ return x._uploadedFotoUrl || null; }).filter(Boolean),
     items:        savedItems,
   };
 
@@ -4212,8 +4278,18 @@ async function editarSalida(movId) {
   document.getElementById('ms-fecha').value = _msFechaRaw.substring(0,10);
   document.getElementById('ms-hora').value  = _msFechaRaw.length > 10 ? _msFechaRaw.substring(11,16) : '';
   document.getElementById('ms-turno').value = mov.turno || '';
-  resetFotoSlots('ms');
-  parseFotoUrls(mov.foto_url).forEach(function(url, i) { cargarFotoEnSlot('ms', i + 1, url); });
+  // Mostrar foto existente en el slot per-ítem (primera foto que no sea firma)
+  quitarMsItemFoto();
+  var _editUrls  = mov.foto_url ? parseFotoUrls(mov.foto_url) : [];
+  var _editFotos = _editUrls.filter(function(u){ return u.indexOf('/firmas/') === -1; });
+  if (_editFotos[0]) {
+    var _ep = document.getElementById('ms-item-foto-prev');
+    var _eph = document.getElementById('ms-item-foto-ph');
+    var _erm = document.getElementById('ms-item-foto-rm');
+    if (_ep)  { _ep.src = _editFotos[0]; _ep.style.display = 'block'; }
+    if (_eph) _eph.style.display = 'none';
+    if (_erm) _erm.style.display = 'flex';
+  }
   const itS = items.find(x => x.id === mov.item_id);
   const lblS = itS ? ((itS.correlativo ? '['+itS.correlativo+'] ' : '') + itS.descripcion + (itS.talla ? ' ('+itS.talla+')' : '')) : (mov.descripcion || '');
   document.getElementById('ms-item-search').value = lblS;
@@ -4282,25 +4358,41 @@ function generarComprobanteSalida() {
     '</tr>';
   }
 
-  // Fotos
+  // Fotos — por ítem con leyenda, centradas
   var fotosHtml = '';
-  var fotos = Array.isArray(d.fotoUrls) ? d.fotoUrls.filter(Boolean) : [];
-  if (fotos.length) {
-    fotosHtml = '<div style="margin-top:18px">' +
-      '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Fotografías</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      fotos.map(function(url){ return '<img src="' + url + '" style="max-width:160px;max-height:130px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+  var itemsConFoto = (d.items || []).filter(function(it){ return it._uploadedFotoUrl; });
+  if (itemsConFoto.length) {
+    fotosHtml = '<div style="margin-top:20px">' +
+      '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Fotografías</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">' +
+      itemsConFoto.map(function(it){
+        return '<div style="text-align:center">' +
+          '<img src="' + it._uploadedFotoUrl + '" style="max-width:160px;max-height:130px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain;display:block;margin:0 auto"/>' +
+          '<div style="font-size:8pt;color:#555;margin-top:5px;max-width:160px;line-height:1.3">' + (it.descripcion || '') + '</div>' +
+        '</div>';
+      }).join('') +
       '</div></div>';
+  } else {
+    var fotos = Array.isArray(d.fotoUrls) ? d.fotoUrls.filter(Boolean) : [];
+    if (fotos.length) {
+      fotosHtml = '<div style="margin-top:20px">' +
+        '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Fotografías</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">' +
+        fotos.map(function(url){ return '<img src="' + url + '" style="max-width:160px;max-height:130px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+        '</div></div>';
+    }
   }
 
-  // Firma
+  // Firma — sin recuadro, línea inferior, nombre y "Retirado por"
   var firmaHtml = '';
   if (d.firmaData && d.firmaData.startsWith('data:image')) {
-    firmaHtml = '<div style="margin-top:18px">' +
-      '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Firma — ' + (d.personaRetira || 'Persona que retira') + '</div>' +
-      '<div style="border:2px solid #1a3a5c;border-radius:10px;padding:8px;display:inline-block;background:#f8f9fb">' +
-      '<img src="' + d.firmaData + '" style="max-width:280px;height:auto;display:block"/>' +
-      '</div></div>';
+    firmaHtml = '<div style="margin-top:24px;text-align:center">' +
+      '<img src="' + d.firmaData + '" style="max-width:260px;height:auto;display:block;margin:0 auto"/>' +
+      '<div style="max-width:260px;margin:0 auto;border-top:1.5px solid #222;padding-top:6px;margin-top:2px">' +
+        '<div style="font-size:10.5pt;font-weight:700;color:#222">' + (d.personaRetira || '—') + '</div>' +
+        '<div style="font-size:8.5pt;color:#666;margin-top:2px">Retirado por</div>' +
+      '</div>' +
+    '</div>';
   }
 
   var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Comprobante de Entrega</title>' +
@@ -4333,7 +4425,6 @@ function generarComprobanteSalida() {
     '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
     fotosHtml + firmaHtml +
     '<div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:10px">Generado el ' + new Date().toLocaleDateString('es-CL') + ' — Sistema de Control de Inventario Pucará</div>' +
-    '<button class="np" onclick="window.print()" style="display:block;margin:16px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>' +
     '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
 
   var w = window.open('', '_blank');
@@ -4571,7 +4662,7 @@ function toggleFirmaSal() {
     setTimeout(function() { initFirmaCanvas('ms-firma-canvas', 'ms-firma-data'); }, 30);
   } else {
     wrap.style.display = 'none';
-    btn.textContent = '✍️ Agregar firma';
+    btn.textContent = '✍️ Firma persona que retira';
     btn.style.background = '#fff';
   }
 }
@@ -4668,7 +4759,7 @@ function confirmarFirmaOverlay() {
 function ocultarFirmaSal() {
   document.getElementById('ms-firma-wrap').style.display = 'none';
   var btn = document.getElementById('ms-firma-toggle-btn');
-  btn.textContent = '✍️ Agregar firma';
+  btn.textContent = '✍️ Firma persona que retira';
   btn.style.background = '#fff';
 }
 
@@ -4710,6 +4801,7 @@ function setSalidaItemMode(modo) {
   document.getElementById('ms-no-descontar-wrap').style.display = isExt ? 'none' : '';
   if (isExt) document.getElementById('ms-no-descontar').checked = false;
   if (isExt) { var lw = document.getElementById('ms-lote-wrap'); if (lw) lw.style.display = 'none'; }
+  _actualizarMsItemOpciones();
 }
 function mostrarLotesSalida(it) {
   var wrap  = document.getElementById('ms-lote-wrap');
@@ -5246,32 +5338,49 @@ function _abrirVentanaPDFInsumos(lista) {
   var rows = lista.map(function(m, i) {
     var esRec = m.tipo === 'recepcion_insumo';
     var parts = esRec && m.observaciones ? m.observaciones.split('||') : [];
-    var areaCell = esRec ? ((parts[0]||'') + (parts[1] ? '<br><small style="color:#888">' + parts[1] + '</small>' : '')) : '—';
+    var areaCell = esRec ? ((parts[0]||'') + (parts[1] ? ' · ' + parts[1] : '')) : '—';
     var obsCell  = esRec ? (parts[2] ? parts[2] + (parts[3] ? '<br><small>' + parts[3] + '</small>' : '') : (parts[3]||'—')) : (m.observaciones||'—');
     var cantColor = esRec ? '#2e7d32' : '#c62828';
     var cantArrow = esRec ? '↑' : '↓';
     var tipoBadge = esRec
-      ? '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📥 Recepción</span>'
-      : '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
+      ? '<span style="background:#e8f5e9;color:#2e7d32;padding:1px 5px;border-radius:6px;font-size:7.5pt;font-weight:700;white-space:nowrap">📥 Rec.</span>'
+      : '<span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:7.5pt;font-weight:700;white-space:nowrap">📤 Sal.</span>';
     var rowBg = esRec ? '#f8fff9' : '#fff';
     var restStr = m.cantidad_restante != null ? String(m.cantidad_restante) : '—';
     var personaLabel = esRec
-      ? ((m.nombre_trabajador ? m.nombre_trabajador : '') + (areaCell !== '—' ? (m.nombre_trabajador ? '<br><small style="color:#888">' + areaCell + '</small>' : areaCell) : '')) || '—'
+      ? ((m.nombre_trabajador || '') + (areaCell !== '—' ? (m.nombre_trabajador ? '<br><small style="color:#888">' + areaCell + '</small>' : areaCell) : '')) || '—'
       : (m.nombre_trabajador || '—');
-    var hasMedia = m.foto_url ? true : false;
-    var refIcon = hasMedia ? ' <span style="color:#1E4F8C;font-size:8pt">📎</span>' : '';
+    // Fotos + firma inline
+    var mediaHtml = '';
+    if (m.foto_url) {
+      var allUrls = parseFotoUrls(m.foto_url);
+      var fotos  = allUrls.filter(function(u){ return u.indexOf('/firmas/') === -1; });
+      var firmas = allUrls.filter(function(u){ return u.indexOf('/firmas/') !== -1; });
+      if (fotos.length) {
+        mediaHtml += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px">' +
+          fotos.map(function(url){ return '<img src="' + url + '" style="max-width:72px;max-height:56px;border-radius:4px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
+          '</div>';
+      }
+      if (firmas.length) {
+        mediaHtml += '<div style="display:flex;flex-wrap:wrap;gap:3px">' +
+          firmas.map(function(url){ return '<img src="' + url + '" style="max-width:88px;max-height:42px;border-radius:4px;border:2px solid #1a3a5c;object-fit:contain;background:#f8f9fb"/>'; }).join('') +
+          '</div>';
+      }
+    }
+    var p = 'padding:5px 6px;font-size:8pt;vertical-align:top;word-break:break-word';
     return '<tr style="background:'+rowBg+';border-bottom:1px solid #e4ebf3">' +
-      '<td style="padding:5px 8px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
-      '<td style="padding:5px 8px">' + tipoBadge + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + ff(m.fecha) + (ffh(m.fecha) ? '<br><small style="color:#888">' + ffh(m.fecha) + '</small>' : '') + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + (m.turno||'—') + '</td>' +
-      '<td style="padding:5px 8px;font-size:9.5pt;font-weight:600">' + (m.descripcion||'—') + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + (m.categoria||'—') + '</td>' +
-      '<td style="padding:5px 8px;text-align:center;font-weight:700;color:'+cantColor+'">' + cantArrow + ' ' + m.cantidad + '</td>' +
-      '<td style="padding:5px 8px;text-align:center;font-weight:600;font-size:9pt">' + restStr + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + (m.responsable||'—') + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + personaLabel + refIcon + '</td>' +
-      '<td style="padding:5px 8px;font-size:9pt">' + obsCell + '</td>' +
+      '<td style="'+p+';text-align:center;color:#888">' + (i+1) + '</td>' +
+      '<td style="'+p+'">' + tipoBadge + '</td>' +
+      '<td style="'+p+'">' + ff(m.fecha) + (ffh(m.fecha) ? '<br><small style="color:#888">' + ffh(m.fecha) + '</small>' : '') + '</td>' +
+      '<td style="'+p+'">' + (m.turno||'—') + '</td>' +
+      '<td style="'+p+';font-weight:600;font-size:8.5pt">' + (m.descripcion||'—') + '</td>' +
+      '<td style="'+p+'">' + (m.categoria||'—') + '</td>' +
+      '<td style="'+p+';text-align:center;font-weight:700;color:'+cantColor+'">' + cantArrow + ' ' + m.cantidad + '</td>' +
+      '<td style="'+p+';text-align:center;font-weight:600">' + restStr + '</td>' +
+      '<td style="'+p+'">' + (m.responsable||'—') + '</td>' +
+      '<td style="'+p+'">' + personaLabel + '</td>' +
+      '<td style="'+p+'">' + obsCell + '</td>' +
+      '<td style="'+p+';vertical-align:middle">' + (mediaHtml || '<span style="color:#ccc;font-size:8pt">—</span>') + '</td>' +
     '</tr>';
   }).join('');
 
@@ -5285,74 +5394,59 @@ function _abrirVentanaPDFInsumos(lista) {
 
   var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>' +
     '<title>Informe Insumos</title>' +
-    '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
-    '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.2cm 1.8cm;box-sizing:border-box}' +
-    '@media print{body{margin:0}.page{padding:0.8cm 1.2cm}}' +
-    'table{border-collapse:collapse;width:100%}thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-    'th{padding:6px 8px;text-align:left;font-size:9pt}' +
+    '<style>' +
+      '@page{size:A4 landscape;margin:0.7cm 1cm}' +
+      'body{font-family:Arial,sans-serif;font-size:9pt;margin:0;padding:0;color:#222}' +
+      '.page{width:27.7cm;margin:0 auto;padding:0.5cm 0;box-sizing:border-box}' +
+      '@media print{body{margin:0}}' +
+      'table{border-collapse:collapse;width:100%;table-layout:fixed}' +
+      'thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      'th{padding:5px 6px;text-align:left;font-size:8pt;word-break:break-word}' +
     '</style></head><body><div class="page">' +
-    '<table style="margin-bottom:12px"><tr>' +
-      '<td style="border:none;width:65px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:55px;height:55px;object-fit:contain;border-radius:8px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
+    '<table style="margin-bottom:10px"><tr>' +
+      '<td style="border:none;width:55px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:48px;height:48px;object-fit:contain;border-radius:7px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
       '<td style="border:none;vertical-align:middle;text-align:center">' +
-        '<div style="font-size:16pt;font-weight:700;color:#1E4F8C">Informe de Insumos — ' + tipoLabel + '</div>' +
-        '<div style="font-size:9.5pt;color:#888;margin-top:3px">' + periodoLabel + ' &nbsp;|&nbsp; ' + lista.length + ' registro' + (lista.length>1?'s':'') + '</div>' +
-        '<div style="font-size:9pt;color:#aaa;margin-top:1px">Generado el ' + ff(new Date().toISOString()) + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
-      '</td><td style="border:none;width:65px"></td>' +
+        '<div style="font-size:14pt;font-weight:700;color:#1E4F8C">Informe de Insumos — ' + tipoLabel + '</div>' +
+        '<div style="font-size:8.5pt;color:#888;margin-top:2px">' + periodoLabel + ' &nbsp;|&nbsp; ' + lista.length + ' registro' + (lista.length>1?'s':'') + '</div>' +
+        '<div style="font-size:8pt;color:#aaa;margin-top:1px">Generado el ' + ff(new Date().toISOString()) + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+      '</td><td style="border:none;width:55px"></td>' +
     '</tr></table>' +
-    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 10px"/>' +
-    '<div style="display:flex;gap:20px;margin-bottom:14px;font-size:10pt">' +
-      (recCnt ? '<div style="background:#e8f5e9;padding:8px 16px;border-radius:8px;color:#2e7d32"><strong>📥 Recepciones:</strong> ' + recCnt + ' mov. — ' + recTot + ' uds.</div>' : '') +
-      (salCnt ? '<div style="background:#fff3e0;padding:8px 16px;border-radius:8px;color:#e65100"><strong>📤 Salidas:</strong> ' + salCnt + ' mov. — ' + salTot + ' uds.</div>' : '') +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 8px"/>' +
+    '<div style="display:flex;gap:14px;margin-bottom:10px;font-size:9pt">' +
+      (recCnt ? '<div style="background:#e8f5e9;padding:5px 12px;border-radius:7px;color:#2e7d32"><strong>📥 Recepciones:</strong> ' + recCnt + ' mov. — ' + recTot + ' uds.</div>' : '') +
+      (salCnt ? '<div style="background:#fff3e0;padding:5px 12px;border-radius:7px;color:#e65100"><strong>📤 Salidas:</strong> ' + salCnt + ' mov. — ' + salTot + ' uds.</div>' : '') +
     '</div>' +
     '<table>' +
+      '<colgroup>' +
+        '<col style="width:2.5%"/>' +   /* # */
+        '<col style="width:7%"/>' +     /* Tipo */
+        '<col style="width:7%"/>' +     /* Fecha */
+        '<col style="width:6%"/>' +     /* Turno */
+        '<col style="width:11%"/>' +    /* Ítem */
+        '<col style="width:7%"/>' +     /* Categoría */
+        '<col style="width:4.5%"/>' +   /* Cant. */
+        '<col style="width:4.5%"/>' +   /* Restante */
+        '<col style="width:10%"/>' +    /* Responsable */
+        '<col style="width:10%"/>' +    /* Persona */
+        '<col style="width:13%"/>' +    /* Estado/Obs */
+        '<col style="width:17.5%"/>' +  /* Fotos/Firma */
+      '</colgroup>' +
       '<thead><tr>' +
-        '<th style="width:28px;text-align:center">#</th>' +
-        '<th style="width:100px">Tipo</th>' +
-        '<th style="width:80px">Fecha</th>' +
-        '<th style="width:55px">Turno</th>' +
+        '<th style="text-align:center">#</th>' +
+        '<th>Tipo</th>' +
+        '<th>Fecha</th>' +
+        '<th>Turno</th>' +
         '<th>Ítem</th>' +
-        '<th style="width:80px">Categoría</th>' +
-        '<th style="width:50px;text-align:center">Cant.</th>' +
-        '<th style="width:55px;text-align:center">Restante</th>' +
-        '<th style="width:110px">Responsable</th>' +
-        '<th style="width:110px">Persona que Retira/Recepciona</th>' +
+        '<th>Categoría</th>' +
+        '<th style="text-align:center">Cant.</th>' +
+        '<th style="text-align:center">Rest.</th>' +
+        '<th>Responsable</th>' +
+        '<th>Persona Retira/Recepciona</th>' +
         '<th>Estado / Obs.</th>' +
+        '<th style="text-align:center">Fotos / Firma</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>' +
-    (function(){
-      var conMedia = lista.filter(function(m){ return m.foto_url; });
-      if (!conMedia.length) return '';
-      var seccion = '<div style="page-break-before:always">' +
-        '<div style="font-size:13pt;font-weight:700;color:#1E4F8C;margin:18px 0 12px;border-left:5px solid #1E4F8C;padding-left:10px">Imágenes y Firmas</div>';
-      conMedia.forEach(function(m, i) {
-        var esRec = m.tipo === 'recepcion_insumo';
-        var allUrls = parseFotoUrls(m.foto_url);
-        var fotos   = allUrls.filter(function(u){ return u.indexOf('/firmas/') === -1; });
-        var firmas  = allUrls.filter(function(u){ return u.indexOf('/firmas/') !== -1; });
-        var persona = m.nombre_trabajador || null;
-        if (!allUrls.length) return;
-        seccion += '<div style="margin-bottom:20px;border:1px solid #d0dcea;border-radius:8px;overflow:hidden;page-break-inside:avoid">' +
-          '<div style="background:#f0f4fa;padding:8px 14px;border-bottom:1px solid #d0dcea;display:flex;align-items:center;gap:12px">' +
-            '<span style="font-size:9pt;color:#888">' + (i+1) + '</span>' +
-            '<span style="font-size:10pt;font-weight:700;color:#1a3a5c">' + (m.descripcion||'—') + '</span>' +
-            '<span style="font-size:9pt;color:#555">' + ff(m.fecha) + (ffh(m.fecha) ? ' ' + ffh(m.fecha) : '') + '</span>' +
-            (persona ? '<span style="font-size:9pt;color:#2e7d32;font-weight:600">· ' + (esRec ? 'Recepciona' : 'Retira') + ': ' + persona + '</span>' : '') +
-          '</div>' +
-          '<div style="padding:12px 14px">' +
-          (fotos.length ? '<div style="margin-bottom:10px"><div style="font-size:9pt;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">Fotografías</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-            fotos.map(function(url){ return '<img src="' + url + '" style="max-width:180px;max-height:140px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain"/>'; }).join('') +
-            '</div></div>' : '') +
-          (firmas.length ? '<div><div style="font-size:9pt;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">Firma' + (persona ? ' — ' + persona : '') + '</div>' +
-            '<div style="display:flex;gap:8px">' +
-            firmas.map(function(url){ return '<img src="' + url + '" style="max-width:220px;max-height:110px;border-radius:6px;border:2px solid #1a3a5c;object-fit:contain;background:#f8f9fb"/>'; }).join('') +
-            '</div></div>' : '') +
-          '</div></div>';
-      });
-      seccion += '</div>';
-      return seccion;
-    })() +
     '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
 
   var w = window.open('', '_blank');
@@ -6545,8 +6639,11 @@ function toggleSelCompra(id, checked) {
   _actualizarBtnExcelCmp();
 }
 function _actualizarBtnExcelCmp() {
-  var btn = document.getElementById('btn-excel-compras');
-  if (btn) btn.textContent = _selCompras.size > 0 ? '📊 Excel (' + _selCompras.size + ')' : '📊 Excel';
+  var btnXl  = document.getElementById('btn-excel-compras');
+  var btnPdf = document.getElementById('btn-pdf-compras');
+  var n = _selCompras.size;
+  if (btnXl)  btnXl.textContent  = n > 0 ? '📊 Excel (' + n + ')'       : '📊 Excel';
+  if (btnPdf) btnPdf.textContent = n > 0 ? '📋 PDF Completo (' + n + ')' : '📋 PDF Completo';
 }
 var _editCompraId = null;
 

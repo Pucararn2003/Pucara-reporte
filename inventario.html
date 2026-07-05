@@ -3738,14 +3738,16 @@ function exportarPDFSalAuto() {
     : _lastSalRows.slice();
   if (!lista.length) { alert('No hay registros para generar el PDF.'); return; }
   lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
-  _abrirVentanaPDFInsumos(lista);
+  var solaSalidas = lista.every(function(m){ return m.tipo === 'salida_insumo'; });
+  solaSalidas ? _abrirVentanaPDFComprobanteMulti(lista) : _abrirVentanaPDFInsumos(lista);
 }
 
 function exportarSelSalPDF() {
   var lista = movs.filter(function(m){ return _selSal.has(m.id); });
   if (!lista.length) return;
   lista.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
-  _abrirVentanaPDFInsumos(lista);
+  var solaSalidas = lista.every(function(m){ return m.tipo === 'salida_insumo'; });
+  solaSalidas ? _abrirVentanaPDFComprobanteMulti(lista) : _abrirVentanaPDFInsumos(lista);
 }
 
 function exportarSelSalExcel() {
@@ -5260,7 +5262,7 @@ function imprimirInformeInsumos() {
 function informeInsumoSingle(movId) {
   var mov = movs.find(function(m){ return m.id === movId; });
   if (!mov) { alert('Registro no encontrado.'); return; }
-  _abrirVentanaPDFInsumos([mov]);
+  mov.tipo === 'salida_insumo' ? _abrirVentanaPDFComprobanteMulti([mov]) : _abrirVentanaPDFInsumos([mov]);
 }
 
 function imprimirInformeCompleto() {
@@ -5431,6 +5433,113 @@ function _abrirVentanaPDFCompleto(lista) {
     '<button class="np" onclick="window.print()" style="display:block;margin:20px auto 0;padding:10px 28px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>' +
     '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
 
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+// Genera comprobante-style PDF para salidas seleccionadas, agrupando por responsable+persona
+function _abrirVentanaPDFComprobanteMulti(lista) {
+  var _pdfUser = TRABAJADORES.find(function(t){ return t.email && currentUser && t.email === currentUser.email; });
+  var _pdfNombre = _pdfUser ? _pdfUser.nombre : (currentUser ? currentUser.email : '');
+  // Agrupar por responsable + personaRetira (nombre_trabajador)
+  var grupos = [];
+  var grupoMap = {};
+  lista.forEach(function(m) {
+    var key = (m.responsable || '') + '|||' + (m.nombre_trabajador || '');
+    if (!grupoMap[key]) {
+      var g = { responsable: m.responsable || '—', personaRetira: m.nombre_trabajador || '—', items: [] };
+      grupoMap[key] = g; grupos.push(g);
+    }
+    grupoMap[key].items.push(m);
+  });
+  var tipoBadge = '<span style="background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:8px;font-size:9pt;font-weight:700;white-space:nowrap">📤 Salida</span>';
+  var seccionesHtml = grupos.map(function(grupo, gi) {
+    var its = grupo.items;
+    var tableRows = its.map(function(m, i) {
+      return '<tr style="background:' + (i%2===0?'#fff':'#fafcff') + ';border-bottom:1px solid #e4ebf3">' +
+        '<td style="padding:6px 9px;text-align:center;color:#888;font-size:9pt">' + (i+1) + '</td>' +
+        '<td style="padding:6px 9px">' + tipoBadge + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + ff(m.fecha) + (ffh(m.fecha) ? '<br><small style="color:#888">' + ffh(m.fecha) + '</small>' : '') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (m.turno||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9.5pt;font-weight:600">' + (m.descripcion||'—') + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (m.categoria||'—') + '</td>' +
+        '<td style="padding:6px 9px;text-align:center;font-weight:700;color:#c62828">↓ ' + m.cantidad + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + grupo.responsable + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + grupo.personaRetira + '</td>' +
+        '<td style="padding:6px 9px;font-size:9pt">' + (m.observaciones||'—') + '</td>' +
+      '</tr>';
+    }).join('');
+    // Fotos con leyenda por ítem
+    var fotoItems = its.filter(function(m) {
+      if (!m.foto_url) return false;
+      return parseFotoUrls(m.foto_url).some(function(u){ return u.indexOf('/firmas/') === -1; });
+    });
+    var fotosHtml = '';
+    if (fotoItems.length) {
+      fotosHtml = '<div style="margin-top:20px">' +
+        '<div style="font-size:9pt;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #eef2f7">Fotografías</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">' +
+        fotoItems.map(function(m) {
+          return parseFotoUrls(m.foto_url).filter(function(u){ return u.indexOf('/firmas/') === -1; }).map(function(url) {
+            return '<div style="text-align:center">' +
+              '<img src="' + url + '" style="max-width:160px;max-height:130px;border-radius:6px;border:1px solid #dde6f0;object-fit:contain;display:block;margin:0 auto"/>' +
+              '<div style="font-size:8pt;color:#555;margin-top:5px;max-width:160px;line-height:1.3">' + (m.descripcion||'') + '</div>' +
+            '</div>';
+          }).join('');
+        }).join('') +
+        '</div></div>';
+    }
+    // Firma — primera URL de firma encontrada en el grupo
+    var firmaUrl = null;
+    for (var i = 0; i < its.length; i++) {
+      if (!its[i].foto_url) continue;
+      var firs = parseFotoUrls(its[i].foto_url).filter(function(u){ return u.indexOf('/firmas/') !== -1; });
+      if (firs.length) { firmaUrl = firs[0]; break; }
+    }
+    var firmaHtml = firmaUrl
+      ? '<div style="margin-top:24px;text-align:center">' +
+          '<img src="' + firmaUrl + '" style="max-width:260px;height:auto;display:block;margin:0 auto"/>' +
+          '<div style="max-width:260px;margin:0 auto;border-top:1.5px solid #222;padding-top:6px;margin-top:2px">' +
+            '<div style="font-size:10.5pt;font-weight:700;color:#222">' + grupo.personaRetira + '</div>' +
+            '<div style="font-size:8.5pt;color:#666;margin-top:2px">Retirado por</div>' +
+          '</div></div>'
+      : '';
+    var pb = gi > 0 ? 'page-break-before:always;padding-top:16px;' : '';
+    return '<div style="' + pb + '">' +
+      '<table><thead><tr>' +
+        '<th style="width:28px;text-align:center">#</th>' +
+        '<th style="width:76px">Tipo</th>' +
+        '<th style="width:88px">Fecha</th>' +
+        '<th style="width:62px">Turno</th>' +
+        '<th>Ítem</th>' +
+        '<th style="width:78px">Categoría</th>' +
+        '<th style="width:48px;text-align:center">Cant.</th>' +
+        '<th style="width:118px">Responsable</th>' +
+        '<th style="width:118px">Persona que Retira</th>' +
+        '<th>Observaciones</th>' +
+      '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
+      fotosHtml + firmaHtml +
+    '</div>';
+  }).join('');
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Comprobante de Entrega</title>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:0;padding:0;color:#222}' +
+    '.page{width:21cm;min-height:29.7cm;margin:0 auto;padding:1.2cm 1.8cm;box-sizing:border-box}' +
+    '@media print{body{margin:0}.page{padding:0.8cm 1.2cm}}' +
+    'table{border-collapse:collapse;width:100%}thead tr{background:#1E4F8C;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    'th{padding:7px 9px;text-align:left;font-size:9pt}' +
+    '</style></head><body><div class="page">' +
+    '<table style="margin-bottom:12px"><tr>' +
+      '<td style="border:none;width:65px;vertical-align:middle"><img src="' + LOGO_URL + '" style="width:55px;height:55px;object-fit:contain;border-radius:8px" alt="Pucará" onerror="this.style.display=\'none\'"/></td>' +
+      '<td style="border:none;vertical-align:middle;text-align:center">' +
+        '<div style="font-size:16pt;font-weight:700;color:#1E4F8C">Comprobante de Entrega de Insumos</div>' +
+        '<div style="font-size:10pt;font-weight:700;color:#1E4F8C">RN-2003 — Control de Inventario Pucará</div>' +
+        '<div style="font-size:9pt;color:#aaa;margin-top:2px">Generado el ' + new Date().toLocaleDateString('es-CL') + ' &nbsp;|&nbsp; ' + _pdfNombre + '</div>' +
+      '</td><td style="border:none;width:65px"></td>' +
+    '</tr></table>' +
+    '<hr style="border:none;border-top:2px solid #1E4F8C;margin:0 0 14px"/>' +
+    seccionesHtml +
+    '<div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:10px">Generado el ' + new Date().toLocaleDateString('es-CL') + ' — Sistema de Control de Inventario Pucará</div>' +
+    '</div><script>window.onload=function(){ window.print(); };<\/script></body></html>';
   var w = window.open('', '_blank');
   if (w) { w.document.write(html); w.document.close(); }
 }

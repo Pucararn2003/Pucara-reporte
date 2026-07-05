@@ -4653,10 +4653,6 @@ function initFirmaCanvas(canvasId, dataId) {
   ctx.lineJoin    = 'round';
   ctx.strokeStyle = '#1a3a5c';
   canvas._ctx = ctx;
-  // iOS Safari: pointer events tienen menor tasa de muestreo y no soportan
-  // getCoalescedEvents → usar touch events directos + interpolación
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var drawing = false;
   var pts = [];
   var rafId = null;
@@ -4664,69 +4660,22 @@ function initFirmaCanvas(canvasId, dataId) {
     var r = canvas.getBoundingClientRect();
     return [e.clientX - r.left, e.clientY - r.top];
   }
-  // Rellena puntos intermedios entre muestras distantes (corrige trazo tosco en iOS)
-  function interpolar(arr) {
-    if (arr.length < 2) return arr;
-    var out = [arr[0]];
-    for (var i = 1; i < arr.length; i++) {
-      var dx = arr[i][0] - arr[i-1][0];
-      var dy = arr[i][1] - arr[i-1][1];
-      var steps = Math.max(1, Math.floor(Math.sqrt(dx*dx + dy*dy) / 5));
-      for (var s = 1; s <= steps; s++) {
-        out.push([arr[i-1][0] + dx*s/steps, arr[i-1][1] + dy*s/steps]);
-      }
-    }
-    return out;
-  }
   function flushPts() {
     rafId = null;
     if (pts.length < 2) return;
-    var dp = isIOS ? interpolar(pts) : pts;
     ctx.beginPath();
-    ctx.moveTo(dp[0][0], dp[0][1]);
-    for (var i = 1; i < dp.length - 1; i++) {
-      var mx = (dp[i][0] + dp[i+1][0]) / 2;
-      var my = (dp[i][1] + dp[i+1][1]) / 2;
-      ctx.quadraticCurveTo(dp[i][0], dp[i][1], mx, my);
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i+1][0]) / 2;
+      var my = (pts[i][1] + pts[i+1][1]) / 2;
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
     }
-    var last = dp[dp.length - 1];
+    var last = pts[pts.length - 1];
     ctx.lineTo(last[0], last[1]);
     ctx.stroke();
     pts = [last];
     canvas.classList.add('signed');
   }
-  // ── iOS: touch events directos, flush inmediato sin RAF
-  if (isIOS) {
-    canvas.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      drawing = true;
-      var t = e.changedTouches[0];
-      var r = canvas.getBoundingClientRect();
-      var p = [t.clientX - r.left, t.clientY - r.top];
-      pts = [p];
-      ctx.beginPath();
-      ctx.moveTo(p[0], p[1]);
-    }, { passive: false });
-    canvas.addEventListener('touchmove', function(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      var r = canvas.getBoundingClientRect();
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        var t = e.changedTouches[i];
-        pts.push([t.clientX - r.left, t.clientY - r.top]);
-      }
-      flushPts();
-    }, { passive: false });
-    canvas.addEventListener('touchend', function(e) {
-      if (!drawing) return;
-      drawing = false;
-      flushPts();
-      document.getElementById(dataId).value = canvas.toDataURL('image/png');
-    }, { passive: false });
-    canvas.addEventListener('touchcancel', function() { drawing = false; });
-    return;
-  }
-  // ── Android / Desktop: Pointer Events + getCoalescedEvents + RAF
   function onDown(e) {
     e.preventDefault();
     drawing = true;

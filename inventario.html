@@ -516,6 +516,8 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     <img id="nav-logo" alt="Pucará"/>
     <h1>Control de Inventario — RN-2003</h1>
     <span id="hdr-welcome" style="font-size:12px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;flex-shrink:1;font-style:italic"></span>
+    <button id="btn-undo" class="hdr-btn" onclick="_deshacer()" disabled title="Nada que deshacer" style="opacity:.35;cursor:not-allowed;padding:6px 11px;font-size:15px;transition:opacity .2s">↩</button>
+    <button id="btn-redo" class="hdr-btn" onclick="_rehacer()" disabled title="Nada que rehacer" style="opacity:.35;cursor:not-allowed;padding:6px 11px;font-size:15px;transition:opacity .2s">↪</button>
     <button class="hdr-btn" onclick="abrirPDF()">📄 <span class="btn-lbl">Informe PDF</span></button>
     <button class="hdr-btn" onclick="abrirExcel()" style="background:rgba(0,140,0,.3)">📊 <span class="btn-lbl">Excel</span></button>
     <button class="hdr-btn hdr-btn-danger" onclick="logout()">🚪 <span class="btn-lbl">Salir</span></button>
@@ -1736,6 +1738,52 @@ let movs  = [];
 let editId = null;
 let sortCol = null;
 let sortDir = 'asc';
+
+// ── Deshacer / Rehacer ─────────────────────────────────────────
+var _undoStack = [];
+var _redoStack = [];
+var _UNDO_MAX  = 15;
+
+function _pushAccion(desc, undoFn, redoFn) {
+  _undoStack.push({ desc: desc, undoFn: undoFn, redoFn: redoFn || null });
+  if (_undoStack.length > _UNDO_MAX) _undoStack.shift();
+  _redoStack = [];
+  _actualizarBotonesHistorial();
+}
+function _actualizarBotonesHistorial() {
+  var bu = document.getElementById('btn-undo');
+  var br = document.getElementById('btn-redo');
+  if (!bu || !br) return;
+  var canU = _undoStack.length > 0;
+  var canR = _redoStack.length > 0;
+  bu.disabled = !canU; bu.style.opacity = canU ? '1' : '0.35'; bu.style.cursor = canU ? 'pointer' : 'not-allowed';
+  br.disabled = !canR; br.style.opacity = canR ? '1' : '0.35'; br.style.cursor = canR ? 'pointer' : 'not-allowed';
+  bu.title = canU ? 'Deshacer: ' + _undoStack[_undoStack.length-1].desc : 'Nada que deshacer';
+  br.title = canR ? 'Rehacer: '  + _redoStack[_redoStack.length-1].desc : 'Nada que rehacer';
+}
+async function _deshacer() {
+  if (!_undoStack.length) return;
+  var accion = _undoStack[_undoStack.length - 1];
+  try {
+    await accion.undoFn();
+    _undoStack.pop();
+    _redoStack.push(accion);
+    _actualizarBotonesHistorial();
+    alert('↩️ Deshecho: ' + accion.desc);
+  } catch(e) { alert('Error al deshacer: ' + (e.message || e)); }
+}
+async function _rehacer() {
+  if (!_redoStack.length) return;
+  var accion = _redoStack[_redoStack.length - 1];
+  if (!accion.redoFn) { alert('Esta acción no se puede rehacer.'); return; }
+  try {
+    await accion.redoFn();
+    _redoStack.pop();
+    _undoStack.push(accion);
+    _actualizarBotonesHistorial();
+    alert('↪️ Rehecho: ' + accion.desc);
+  } catch(e) { alert('Error al rehacer: ' + (e.message || e)); }
+}
 
 
 
@@ -3511,11 +3559,28 @@ async function guardarItem() {
       p.historial = [entrada, ...(oldIt.historial || [])].slice(0, 50);
     }
   }
-  const { error } = editId
-    ? await sb.from('inventario_items').update(p).eq('id', editId)
-    : await sb.from('inventario_items').insert(p);
+  const _editIdSnap = editId;
+  const _oldItemSnap = _editIdSnap ? JSON.parse(JSON.stringify(items.find(function(x){ return x.id === _editIdSnap; }) || {})) : null;
+  const { data: _itemRes, error } = _editIdSnap
+    ? await sb.from('inventario_items').update(p).eq('id', _editIdSnap).select('id').single()
+    : await sb.from('inventario_items').insert(p).select('id').single();
   btnG.disabled = false; btnG.textContent = 'Guardar Ítem';
   if (error) { alert('Error: ' + error.message); return; }
+  // ── Registrar acción en historial deshacer ──
+  if (_editIdSnap) {
+    var _pSnap = Object.assign({}, p);
+    var _oldSnap = _oldItemSnap;
+    _pushAccion('Edición ítem: ' + (p.descripcion||'—'),
+      async function() { await sb.from('inventario_items').update(_oldSnap).eq('id', _editIdSnap); await cargarItems(); renderAsignaciones(); },
+      async function() { await sb.from('inventario_items').update(_pSnap).eq('id', _editIdSnap);  await cargarItems(); renderAsignaciones(); }
+    );
+  } else if (_itemRes && _itemRes.id) {
+    var _newId = _itemRes.id;
+    _pushAccion('Nuevo ítem: ' + (p.descripcion||'—'),
+      async function() { await sb.from('inventario_items').delete().eq('id', _newId); await cargarItems(); renderAsignaciones(); },
+      null
+    );
+  }
   // Registrar como reciente para ordenar arriba
   var savedId = editId || null;
   if (!savedId) {
@@ -4234,15 +4299,17 @@ async function _guardarSalidaImpl() {
     });
 
     if (it.isExt) {
-      const { error } = await sb.from('inventario_movimientos').insert(payload);
+      const { data: _insD, error } = await sb.from('inventario_movimientos').insert(payload).select('id').single();
       if (error) { alert('Error guardando "' + it.descripcion + '": ' + error.message); continue; }
+      if (_insD) it._movId = _insD.id;
     } else {
       const { data: _preS } = await sb.from('inventario_items').select('cantidad_disponible').eq('id', it.itemId).single();
       var _preDisp = _preS ? (_preS.cantidad_disponible ?? 0) : (itSel?.cantidad_disponible ?? 0);
       var _newDisp = it.noDescontar ? _preDisp : Math.max(0, _preDisp - it.cantidad);
       payload.cantidad_restante = _newDisp;
-      const { error } = await sb.from('inventario_movimientos').insert(payload);
+      const { data: _insD, error } = await sb.from('inventario_movimientos').insert(payload).select('id').single();
       if (error) { alert('Error guardando "' + it.descripcion + '": ' + error.message); continue; }
+      if (_insD) it._movId = _insD.id;
       var _upd = { cantidad_disponible: _newDisp };
       if (it.noDescontar) _upd.cantidad_total = (itSel?.cantidad_total || 0) + it.cantidad;
       // Descontar del lote específico si fue seleccionado
@@ -4261,6 +4328,30 @@ async function _guardarSalidaImpl() {
   }
 
   if (!savedItems.length) return;
+
+  // ── Registrar acción en historial deshacer ──
+  (function() {
+    var _snap = savedItems.map(function(it) {
+      return { movId: it._movId, itemId: it.itemId, cantidad: it.cantidad, isExt: it.isExt, noDescontar: it.noDescontar, descripcion: it.descripcion };
+    });
+    var _desc = _snap.length > 1
+      ? 'Salida ' + _snap.length + ' ítems (' + _snap.map(function(x){ return x.descripcion; }).join(', ') + ')'
+      : 'Salida: ' + (_snap[0].descripcion||'—') + ' ×' + (_snap[0].cantidad||1);
+    _pushAccion(_desc,
+      async function() { // DESHACER
+        for (var i = 0; i < _snap.length; i++) {
+          var s = _snap[i];
+          if (s.movId) await sb.from('inventario_movimientos').delete().eq('id', s.movId);
+          if (!s.isExt && !s.noDescontar && s.itemId) {
+            var cur = items.find(function(x){ return x.id === s.itemId; });
+            if (cur) await sb.from('inventario_items').update({ cantidad_disponible: (cur.cantidad_disponible||0) + (s.cantidad||0) }).eq('id', s.itemId);
+          }
+        }
+        await cargarDatos();
+      },
+      null // redo no disponible para salidas (evita doble descuento de stock)
+    );
+  })();
 
   // Comprobante: primer ítem guardado (o resumen multi)
   var primerIt = savedItems[0];

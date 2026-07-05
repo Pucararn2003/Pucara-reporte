@@ -1160,120 +1160,142 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
 <div class="modal-bd" id="modal-salida">
   <div class="modal modal-sm">
     <div class="mhdr">
-      <h3>Registrar Salida de Insumos</h3>
+      <h3 id="ms-titulo">Registrar Salida de Insumos</h3>
       <button class="mclose" onclick="cerrar('modal-salida')">✕</button>
+    </div>
+    <!-- Indicador de pasos -->
+    <div style="display:flex;border-bottom:2px solid #e4ebf3;background:#f8fafc">
+      <div id="ms-step-ind-1" style="flex:1;text-align:center;padding:9px 0;font-size:12px;font-weight:700;color:#1E4F8C;border-bottom:3px solid #1E4F8C;margin-bottom:-2px;transition:all .2s">1. Ítems</div>
+      <div id="ms-step-ind-2" style="flex:1;text-align:center;padding:9px 0;font-size:12px;font-weight:700;color:#bbb;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s">2. Entrega</div>
     </div>
     <div class="mbody">
       <div id="alerta-sal" class="alert alert-warn" style="display:none"></div>
-      <div class="fgrid">
-        <div class="fg"><label>Fecha de Entrega *</label><input type="date" id="ms-fecha"/></div>
-        <div class="fg"><label>Hora</label><input type="time" id="ms-hora"/></div>
-        <div class="fg">
-          <label>Turno *</label>
-          <select id="ms-turno">
-            <option value="">Seleccionar turno…</option>
-            <option>Turno A</option><option>Turno B</option>
-          </select>
-        </div>
-        <div class="fg full">
-          <!-- Lista de ítems ya agregados -->
-          <div id="ms-items-lista-wrap" style="display:none;border:1px solid #c8dff5;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#f0f7ff">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#1a3a5c">
-              <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:.4px">ÍTEMS A REGISTRAR</span>
-              <span id="ms-items-count" style="font-size:11px;color:rgba(255,255,255,.7)"></span>
-            </div>
-            <div id="ms-items-lista"></div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label id="ms-item-label" style="margin:0">Ítem *</label>
-            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
-              <button id="ms-item-btn-inv" class="btn-tipo active" onclick="setSalidaItemMode('inventario')" style="padding:3px 12px;font-size:12px;border-radius:0">📦 Del inventario</button>
-              <button id="ms-item-btn-ext" class="btn-tipo" onclick="setSalidaItemMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ No registrado</button>
-            </div>
-          </div>
-          <div id="ms-item-inv-wrap" class="item-search-wrap">
-            <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
-                   oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
-                   onkeydown="ddNav(event,'ms-item-list')"
-                   style="width:100%;padding:9px 36px 9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
-            <button onclick="document.getElementById('ms-item-search').value='';document.getElementById('ms-item-val').value='';document.getElementById('ms-item-list').style.display='none';var lw=document.getElementById('ms-lote-wrap');if(lw)lw.style.display='none';_actualizarMsItemOpciones();"
-                    title="Limpiar" style="position:absolute;right:8px;top:10px;background:none;border:none;cursor:pointer;color:#bbb;font-size:20px;padding:0;line-height:1;z-index:2">×</button>
-            <div id="ms-item-list" class="item-dropdown"></div>
-            <input type="hidden" id="ms-item-val"/>
-          </div>
-          <div id="ms-lote-wrap" style="display:none;margin-top:8px;background:#f0f7ff;border:1px solid #c8dff5;border-radius:8px;padding:8px 10px">
-            <label style="font-size:11px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:5px">📦 Lote a descontar</label>
-            <select id="ms-lote-id" onchange="onChangeLoteSal()" style="width:100%;padding:8px 10px;border:1px solid #90caf9;border-radius:7px;font-size:16px;outline:none;background:#fff;color:#1a3a5c">
-              <option value="">— Descontar del total general —</option>
+
+      <!-- ── PASO 1: Ítems ── -->
+      <div id="ms-paso-1">
+        <div class="fgrid">
+          <div class="fg"><label>Fecha de Entrega *</label><input type="date" id="ms-fecha"/></div>
+          <div class="fg"><label>Hora</label><input type="time" id="ms-hora"/></div>
+          <div class="fg">
+            <label>Turno *</label>
+            <select id="ms-turno">
+              <option value="">Seleccionar turno…</option>
+              <option>Turno A</option><option>Turno B</option>
             </select>
-            <div id="ms-lote-stock" style="font-size:11px;margin-top:5px;color:#555"></div>
           </div>
-          <div id="ms-item-ext-wrap" style="display:none">
-            <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." oninput="_actualizarMsItemOpciones()" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
-            <input type="text" id="ms-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
+          <div class="fg full">
+            <div id="ms-items-lista-wrap" style="display:none;border:1px solid #c8dff5;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#f0f7ff">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#1a3a5c">
+                <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:.4px">ÍTEMS A REGISTRAR</span>
+                <span id="ms-items-count" style="font-size:11px;color:rgba(255,255,255,.7)"></span>
+              </div>
+              <div id="ms-items-lista"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label id="ms-item-label" style="margin:0">Ítem *</label>
+              <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+                <button id="ms-item-btn-inv" class="btn-tipo active" onclick="setSalidaItemMode('inventario')" style="padding:3px 12px;font-size:12px;border-radius:0">📦 Del inventario</button>
+                <button id="ms-item-btn-ext" class="btn-tipo" onclick="setSalidaItemMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ No registrado</button>
+              </div>
+            </div>
+            <div id="ms-item-inv-wrap" class="item-search-wrap">
+              <input type="text" id="ms-item-search" placeholder="🔍 Buscar ítem por nombre o correlativo..."
+                     oninput="filtrarItems('ms')" onfocus="filtrarItems('ms')" autocomplete="off"
+                     onkeydown="ddNav(event,'ms-item-list')"
+                     style="width:100%;padding:9px 36px 9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+              <button onclick="document.getElementById('ms-item-search').value='';document.getElementById('ms-item-val').value='';document.getElementById('ms-item-list').style.display='none';var lw=document.getElementById('ms-lote-wrap');if(lw)lw.style.display='none';_actualizarMsItemOpciones();"
+                      title="Limpiar" style="position:absolute;right:8px;top:10px;background:none;border:none;cursor:pointer;color:#bbb;font-size:20px;padding:0;line-height:1;z-index:2">×</button>
+              <div id="ms-item-list" class="item-dropdown"></div>
+              <input type="hidden" id="ms-item-val"/>
+            </div>
+            <div id="ms-lote-wrap" style="display:none;margin-top:8px;background:#f0f7ff;border:1px solid #c8dff5;border-radius:8px;padding:8px 10px">
+              <label style="font-size:11px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:5px">📦 Lote a descontar</label>
+              <select id="ms-lote-id" onchange="onChangeLoteSal()" style="width:100%;padding:8px 10px;border:1px solid #90caf9;border-radius:7px;font-size:16px;outline:none;background:#fff;color:#1a3a5c">
+                <option value="">— Descontar del total general —</option>
+              </select>
+              <div id="ms-lote-stock" style="font-size:11px;margin-top:5px;color:#555"></div>
+            </div>
+            <div id="ms-item-ext-wrap" style="display:none">
+              <input type="text" id="ms-item-ext-nombre" placeholder="Nombre del ítem..." oninput="_actualizarMsItemOpciones()" style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+              <input type="text" id="ms-item-ext-categ" placeholder="Categoría (opcional)..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box;margin-top:6px"/>
+            </div>
+            <input type="hidden" id="ms-item-mode" value="inventario"/>
           </div>
-          <input type="hidden" id="ms-item-mode" value="inventario"/>
-        </div>
-        <div id="ms-item-opciones-wrap" style="display:none;contents:contents">
-        <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
-        <div id="ms-no-descontar-wrap" class="fg full" style="padding:4px 0">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
-            <input type="checkbox" id="ms-no-descontar" style="width:16px;height:16px;cursor:pointer;flex-shrink:0"/>
-            <span style="font-weight:600;color:#1a3a5c">No descontar del inventario general</span>
-            <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">La cantidad retirada se descontará del total del ítem del inventario general.</div></span>
-          </label>
-        </div>
-        <div class="fg full"><label>Observaciones del ítem</label><textarea id="ms-obs" rows="2" placeholder="Notas u observaciones sobre este ítem..."></textarea></div>
-        <div class="fg full" style="padding:2px 0 0">
-          <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.3px">Foto del ítem <small style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional, máx. 1)</small></label>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-            <div class="foto-slot" style="width:88px;height:66px;flex-shrink:0" onclick="document.getElementById('ms-item-foto-file').click()">
-              <input type="file" id="ms-item-foto-file" accept="image/*" capture="environment" onchange="previewMsItemFoto(this)" style="display:none"/>
-              <div class="foto-slot-ph" id="ms-item-foto-ph"><span>📷</span></div>
-              <img id="ms-item-foto-prev" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
-              <button class="foto-slot-rm" id="ms-item-foto-rm" style="display:none" onclick="event.stopPropagation();quitarMsItemFoto()">✕</button>
+          <div id="ms-item-opciones-wrap" style="display:none;contents:contents">
+            <div class="fg"><label>Cantidad *</label><input type="number" id="ms-cant" min="1" value="1"/></div>
+            <div id="ms-no-descontar-wrap" class="fg full" style="padding:4px 0">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+                <input type="checkbox" id="ms-no-descontar" style="width:16px;height:16px;cursor:pointer;flex-shrink:0"/>
+                <span style="font-weight:600;color:#1a3a5c">No descontar del inventario general</span>
+                <span class="nd-wrap"><span class="nd-icon">?</span><div class="nd-tip">La cantidad retirada se descontará del total del ítem del inventario general.</div></span>
+              </label>
+            </div>
+            <div class="fg full"><label>Observaciones del ítem</label><textarea id="ms-obs" rows="2" placeholder="Notas u observaciones sobre este ítem..."></textarea></div>
+            <div class="fg full" style="padding:2px 0 0">
+              <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.3px">Foto del ítem <small style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional, máx. 1)</small></label>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                <div class="foto-slot" style="width:88px;height:66px;flex-shrink:0" onclick="document.getElementById('ms-item-foto-file').click()">
+                  <input type="file" id="ms-item-foto-file" accept="image/*" capture="environment" onchange="previewMsItemFoto(this)" style="display:none"/>
+                  <div class="foto-slot-ph" id="ms-item-foto-ph"><span>📷</span></div>
+                  <img id="ms-item-foto-prev" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+                  <button class="foto-slot-rm" id="ms-item-foto-rm" style="display:none" onclick="event.stopPropagation();quitarMsItemFoto()">✕</button>
+                </div>
+              </div>
+            </div>
+            <div class="fg full" style="padding:0 0 4px">
+              <button type="button" onclick="agregarItemLista()" style="width:100%;padding:9px;background:#e8f4fc;border:1px dashed #64b5f6;border-radius:8px;color:#1565c0;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                <span style="font-size:16px;line-height:1">＋</span> Agregar ítem a la lista
+              </button>
             </div>
           </div>
-        </div>
-        <!-- Botón para agregar ítem a la lista (multi-ítem) -->
-        <div class="fg full" style="padding:0 0 4px">
-          <button type="button" onclick="agregarItemLista()" style="width:100%;padding:9px;background:#e8f4fc;border:1px dashed #64b5f6;border-radius:8px;color:#1565c0;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-            <span style="font-size:16px;line-height:1">＋</span> Agregar ítem a la lista
-          </button>
-        </div>
-        </div>
-        <div class="fg full">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label style="margin:0">Responsable de la Entrega</label>
-            <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
-              <button id="ms-btn-int" class="btn-tipo active" onclick="setSalidaRespMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
-              <button id="ms-btn-ext" class="btn-tipo" onclick="setSalidaRespMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
-            </div>
-          </div>
-          <select id="ms-resp" onchange="autoTurnoSal(this.value)" style="width:100%"><option value="">Seleccionar…</option></select>
-          <input type="text" id="ms-resp-ext" placeholder="Nombre, empresa o cargo..." style="display:none;width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
-          <input type="hidden" id="ms-ext-mode" value="interno"/>
-        </div>
-        <div class="fg full">
-          <label>Persona que Retira</label>
-          <input type="text" id="ms-persona-retira" placeholder="Nombre de quien retira físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
-          <div style="margin-top:8px">
-            <button type="button" id="ms-firma-toggle-btn" onclick="toggleFirmaSal()" style="font-size:12px;padding:5px 14px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;width:100%">✍️ Firma persona que retira</button>
-          </div>
-          <div id="ms-firma-wrap" style="display:none;margin-top:8px">
-            <canvas id="ms-firma-canvas" class="firma-canvas"></canvas>
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <button type="button" onclick="limpiarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">🗑 Limpiar</button>
-              <button type="button" onclick="ocultarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">✕ Cancelar</button>
-            </div>
-          </div>
-          <input type="hidden" id="ms-firma-data"/>
         </div>
       </div>
+
+      <!-- ── PASO 2: Entrega ── -->
+      <div id="ms-paso-2" style="display:none">
+        <!-- Resumen ítems -->
+        <div id="ms-p2-resumen" style="background:#f0f7ff;border:1px solid #c8dff5;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1a3a5c"></div>
+        <div class="fgrid">
+          <div class="fg full">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label style="margin:0">Responsable de la Entrega</label>
+              <div style="display:flex;border:1px solid #cdd8e3;border-radius:6px;overflow:hidden">
+                <button id="ms-btn-int" class="btn-tipo active" onclick="setSalidaRespMode('interno')" style="padding:3px 12px;font-size:12px;border-radius:0">🏢 Interno</button>
+                <button id="ms-btn-ext" class="btn-tipo" onclick="setSalidaRespMode('externo')" style="padding:3px 12px;font-size:12px;border-radius:0">✏️ Externo</button>
+              </div>
+            </div>
+            <select id="ms-resp" onchange="autoTurnoSal(this.value)" style="width:100%"><option value="">Seleccionar…</option></select>
+            <input type="text" id="ms-resp-ext" placeholder="Nombre, empresa o cargo..." style="display:none;width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <input type="hidden" id="ms-ext-mode" value="interno"/>
+          </div>
+          <div class="fg full">
+            <label>Persona que Retira</label>
+            <input type="text" id="ms-persona-retira" placeholder="Nombre de quien retira físicamente..." style="width:100%;padding:9px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box"/>
+            <div style="margin-top:8px">
+              <button type="button" id="ms-firma-toggle-btn" onclick="toggleFirmaSal()" style="font-size:12px;padding:5px 14px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;width:100%">✍️ Firma persona que retira</button>
+            </div>
+            <div id="ms-firma-wrap" style="display:none;margin-top:8px">
+              <canvas id="ms-firma-canvas" class="firma-canvas"></canvas>
+              <div style="display:flex;gap:8px;margin-top:6px">
+                <button type="button" onclick="limpiarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">🗑 Limpiar</button>
+                <button type="button" onclick="ocultarFirmaSal()" style="flex:1;font-size:12px;padding:7px 0;border:1px solid #cdd8e3;border-radius:6px;background:#fff;cursor:pointer;color:#555">✕ Cancelar</button>
+              </div>
+            </div>
+            <input type="hidden" id="ms-firma-data"/>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="mftr">
-      <button class="btn btn-secondary" onclick="cerrar('modal-salida')">Cancelar</button>
-      <button class="btn btn-warn" id="btn-guardar-salida" onclick="guardarSalida()">Registrar Salida</button>
+    <div class="mftr" style="padding:10px 16px">
+      <div id="ms-ftr-1" style="display:flex;gap:8px;width:100%">
+        <button class="btn btn-secondary" style="flex:1" onclick="cerrar('modal-salida')">Cancelar</button>
+        <button class="btn btn-warn" style="flex:2;font-size:14px" onclick="_irMsPaso(2)">Siguiente →</button>
+      </div>
+      <div id="ms-ftr-2" style="display:none;gap:8px;width:100%">
+        <button class="btn btn-secondary" style="flex:1" onclick="_irMsPaso(1)">← Volver</button>
+        <button class="btn btn-warn" style="flex:2;font-size:14px" id="btn-guardar-salida" onclick="guardarSalida()">Registrar Salida</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3786,6 +3808,42 @@ function _actualizarMsItemOpciones() {
   if (wrap) wrap.style.display = tieneItem ? 'contents' : 'none';
 }
 
+var _msPaso = 1;
+function _irMsPaso(n) {
+  if (n === 2) {
+    // Validar: debe haber al menos 1 ítem en lista o campo actual relleno
+    var mode   = document.getElementById('ms-item-mode').value;
+    var isExt  = mode === 'externo';
+    var itemId = document.getElementById('ms-item-val').value;
+    var extNom = isExt ? document.getElementById('ms-item-ext-nombre').value.trim() : '';
+    var currentFill = isExt ? !!extNom : !!itemId;
+    if (_msItemsList.length === 0 && !currentFill) {
+      alert('Agrega al menos un ítem antes de continuar.');
+      return;
+    }
+    // Resumen de ítems para el paso 2
+    var todos = _msItemsList.slice();
+    if (currentFill) {
+      var desc = isExt ? extNom : (items.find(function(x){return x.id===itemId;})||{}).descripcion || itemId;
+      todos.push({ descripcion: desc, cantidad: parseInt(document.getElementById('ms-cant').value)||1 });
+    }
+    var resumen = document.getElementById('ms-p2-resumen');
+    if (resumen) {
+      resumen.innerHTML = '<strong>📦 Ítems a registrar:</strong> ' +
+        todos.map(function(it){ return it.descripcion + ' <span style="color:#c62828;font-weight:700">×' + it.cantidad + '</span>'; }).join(' &nbsp;·&nbsp; ');
+    }
+  }
+  _msPaso = n;
+  document.getElementById('ms-paso-1').style.display = n === 1 ? '' : 'none';
+  document.getElementById('ms-paso-2').style.display = n === 2 ? '' : 'none';
+  document.getElementById('ms-ftr-1').style.display  = n === 1 ? 'flex' : 'none';
+  document.getElementById('ms-ftr-2').style.display  = n === 2 ? 'flex' : 'none';
+  var i1 = document.getElementById('ms-step-ind-1');
+  var i2 = document.getElementById('ms-step-ind-2');
+  if (i1) { i1.style.color = n===1?'#1E4F8C':'#bbb'; i1.style.borderBottomColor = n===1?'#1E4F8C':'transparent'; }
+  if (i2) { i2.style.color = n===2?'#1E4F8C':'#bbb'; i2.style.borderBottomColor = n===2?'#1E4F8C':'transparent'; }
+}
+
 function quitarMsItemFoto() {
   var inp  = document.getElementById('ms-item-foto-file');
   var prev = document.getElementById('ms-item-foto-prev');
@@ -3987,6 +4045,7 @@ function abrirModalSalida() {
   document.getElementById('ms-obs').value   = '';
   quitarMsItemFoto();
   document.getElementById('alerta-sal').style.display = 'none';
+  _irMsPaso(1);
   // Reset lote selector
   var _lWrapA = document.getElementById('ms-lote-wrap');
   if (_lWrapA) _lWrapA.style.display = 'none';
@@ -4126,8 +4185,8 @@ async function _guardarSalidaImpl() {
       if (newIt) await sb.from('inventario_items').update({ cantidad_disponible: Math.max(0,(newIt.cantidad_disponible||0)-it.cantidad) }).eq('id', it.itemId);
     }
     editMovSalId = null;
-    const mhdrS = document.querySelector('#modal-salida .mhdr h3');
-    if (mhdrS) mhdrS.textContent = 'Registrar Salida Insumo';
+    var _tit = document.getElementById('ms-titulo');
+    if (_tit) _tit.textContent = 'Registrar Salida de Insumos';
     cerrar('modal-salida');
     await cargarDatos();
     return;
@@ -4309,7 +4368,8 @@ async function editarSalida(movId) {
   document.getElementById('ms-persona-retira').value = mov.nombre_trabajador || '';
   document.getElementById('ms-obs').value   = mov.observaciones || '';
   document.getElementById('alerta-sal').style.display = 'none';
-  document.querySelector('#modal-salida .mhdr h3').textContent = 'Editar Salida Insumo';
+  _irMsPaso(1);
+  document.getElementById('ms-titulo').textContent = 'Editar Salida Insumo';
   abrir('modal-salida');
 }
 

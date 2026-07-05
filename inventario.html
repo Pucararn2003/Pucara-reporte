@@ -406,6 +406,15 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
   /* === Modales — más espacio para formularios con muchos campos === */
   .modal,.modal-sm{max-height:92vh;-webkit-overflow-scrolling:touch}
 
+  /* === Inputs date/time en modales — iOS aplica altura nativa grande, se normaliza === */
+  #modal-salida input[type="date"],#modal-salida input[type="time"],
+  #modal-recepcion input[type="date"],#modal-recepcion input[type="time"]{
+    height:40px;line-height:40px;padding:0 10px;font-size:15px;
+    -webkit-appearance:none;appearance:none;box-sizing:border-box;
+    border:1px solid #cdd8e3;border-radius:7px;background:#fff;color:#222;
+    display:block;width:100%
+  }
+
   /* === Firma pad — altura cómoda para firmar con dedo === */
   .firma-canvas{height:160px}
   #ms-firma-toggle-btn{padding:6px 10px!important;font-size:12px!important;font-weight:600}

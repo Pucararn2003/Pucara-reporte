@@ -705,9 +705,9 @@ function parseReporte(r) {
 
 function fmt(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  const p = n => String(n).padStart(2,'0');
-  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;
+  const [y, m, d] = iso.split('T')[0].split('-');
+  if (!y || !m || !d) return '—';
+  return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
 }
 
 function renderTabla() {
@@ -1084,7 +1084,7 @@ function fmtActividad(data) {
 
 function buildHtmlReporte(r) {
   const pad2 = n => String(n).padStart(2,'0');
-  const fmtD = iso => { if(!iso) return '—'; const d=new Date(iso); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`; };
+  const fmtD = iso => { if(!iso) return '—'; const [y,m,d] = iso.split('T')[0].split('-'); if(!y||!m||!d) return '—'; return `${pad2(d)}/${pad2(m)}/${y}`; };
   const firmaBase64 = localStorage.getItem(firmaKey());
   const firmaImgHtml = firmaBase64
     ? `<img src="${firmaBase64}" style="max-height:54pt;max-width:90%;object-fit:contain;display:block;margin:0 auto 0;"/>`

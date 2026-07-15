@@ -7394,6 +7394,7 @@ function _abrirVentanaPDFCompras(selCompras) {
           return '<tr style="border-bottom:1px solid #e8eef4">' +
             '<td style="padding:5px 8px">' + gestIcon + ' ' + (t.nombre||'—') + '</td>' +
             '<td style="padding:5px 8px;text-align:center">' + (t.turno||'—') + '</td>' +
+            '<td style="padding:5px 8px;text-align:center;font-weight:700">' + (t.cantidad??'—') + '</td>' +
             '<td style="padding:5px 8px;text-align:center">' + (t.talla||'—') + '</td>' +
             '<td style="padding:5px 8px;text-align:center">' + (t.color||'—') + '</td>' +
             '<td style="padding:5px 8px">' + (t.obs||'—') + '</td>' +
@@ -7406,6 +7407,7 @@ function _abrirVentanaPDFCompras(selCompras) {
           '<table style="width:100%;border-collapse:collapse;font-size:9pt">' +
             '<thead><tr style="background:#344d6b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
               '<th style="padding:5px 8px;text-align:left">Trabajador</th><th style="padding:5px 8px;text-align:center">Turno</th>' +
+              '<th style="padding:5px 8px;text-align:center">Cant.</th>' +
               '<th style="padding:5px 8px;text-align:center">Talla</th><th style="padding:5px 8px;text-align:center">Color</th>' +
               '<th style="padding:5px 8px;text-align:left">Observación</th><th style="padding:5px 8px;text-align:center">Estado</th>' +
             '</tr></thead><tbody>' + trabFilas + '</tbody></table></div>';
@@ -7516,22 +7518,22 @@ function exportarExcelCompras() {
   });
 
   // Hoja 2: detalle por trabajador (una fila por trabajador)
-  var hdrs2 = ['Fecha Solicitud','Correlativo','Descripción Ítem','Talla','Trabajador','Gestionado'];
+  var hdrs2 = ['Fecha Solicitud','Correlativo','Descripción Ítem','Talla','Trabajador','Cantidad','Gestionado'];
   var data2 = [];
   lista.forEach(function(c) {
     var trabs = c.trabajadores || [];
     if (trabs.length) {
       trabs.forEach(function(t) {
-        data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', c.talla||'', t.nombre||'', t.gestionado ? 'Sí' : 'No']);
+        data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', t.talla||c.talla||'', t.nombre||'', t.cantidad??'', t.gestionado ? 'Sí' : 'No']);
       });
     } else {
-      data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', c.talla||'', '—', '—']);
+      data2.push([c.fecha||'', c.correlativo||'', c.descripcion||'', c.talla||'', '—', '—', '—']);
     }
   });
 
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, crearHoja(hdrs1, data1, [14,10,14,28,8,8,22,14,12,25,25]), 'Solicitudes');
-  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs2, data2, [14,10,28,8,28,10]), 'Detalle Trabajadores');
+  XLSX.utils.book_append_sheet(wb, crearHoja(hdrs2, data2, [14,10,28,8,28,10,10]), 'Detalle Trabajadores');
   XLSX.writeFile(wb, 'Compras_' + hoy() + '.xlsx');
 }
 
@@ -7968,6 +7970,7 @@ function renderDetalleCompra(c) {
           '<thead><tr style="background:#f0f4f8">' +
             '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#555;font-weight:700">Trabajador</th>' +
             '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#555;font-weight:700">Turno</th>' +
+            '<th style="padding:8px 12px;text-align:center;font-size:11px;color:#555;font-weight:700">Cant.</th>' +
             '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#555;font-weight:700">Talla</th>' +
             '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#555;font-weight:700">Color</th>' +
             '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#555;font-weight:700">Observación</th>' +
@@ -7978,6 +7981,7 @@ function renderDetalleCompra(c) {
             return '<tr style="border-top:1px solid #f0f4f8;' + (done ? 'background:#f0fdf4' : '') + '">' +
               '<td style="padding:9px 12px;font-weight:600">' + (t.nombre || '—') + '</td>' +
               '<td style="padding:9px 12px">' + (t.turno ? '<span style="background:#eef4ff;color:#1E4F8C;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700">' + t.turno + '</span>' : '—') + '</td>' +
+              '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#1E4F8C">' + (t.cantidad ?? '—') + '</td>' +
               '<td style="padding:9px 12px">' + (t.talla || '—') + '</td>' +
               '<td style="padding:9px 12px">' + (t.color || '—') + '</td>' +
               '<td style="padding:9px 12px;color:#666">' + (t.obs || '—') + '</td>' +
@@ -8083,25 +8087,48 @@ function agregarFilaTrab(data) {
   if (empty) empty.style.display = 'none';
   var div = document.createElement('div');
   div.className = 'mc-trab-row';
-  div.style.cssText = 'display:grid;grid-template-columns:2fr 78px 88px 88px 1fr 32px;gap:5px;align-items:center;background:#f5f8ff;padding:7px 8px;border-radius:7px;border:1px solid #dce8f0';
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 78px 70px 88px 88px 1fr 32px;gap:5px;align-items:center;background:#f5f8ff;padding:7px 8px;border-radius:7px;border:1px solid #dce8f0';
   var inp = 'padding:6px 8px;border:1px solid #cdd8e3;border-radius:6px;font-size:13px;width:100%;box-sizing:border-box;outline:none';
   var trabOpts = '<option value="">Seleccionar…</option>' +
     TRABAJADORES.map(function(t){ return '<option value="'+t.nombre+'">'+t.nombre+'</option>'; }).join('');
   div.innerHTML =
     '<select class="trab-sel" onchange="autoTurnoTrab(this)" style="'+inp+'">'+trabOpts+'</select>' +
     '<input type="text" class="trab-turno" placeholder="—" readonly style="'+inp+';background:#eef4ff;color:#1E4F8C;font-weight:700;text-align:center;cursor:default"/>' +
+    '<input type="number" class="trab-cant" min="1" placeholder="Cant." oninput="_recalcCantidadCompra()" style="'+inp+';text-align:center"/>' +
     '<input type="text" class="trab-talla" placeholder="Talla" style="'+inp+'"/>' +
     '<input type="text" class="trab-color" placeholder="Color" style="'+inp+'"/>' +
     '<input type="text" class="trab-obs"   placeholder="Observación" style="'+inp+'"/>' +
-    '<button type="button" onclick="this.closest(\'.mc-trab-row\').remove();_trabEmptyMsg()" style="background:#fee2e2;border:none;border-radius:6px;color:#c62828;cursor:pointer;font-size:14px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">✕</button>';
+    '<button type="button" onclick="this.closest(\'.mc-trab-row\').remove();_trabEmptyMsg();_recalcCantidadCompra()" style="background:#fee2e2;border:none;border-radius:6px;color:#c62828;cursor:pointer;font-size:14px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">✕</button>';
   if (data) {
     div.querySelector('.trab-sel').value   = data.nombre || '';
     div.querySelector('.trab-turno').value = data.turno  || '';
+    div.querySelector('.trab-cant').value  = data.cantidad || '';
     div.querySelector('.trab-talla').value = data.talla  || '';
     div.querySelector('.trab-color').value = data.color  || '';
     div.querySelector('.trab-obs').value   = data.obs    || '';
   }
   cont.appendChild(div);
+}
+function _recalcCantidadCompra() {
+  var rows = document.querySelectorAll('#mc-trab-rows .mc-trab-row');
+  var total = 0, any = false;
+  rows.forEach(function(r) {
+    var v = r.querySelector('.trab-cant').value;
+    if (v !== '') { total += Number(v) || 0; any = true; }
+  });
+  var inp = document.getElementById('mc-cantidad');
+  if (any) {
+    inp.value    = total;
+    inp.readOnly = true;
+    inp.title    = 'Se calcula automáticamente según la cantidad asignada a los trabajadores';
+    inp.style.background = '#eef4ff';
+    inp.style.cursor     = 'not-allowed';
+  } else {
+    inp.readOnly = false;
+    inp.title    = '';
+    inp.style.background = '';
+    inp.style.cursor     = '';
+  }
 }
 function autoTurnoTrab(sel) {
   var t = TRABAJADORES.find(function(x){ return x.nombre === sel.value; });
@@ -8110,11 +8137,12 @@ function autoTurnoTrab(sel) {
 function getTrabajadoresModal() {
   return Array.from(document.querySelectorAll('#mc-trab-rows .mc-trab-row')).map(function(row) {
     return {
-      nombre: row.querySelector('.trab-sel').value,
-      turno:  row.querySelector('.trab-turno').value,
-      talla:  row.querySelector('.trab-talla').value.trim(),
-      color:  row.querySelector('.trab-color').value.trim(),
-      obs:    row.querySelector('.trab-obs').value.trim()
+      nombre:   row.querySelector('.trab-sel').value,
+      turno:    row.querySelector('.trab-turno').value,
+      cantidad: row.querySelector('.trab-cant').value ? Number(row.querySelector('.trab-cant').value) : null,
+      talla:    row.querySelector('.trab-talla').value.trim(),
+      color:    row.querySelector('.trab-color').value.trim(),
+      obs:      row.querySelector('.trab-obs').value.trim()
     };
   }).filter(function(t){ return t.nombre; });
 }
@@ -8160,6 +8188,7 @@ function abrirModalCompra() {
   trabCont.querySelectorAll('.mc-trab-row').forEach(function(r){ r.remove(); });
   var emptyMsg = document.getElementById('mc-trab-empty');
   if (emptyMsg) emptyMsg.style.display = '';
+  _recalcCantidadCompra();
   abrir('modal-compra');
 }
 
@@ -8193,6 +8222,7 @@ function editarCompra(id) {
   var emptyMsg = document.getElementById('mc-trab-empty');
   (c.trabajadores || []).forEach(function(t){ agregarFilaTrab(t); });
   if (emptyMsg) emptyMsg.style.display = (c.trabajadores && c.trabajadores.length) ? 'none' : '';
+  _recalcCantidadCompra();
   abrir('modal-compra');
 }
 
@@ -8226,10 +8256,15 @@ async function guardarCompra() {
   if (_editCompraId) {
     var _updPayload = Object.assign({}, payload);
     delete _updPayload.id;
-    var { error } = await sb.from('inventario_compras').update(_updPayload).eq('id', _editCompraId);
-    if (error) { console.error(error); alert('Error al guardar'); return; }
+    var { data: _updData, error } = await sb.from('inventario_compras').update(_updPayload).eq('id', _editCompraId).select();
+    if (error) { console.error(error); alert('Error al guardar: ' + error.message); return; }
+    if (!_updData || !_updData.length) {
+      console.error('Update no afectó ninguna fila. _editCompraId=', _editCompraId);
+      alert('No se pudo guardar: la solicitud no se encontró en la base de datos (id=' + _editCompraId + '). Recarga la página e intenta nuevamente.');
+      return;
+    }
     var idx = _compras.findIndex(function(x){ return x.id === _editCompraId; });
-    if (idx >= 0) _compras[idx] = Object.assign({}, _compras[idx], _updPayload);
+    if (idx >= 0) _compras[idx] = Object.assign({}, _compras[idx], _updData[0]);
   } else {
     payload.id = Date.now().toString();
     var { error } = await sb.from('inventario_compras').insert(payload);
@@ -8928,9 +8963,10 @@ async function enviarComentario() {
             <label style="margin-bottom:0;color:#1E4F8C;font-weight:700;font-size:13px">👷 Asignación a Trabajadores</label>
             <button type="button" class="btn btn-secondary btn-sm" onclick="agregarFilaTrab()">+ Agregar trabajador</button>
           </div>
-          <div id="mc-trab-header" style="display:grid;grid-template-columns:2fr 78px 88px 88px 1fr 32px;gap:5px;padding:0 6px;margin-bottom:4px">
+          <div id="mc-trab-header" style="display:grid;grid-template-columns:2fr 78px 70px 88px 88px 1fr 32px;gap:5px;padding:0 6px;margin-bottom:4px">
             <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Trabajador</span>
             <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Turno</span>
+            <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Cant.</span>
             <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Talla</span>
             <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Color</span>
             <span style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Observación</span>

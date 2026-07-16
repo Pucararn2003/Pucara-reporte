@@ -2976,30 +2976,69 @@ function generarFichaBaja(movId) {
 var _trpMovId = null;
 var _trpMasivIds = null;
 
+function _conTimeout(promise, ms, msg) {
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject) {
+      setTimeout(function(){ reject(new Error(msg || 'Tiempo de espera agotado. Revisa tu conexión e intenta nuevamente.')); }, ms);
+    })
+  ]);
+}
+
 function _traspasarMasivoAEPP() {
   if (_selAsig.size === 0) return;
   _trpMasivIds = Array.from(_selAsig);
   _trpMovId = null;
-  // Pre-llenar fecha con hoy y turno vacío
-  document.getElementById('trp-fecha-entrega').value = hoy();
+  // Fecha original de cada registro (misma prioridad que la columna "Fecha de Entrega" de Asignaciones)
+  var _trpOriginalFechas = {};
+  _trpMasivIds.forEach(function(id) {
+    var m = movs.find(function(x){ return x.id === id; });
+    var itV = m && m.item_id ? items.find(function(x){ return x.id === m.item_id; }) : null;
+    var f = (m && m.fecha_entrega) || (itV && itV.fecha_ingreso) || (m && m.fecha) || (m && m.created_at) || '';
+    _trpOriginalFechas[id] = f ? String(f).substring(0, 10) : '';
+  });
+  var fechasUnicas = Array.from(new Set(Object.values(_trpOriginalFechas)));
+  var hint = document.getElementById('trp-fecha-hint');
+  if (fechasUnicas.length === 1 && fechasUnicas[0]) {
+    document.getElementById('trp-fecha-entrega').value = fechasUnicas[0];
+    if (hint) hint.style.display = 'none';
+  } else {
+    document.getElementById('trp-fecha-entrega').value = '';
+    if (hint) hint.style.display = fechasUnicas.length > 1 ? 'block' : 'none';
+  }
   document.getElementById('trp-turno').value = '';
   // Reasignar handler del botón confirmar
   var btn = document.getElementById('btn-confirmar-traspasar');
   var nuevo = btn.cloneNode(true);
   btn.parentNode.replaceChild(nuevo, btn);
   nuevo.onclick = async function() {
-    var fechaEntrega = document.getElementById('trp-fecha-entrega').value || null;
+    var fechaElegida = document.getElementById('trp-fecha-entrega').value || null;
     var turno = document.getElementById('trp-turno').value || null;
-    var updates = { tipo: 'entrega_epp', fecha_entrega: fechaEntrega, turno: turno };
     nuevo.disabled = true; nuevo.textContent = 'Traspasando…';
     try {
-      var { error } = await sb.from('inventario_movimientos').update(updates).in('id', _trpMasivIds);
-      if (error) throw new Error(error.message);
-      // Actualizar en memoria
-      _trpMasivIds.forEach(function(id) {
-        var m = movs.find(function(x){ return x.id === id; });
-        if (m) Object.assign(m, updates);
-      });
+      if (fechaElegida) {
+        // El usuario eligió una fecha explícita: se aplica a todos los seleccionados
+        var updates = { tipo: 'entrega_epp', fecha_entrega: fechaElegida, turno: turno };
+        var { error } = await _conTimeout(
+          sb.from('inventario_movimientos').update(updates).in('id', _trpMasivIds),
+          15000
+        );
+        if (error) throw new Error(error.message);
+        _trpMasivIds.forEach(function(id) {
+          var m = movs.find(function(x){ return x.id === id; });
+          if (m) Object.assign(m, updates);
+        });
+      } else {
+        // Sin fecha elegida: cada registro conserva su propia fecha original
+        await _conTimeout(Promise.all(_trpMasivIds.map(function(id) {
+          var updates = { tipo: 'entrega_epp', fecha_entrega: _trpOriginalFechas[id] || null, turno: turno };
+          return sb.from('inventario_movimientos').update(updates).eq('id', id).then(function(res) {
+            if (res.error) throw new Error(res.error.message);
+            var m = movs.find(function(x){ return x.id === id; });
+            if (m) Object.assign(m, updates);
+          });
+        })), 20000);
+      }
       _trpMasivIds = null;
       _limpiarSelAsig();
       cerrar('modal-traspasar-epp');
@@ -3035,7 +3074,10 @@ function traspasarAEPP(movId) {
     const updates = { tipo: 'entrega_epp', fecha_entrega: fechaEntrega, turno: turno || null };
     nuevo.disabled = true; nuevo.textContent = 'Traspasando…';
     try {
-      const { error } = await sb.from('inventario_movimientos').update(updates).eq('id', _trpMovId);
+      const { error } = await _conTimeout(
+        sb.from('inventario_movimientos').update(updates).eq('id', _trpMovId),
+        15000
+      );
       if (error) throw new Error(error.message);
       const m = movs.find(function(x){ return x.id === _trpMovId; });
       if (m) Object.assign(m, updates);
@@ -8999,6 +9041,7 @@ async function enviarComentario() {
           <button type="button" onclick="document.getElementById('trp-fecha-entrega').value=hoy()" style="font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #2e7d32;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-weight:600;line-height:1.6">● Hoy</button>
         </label>
         <input type="date" id="trp-fecha-entrega" style="width:100%;padding:8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:14px"/>
+        <div id="trp-fecha-hint" style="display:none;font-size:12px;color:#e65100;margin-top:5px">Los registros seleccionados tienen fechas distintas — se mantendrá la fecha original de cada uno. Si eliges una fecha aquí, se aplicará a todos.</div>
       </div>
       <div class="fg full" style="margin-top:12px">
         <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px">Turno</label>

@@ -497,9 +497,17 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg"><label>Período hasta</label><input type="date" id="xl-hasta"/></div>
       </div>
       <p style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 10px">Incluir en el archivo</p>
-      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
-        <input type="checkbox" id="xl-inv" checked/> Inventario General (estado actual)
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:6px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="xl-inv" checked onchange="document.getElementById('xl-inv-area-wrap').style.display=this.checked?'flex':'none'"/> Inventario General (estado actual)
       </label>
+      <div id="xl-inv-area-wrap" style="display:flex;align-items:center;gap:8px;margin:0 0 12px 26px">
+        <label style="font-size:12px;color:#777;white-space:nowrap">Área a incluir:</label>
+        <select id="xl-inv-area" style="flex:1;padding:6px 10px;border:1px solid #cdd8e3;border-radius:6px;font-size:13px;background:#fff;outline:none">
+          <option value="">Todas (Pucará + Geotécnia)</option>
+          <option value="PUCAR">Solo Pucará</option>
+          <option value="GEO">Solo Geotécnia</option>
+        </select>
+      </div>
       <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
         <input type="checkbox" id="xl-epp" checked/> Entregas EPP
       </label>
@@ -1838,9 +1846,17 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <div class="fg"><label>Período hasta</label><input type="date" id="pdf-hasta"/></div>
       </div>
       <p style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 10px">Incluir en el informe</p>
-      <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
-        <input type="checkbox" id="pdf-inv" checked/> Inventario General (estado actual)
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:6px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="pdf-inv" checked onchange="document.getElementById('pdf-inv-area-wrap').style.display=this.checked?'flex':'none'"/> Inventario General (estado actual)
       </label>
+      <div id="pdf-inv-area-wrap" style="display:flex;align-items:center;gap:8px;margin:0 0 12px 26px">
+        <label style="font-size:12px;color:#777;white-space:nowrap">Área a incluir:</label>
+        <select id="pdf-inv-area" style="flex:1;padding:6px 10px;border:1px solid #cdd8e3;border-radius:6px;font-size:13px;background:#fff;outline:none">
+          <option value="">Todas (Pucará + Geotécnia)</option>
+          <option value="PUCAR">Solo Pucará</option>
+          <option value="GEO">Solo Geotécnia</option>
+        </select>
+      </div>
       <label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;cursor:pointer;font-size:14px">
         <input type="checkbox" id="pdf-epp" checked/> Entregas EPP
       </label>
@@ -6627,6 +6643,8 @@ function abrirExcel() {
   document.getElementById('xl-desde').value = `${y}-${m}-01`;
   document.getElementById('xl-hasta').value = hoy();
   document.getElementById('xl-inv').checked  = true;
+  document.getElementById('xl-inv-area').value = '';
+  document.getElementById('xl-inv-area-wrap').style.display = 'flex';
   document.getElementById('xl-epp').checked  = true;
   document.getElementById('xl-sal').checked  = true;
   abrir('modal-excel');
@@ -6665,8 +6683,11 @@ function exportarExcel() {
   const fmtTs = d => { try { return new Date(d).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e){ return d||''; } };
 
   if (incInv) {
+    const xlInvArea = document.getElementById('xl-inv-area')?.value || '';
+    let itemsInv = items;
+    if (xlInvArea) itemsInv = itemsInv.filter(i => (i.area_responsable||'').toUpperCase().includes(xlInvArea));
     const hdrs = ['Corr.','Categoría','Descripción','Color','Talla','Marca/Modelo','Serie/SN','Norma','Total','Disponible','Estado','Ubicación','Área','F.Ingreso','Observaciones'];
-    const data = items.map(i => [i.correlativo,i.categoria,i.descripcion,i.color,i.talla,i.marca_modelo,i.serie_sn,i.norma,i.cantidad_total,i.cantidad_disponible,i.estado,i.ubicacion,i.area_responsable,i.fecha_ingreso,i.observaciones]);
+    const data = itemsInv.map(i => [i.correlativo,i.categoria,i.descripcion,i.color,i.talla,i.marca_modelo,i.serie_sn,i.norma,i.cantidad_total,i.cantidad_disponible,i.estado,i.ubicacion,i.area_responsable,i.fecha_ingreso,i.observaciones]);
     XLSX.utils.book_append_sheet(wb, crearHoja(hdrs, data, [6,15,25,10,8,18,15,12,8,10,12,15,15,12,25]), 'Inventario');
   }
 
@@ -7208,6 +7229,8 @@ function abrirPDF() {
   const now = new Date(), y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('pdf-desde').value = `${y}-${m}-01`;
   document.getElementById('pdf-hasta').value = hoy();
+  document.getElementById('pdf-inv-area').value = '';
+  document.getElementById('pdf-inv-area-wrap').style.display = 'flex';
   abrir('modal-pdf');
 }
 
@@ -7242,14 +7265,19 @@ function generarPDF() {
         <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:12px;color:#999">Sin ítems</td></tr>'}</tbody>
       </table>`;
     }
+    const pdfInvArea = document.getElementById('pdf-inv-area')?.value || '';
     const _sortDesc = (a, b) => (a.descripcion||'').localeCompare(b.descripcion||'', 'es');
     const itemsPucara  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR')).sort(_sortDesc);
     const itemsGeotec  = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO')).sort(_sortDesc);
     const itemsOtros   = items.filter(i => !((i.area_responsable||'').toUpperCase().includes('PUCAR') || (i.area_responsable||'').toUpperCase().includes('GEO'))).sort(_sortDesc);
     body += `<h3 style="margin:22px 0 8px;color:#1E4F8C;font-size:13pt;border-bottom:2px solid #1E4F8C;padding-bottom:4px">Inventario General — Estado Actual</h3>`;
-    body += `<h4 style="margin:14px 0 6px;color:#1E4F8C;font-size:11pt;border-left:4px solid #1E4F8C;padding-left:8px">Ítems PUCARÁ</h4>` + tablaInv(itemsPucara);
-    body += `<h4 style="margin:14px 0 6px;color:#2e7d32;font-size:11pt;border-left:4px solid #2e7d32;padding-left:8px">Ítems GEOTÉCNIA</h4>` + tablaInv(itemsGeotec);
-    if (itemsOtros.length) {
+    if (!pdfInvArea || pdfInvArea === 'PUCAR') {
+      body += `<h4 style="margin:14px 0 6px;color:#1E4F8C;font-size:11pt;border-left:4px solid #1E4F8C;padding-left:8px">Ítems PUCARÁ</h4>` + tablaInv(itemsPucara);
+    }
+    if (!pdfInvArea || pdfInvArea === 'GEO') {
+      body += `<h4 style="margin:14px 0 6px;color:#2e7d32;font-size:11pt;border-left:4px solid #2e7d32;padding-left:8px">Ítems GEOTÉCNIA</h4>` + tablaInv(itemsGeotec);
+    }
+    if (!pdfInvArea && itemsOtros.length) {
       body += `<h4 style="margin:14px 0 6px;color:#555;font-size:11pt;border-left:4px solid #aaa;padding-left:8px">Otros</h4>` + tablaInv(itemsOtros);
     }
   }

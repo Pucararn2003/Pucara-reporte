@@ -104,6 +104,10 @@ th.sortable:hover{background:#163d6e}
 .th-filter .btn-clear{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;width:100%;white-space:nowrap}
 .th-filter .btn-clear:hover{background:rgba(255,255,255,.28)}
 .tf-inp,.tf-sel{width:100%;padding:4px 7px;border:1px solid rgba(255,255,255,.25);border-radius:5px;font-size:12px;background:rgba(255,255,255,.12);color:#fff;outline:none;box-sizing:border-box}
+.btn-area-seg{border:none;background:#fff;color:#555;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-right:1.5px solid #cdd8e3;transition:.15s}
+.btn-area-seg:last-child{border-right:none}
+.btn-area-seg:hover{background:#f0f4f9}
+.btn-area-seg.active{background:#1E4F8C;color:#fff}
 .tf-inp::placeholder{color:rgba(255,255,255,.6)}
 .tf-inp:focus,.tf-sel:focus{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.22)}
 .tf-sel option{background:#1E4F8C;color:#fff}
@@ -650,6 +654,11 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
     <div class="toolbar" style="gap:8px">
       <button class="btn btn-primary" onclick="abrirModalItem()">+ Agregar Ítem Nuevo</button>
       <button class="btn" onclick="abrirModalLote()" style="background:#0277bd;color:#fff;border:none;white-space:nowrap">+ Agregar Lote Nuevo</button>
+      <div id="grp-area" style="display:flex;border:1.5px solid #cdd8e3;border-radius:8px;overflow:hidden;flex-shrink:0">
+        <button type="button" class="btn-area-seg active" data-area="" onclick="setFiltroArea('')">Todos</button>
+        <button type="button" class="btn-area-seg" data-area="PUCAR" onclick="setFiltroArea('PUCAR')">🏢 Pucará</button>
+        <button type="button" class="btn-area-seg" data-area="GEO" onclick="setFiltroArea('GEO')">⛏️ Geotécnia</button>
+      </div>
       <div style="position:relative;flex:1;max-width:320px">
         <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario();document.getElementById('fi-buscar-x').style.display=this.value?'flex':'none'" style="padding:8px 36px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;width:100%;box-sizing:border-box;color:#222"/>
         <button id="fi-buscar-x" onclick="document.getElementById('fi-buscar').value='';renderInventario();this.style.display='none'" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999;font-size:16px;line-height:1;padding:2px 4px;align-items:center;justify-content:center">×</button>
@@ -3181,12 +3190,21 @@ function limpiarFS() {
   setFiltroTipoInsumo('todos');
 }
 
+var _filtroArea = '';
+function setFiltroArea(valor) {
+  _filtroArea = valor;
+  document.querySelectorAll('#grp-area .btn-area-seg').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.area === valor);
+  });
+  renderInventario();
+}
+
 function limpiarFiltros() {
   document.getElementById('fi-buscar').value = '';
   document.getElementById('fi-cat').value    = '';
   document.getElementById('fi-estado').value = '';
   document.getElementById('fi-ubic').value   = '';
-  renderInventario();
+  setFiltroArea('');
 }
 
 function renderInventario() {
@@ -3204,6 +3222,16 @@ function renderInventario() {
   });
   _catSel.innerHTML = _catHtml;
   let rows = [...items];
+  // Conteos por área en los botones del filtro
+  const _nPucara = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR')).length;
+  const _nGeotec = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO')).length;
+  const _btnTodos = document.querySelector('#grp-area .btn-area-seg[data-area=""]');
+  const _btnPuc   = document.querySelector('#grp-area .btn-area-seg[data-area="PUCAR"]');
+  const _btnGeo   = document.querySelector('#grp-area .btn-area-seg[data-area="GEO"]');
+  if (_btnTodos) _btnTodos.textContent = `Todos (${items.length})`;
+  if (_btnPuc)   _btnPuc.textContent   = `🏢 Pucará (${_nPucara})`;
+  if (_btnGeo)   _btnGeo.textContent   = `⛏️ Geotécnia (${_nGeotec})`;
+  if (_filtroArea) rows = rows.filter(i => (i.area_responsable||'').toUpperCase().includes(_filtroArea));
   if (cat) rows = rows.filter(i => i.categoria === cat);
   // Actualizar conteos por estado (sobre items ya filtrados por categoría)
   const _estadoSel = document.getElementById('fi-estado');

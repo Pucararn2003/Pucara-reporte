@@ -108,6 +108,9 @@ th.sortable:hover{background:#163d6e}
 .btn-area-seg:last-child{border-right:none}
 .btn-area-seg:hover{background:#f0f4f9}
 .btn-area-seg.active{background:#1E4F8C;color:#fff}
+.btn-area-seg.warn{background:#fff3e0;color:#e65100}
+.btn-area-seg.warn:hover{background:#ffe6c2}
+.btn-area-seg.warn.active{background:#e65100;color:#fff}
 .tf-inp::placeholder{color:rgba(255,255,255,.6)}
 .tf-inp:focus,.tf-sel:focus{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.22)}
 .tf-sel option{background:#1E4F8C;color:#fff}
@@ -658,6 +661,7 @@ tr.row-sel td{background:#dbeafe !important;transition:background .15s}
         <button type="button" class="btn-area-seg active" data-area="" onclick="setFiltroArea('')">Todos</button>
         <button type="button" class="btn-area-seg" data-area="PUCAR" onclick="setFiltroArea('PUCAR')">🏢 Pucará</button>
         <button type="button" class="btn-area-seg" data-area="GEO" onclick="setFiltroArea('GEO')">⛏️ Geotécnia</button>
+        <button type="button" class="btn-area-seg warn" data-area="SIN" id="btn-area-sin" onclick="setFiltroArea('SIN')" style="display:none">⚠️ Sin asignar</button>
       </div>
       <div style="position:relative;flex:1;max-width:320px">
         <input type="text" id="fi-buscar" placeholder="🔍 Buscar por nombre, correlativo..." oninput="renderInventario();document.getElementById('fi-buscar-x').style.display=this.value?'flex':'none'" style="padding:8px 36px 8px 12px;border:1px solid #cdd8e3;border-radius:7px;font-size:13px;background:#fff;outline:none;width:100%;box-sizing:border-box;color:#222"/>
@@ -3190,6 +3194,10 @@ function limpiarFS() {
   setFiltroTipoInsumo('todos');
 }
 
+function _sinAreaAsignada(i) {
+  const a = (i.area_responsable||'').toUpperCase();
+  return !a.includes('PUCAR') && !a.includes('GEO');
+}
 var _filtroArea = '';
 function setFiltroArea(valor) {
   _filtroArea = valor;
@@ -3225,13 +3233,20 @@ function renderInventario() {
   // Conteos por área en los botones del filtro
   const _nPucara = items.filter(i => (i.area_responsable||'').toUpperCase().includes('PUCAR')).length;
   const _nGeotec = items.filter(i => (i.area_responsable||'').toUpperCase().includes('GEO')).length;
+  const _nSinArea = items.filter(_sinAreaAsignada).length;
   const _btnTodos = document.querySelector('#grp-area .btn-area-seg[data-area=""]');
   const _btnPuc   = document.querySelector('#grp-area .btn-area-seg[data-area="PUCAR"]');
   const _btnGeo   = document.querySelector('#grp-area .btn-area-seg[data-area="GEO"]');
+  const _btnSin   = document.getElementById('btn-area-sin');
   if (_btnTodos) _btnTodos.textContent = `Todos (${items.length})`;
   if (_btnPuc)   _btnPuc.textContent   = `🏢 Pucará (${_nPucara})`;
   if (_btnGeo)   _btnGeo.textContent   = `⛏️ Geotécnia (${_nGeotec})`;
-  if (_filtroArea) rows = rows.filter(i => (i.area_responsable||'').toUpperCase().includes(_filtroArea));
+  if (_btnSin) {
+    _btnSin.textContent = `⚠️ Sin asignar (${_nSinArea})`;
+    _btnSin.style.display = _nSinArea > 0 ? '' : 'none';
+  }
+  if (_filtroArea === 'SIN') rows = rows.filter(_sinAreaAsignada);
+  else if (_filtroArea) rows = rows.filter(i => (i.area_responsable||'').toUpperCase().includes(_filtroArea));
   if (cat) rows = rows.filter(i => i.categoria === cat);
   // Actualizar conteos por estado (sobre items ya filtrados por categoría)
   const _estadoSel = document.getElementById('fi-estado');
@@ -3271,7 +3286,7 @@ function renderInventario() {
   tb.innerHTML = rows.map((i, idx) => `<tr style="cursor:pointer" onclick="clicFila(this,'inv','${i.id}')" ondblclick="dblFila(this,'inv','${i.id}')">
     <td style="text-align:center;color:#999;font-size:12px;font-weight:600">${idx + 1}</td>
     <td>${i.correlativo||'—'}</td>
-    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}${i.lote?`<span onclick="event.stopPropagation();abrirModalVerLote('${i.id}')" style="color:#fff;background:#5c7aa0;font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle;cursor:pointer" title="Ver/editar lote">Lote: ${i.lote}</span>`:''}</span></div></td>
+    <td><div style="display:flex;align-items:center;gap:7px">${i.imagen_url?`<img class="img-thumb" src="${i.imagen_url}" onclick="event.stopPropagation();abrirLightbox('${i.imagen_url}')" title="Ver imagen">`:`<div class="img-placeholder">📷</div>`}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${i.descripcion}${i.marca_modelo?`<span style="color:#aaa;font-size:11px;margin-left:5px">${i.marca_modelo}</span>`:''}${i.lote?`<span onclick="event.stopPropagation();abrirModalVerLote('${i.id}')" style="color:#fff;background:#5c7aa0;font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle;cursor:pointer" title="Ver/editar lote">Lote: ${i.lote}</span>`:''}${_sinAreaAsignada(i)?`<span title="Sin área responsable asignada" style="color:#e65100;background:#fff3e0;border:1px solid #ffcc80;font-size:10px;font-weight:700;margin-left:6px;padding:1px 6px;border-radius:10px;vertical-align:middle">⚠️ Sin área</span>`:''}</span></div></td>
     <td><span class="badge b-info">${i.categoria||'—'}</span></td>
     <td>${i.talla||'—'}</td>
     <td style="text-align:center">${i.cantidad_total??0}</td>
